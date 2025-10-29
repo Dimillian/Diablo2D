@@ -4,6 +4,7 @@ local createRenderableComponent = require("components.renderable")
 local createPlayerControlledComponent = require("components.player_controlled")
 local createWanderComponent = require("components.wander")
 local createHealthComponent = require("components.health")
+local createPositionComponent = require("components.position")
 local playerInputSystem = require("systems.player_input")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
@@ -74,15 +75,14 @@ function WorldScene.new(opts)
     local enemyId = "enemy_1"
     local enemy = {
         id = enemyId,
-        position = {
+        position = createPositionComponent({
             x = 300,
             y = 200,
-        },
+        }),
         size = {
             w = 20,
             h = 20,
         },
-        move = player.move, -- reuse player movement helper for now
     }
 
     scene.entities[enemyId] = enemy

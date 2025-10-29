@@ -2,7 +2,7 @@ local cameraSystem = {}
 
 function cameraSystem.update(world, dt)
     local player = world:getPlayer()
-    if not player then
+    if not player or not player.position then
         return
     end
 

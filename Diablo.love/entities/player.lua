@@ -10,13 +10,14 @@ function Player.new(opts)
     local createInventory = require("components.inventory")
     local createEquipment = require("components.equipment")
     local createBaseStats = require("components.base_stats")
+    local createPosition = require("components.position")
 
     local entity = {
         id = opts.id or "player",
-        position = {
+        position = createPosition({
             x = opts.x or 0,
             y = opts.y or 0,
-        },
+        }),
         size = {
             w = opts.width or 16,
             h = opts.height or 24,
@@ -27,22 +28,6 @@ function Player.new(opts)
     }
 
     return setmetatable(entity, Player)
-end
-
----Set the absolute position of the player.
----@param x number
----@param y number
-function Player:setPosition(x, y)
-    self.position.x = x
-    self.position.y = y
-end
-
----Move the player relative to the current position.
----@param dx number
----@param dy number
-function Player:move(dx, dy)
-    self.position.x = self.position.x + dx
-    self.position.y = self.position.y + dy
 end
 
 return Player
