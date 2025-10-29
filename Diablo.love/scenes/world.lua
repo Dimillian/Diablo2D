@@ -9,6 +9,7 @@ local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
 local wanderSystem = require("systems.wander")
 local uiPlayerStatus = require("systems.ui_player_status")
+local cameraSystem = require("systems.camera")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -22,6 +23,7 @@ function WorldScene.new(opts)
     local scene = {
         entities = {},
         kind = "world",
+        camera = { x = 0, y = 0 },
         components = {
             movement = {},
             renderable = {},
@@ -34,6 +36,7 @@ function WorldScene.new(opts)
                 playerInputSystem.update,
                 wanderSystem.update,
                 movementSystem.update,
+                cameraSystem.update,
             },
             draw = {
                 renderSystem.draw,

@@ -6,6 +6,11 @@ function renderSystem.draw(world)
         return
     end
 
+    local camera = world.camera or { x = 0, y = 0 }
+
+    love.graphics.push()
+    love.graphics.translate(-camera.x, -camera.y)
+
     for entityId, renderable in pairs(renderables) do
         local entity = world.entities[entityId]
         if entity then
@@ -24,6 +29,7 @@ function renderSystem.draw(world)
     end
 
     love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.pop()
 end
 
 return renderSystem
