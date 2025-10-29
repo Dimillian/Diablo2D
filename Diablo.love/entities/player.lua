@@ -17,6 +17,8 @@ function Player.new(opts)
             w = opts.width or 16,
             h = opts.height or 24,
         },
+        inventory = opts.inventory or { items = {} },
+        equipment = opts.equipment or {},
     }
 
     return setmetatable(entity, Player)

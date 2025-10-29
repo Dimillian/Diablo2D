@@ -45,6 +45,18 @@ end
 
 function SceneManager:toggleInventory(key)
     local top = self:current()
+
+    if key == "escape" then
+        if top and top.kind == "inventory" then
+            self:pop()
+        end
+        return
+    end
+
+    if key ~= "i" then
+        return
+    end
+
     if top and top.kind == "inventory" then
         self:pop()
         return
@@ -55,14 +67,11 @@ function SceneManager:toggleInventory(key)
         return
     end
 
-    if key == "i" then
-        self:push(
-            InventoryScene.new({
-                inventory = world.inventory,
-                equipment = world.equipment,
-            })
-        )
-    end
+    self:push(
+        InventoryScene.new({
+            world = world,
+        })
+    )
 end
 
 local sceneManager = SceneManager.new()

@@ -7,6 +7,7 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 - Basic sandbox world with a controllable hero and a wandering enemy to validate systems.
 - Scene manager with stack-based overlays; inventory scene renders as a modal without pausing the world draw order.
 - Inventory overlay UI stub (split equipment/inventory columns, translucent backdrop).
+- Item generator with slot-aware prefixes/suffixes, rarity weighting, and tooltips showing rolled stats.
 
 ## Feature Targets (Early Phase)
 - Procedural forest overworld with repeatable runs.

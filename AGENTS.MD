@@ -13,6 +13,11 @@
 - `WorldScene` guarantees `getPlayer`/`getEntity` helpers so downstream systems can rely on unified entity retrieval (no guard checks needed).
 - Keep systems decoupled and data-driven to enable procedural content later.
 
+### Loot/Item System
+- Item metadata lives in `data/items.lua`: types, rarity weights, base stat ranges, and slot-gated prefix/suffix pools.
+- `items/generator.lua` rolls rarity (weighted 50/25/15/7/3), item type, base stats within min/max, applies rarity multipliers, then affixes respecting slot restrictions.
+- Inventory scene and future loot drops consume the generator and read stats directly off the generated item payload.
+
 ## Gameplay Pillars To Enable
 - Procedural forest world generation as the first playable space.
 - Monster packs with basic combat behaviors and XP/level progression.
