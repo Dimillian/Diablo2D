@@ -118,4 +118,15 @@ function WorldScene:draw()
     end
 end
 
+function WorldScene:getEntity(entityId)
+    if not entityId then
+        return nil
+    end
+    return self.entities[entityId]
+end
+
+function WorldScene:getPlayer()
+    return self:getEntity(self.playerId)
+end
+
 return WorldScene

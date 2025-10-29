@@ -9,6 +9,8 @@
 - Use a lightweight, homemade ECS: `WorldScene` composes entities, component tables, and runs ordered systems. Systems operate on component sets; entities remain data.
 - Everything is an entity; behavior emerges from systems (`player_input`, `movement`, `wander`, `render`) consuming components (`movement`, `renderable`, `player_controlled`, `wander`).
 - Scene orchestration handled by a shared `SceneManager` stack—allows overlay scenes (inventory) without coupling to the world.
+- Core world systems cover input, AI wander, movement, camera centering, rendering, and HUD (`ui_player_status`).
+- `WorldScene` guarantees `getPlayer`/`getEntity` helpers so downstream systems can rely on unified entity retrieval (no guard checks needed).
 - Keep systems decoupled and data-driven to enable procedural content later.
 
 ## Gameplay Pillars To Enable

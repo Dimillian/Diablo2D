@@ -1,13 +1,13 @@
 local uiPlayerStatus = {}
 
 function uiPlayerStatus.draw(world)
-    local playerId = world.playerId
-    if not playerId then
+    local player = world:getPlayer()
+    if not player then
         return
     end
 
     local healthComponents = world.components.health or {}
-    local health = healthComponents[playerId]
+    local health = healthComponents[player.id]
     if not health then
         return
     end

@@ -1,12 +1,7 @@
 local cameraSystem = {}
 
 function cameraSystem.update(world, dt)
-    local playerId = world.playerId
-    if not playerId then
-        return
-    end
-
-    local player = world.entities[playerId]
+    local player = world:getPlayer()
     if not player then
         return
     end
