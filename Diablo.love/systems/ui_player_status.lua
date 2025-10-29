@@ -22,6 +22,8 @@ function uiPlayerStatus.draw(world)
     local barX = 32
     local barY = 32
 
+    barWidth = math.floor(barWidth + 0.5)
+
     love.graphics.push("all")
 
     -- Background shadow
@@ -44,7 +46,8 @@ function uiPlayerStatus.draw(world)
     -- Text
     love.graphics.setColor(1, 1, 1, 1)
     local text = string.format("%d / %d", math.floor(currentHealth), math.floor(maxHealth))
-    love.graphics.printf(text, barX, barY + (barHeight / 2) - 6, barWidth, "center")
+    local textY = math.floor(barY + (barHeight / 2) - 6 + 0.5)
+    love.graphics.printf(text, barX, textY, barWidth, "center")
 
     love.graphics.pop()
 end

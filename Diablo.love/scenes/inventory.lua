@@ -8,6 +8,10 @@ local rarityColors = {
     legendary = { 1, 0.65, 0.2, 1 },
 }
 
+local function snap(value)
+    return math.floor(value + 0.5)
+end
+
 local InventoryScene = {}
 InventoryScene.__index = InventoryScene
 
@@ -38,10 +42,10 @@ end
 function InventoryScene:draw()
     local screenWidth, screenHeight = love.graphics.getDimensions()
 
-    local panelWidth = screenWidth * 0.8
-    local panelHeight = screenHeight * 0.8
-    local panelX = (screenWidth - panelWidth) / 2
-    local panelY = (screenHeight - panelHeight) / 2
+    local panelWidth = snap(screenWidth * 0.8)
+    local panelHeight = snap(screenHeight * 0.8)
+    local panelX = snap((screenWidth - panelWidth) / 2)
+    local panelY = snap((screenHeight - panelHeight) / 2)
 
     love.graphics.push("all")
 
@@ -59,12 +63,12 @@ function InventoryScene:draw()
     love.graphics.rectangle("line", panelX, panelY, panelWidth, panelHeight, 8, 8)
 
     -- Divide panel into equipment (left) and inventory (right)
-    local dividerX = panelX + (panelWidth * 0.45)
+    local dividerX = snap(panelX + (panelWidth * 0.45))
     love.graphics.line(dividerX, panelY, dividerX, panelY + panelHeight)
 
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("Equipment", panelX + 20, panelY + 20)
-    love.graphics.print("Inventory", dividerX + 20, panelY + 20)
+    love.graphics.print("Equipment", snap(panelX + 20), snap(panelY + 20))
+    love.graphics.print("Inventory", snap(dividerX + 20), snap(panelY + 20))
 
     -- Draw inventory items list
     local player = self.world:getPlayer()
@@ -72,9 +76,9 @@ function InventoryScene:draw()
     inventory.items = inventory.items or {}
     local items = inventory.items
     local lineHeight = 18
-    local startY = panelY + 52
-    local itemAreaX = dividerX + 20
-    local itemAreaWidth = (panelX + panelWidth) - 40 - itemAreaX
+    local startY = snap(panelY + 52)
+    local itemAreaX = snap(dividerX + 20)
+    local itemAreaWidth = snap((panelX + panelWidth) - 40 - itemAreaX)
 
     self.itemRects = {}
 
@@ -89,7 +93,7 @@ function InventoryScene:draw()
         love.graphics.print(
             string.format("%s [%s]", item.name, item.rarityLabel),
             itemAreaX,
-            y
+            snap(y)
         )
 
         self.itemRects[#self.itemRects + 1] = {
@@ -102,7 +106,7 @@ function InventoryScene:draw()
     end
 
     love.graphics.setColor(0.8, 0.8, 0.8, 1)
-    love.graphics.print("Press G to add random loot", dividerX + 20, panelY + panelHeight - 32)
+    love.graphics.print("Press G to add random loot", snap(dividerX + 20), snap(panelY + panelHeight - 32))
 
     self:drawTooltip()
 
@@ -207,12 +211,12 @@ function InventoryScene:drawTooltip()
         width = math.max(width, font:getWidth(line))
     end
 
-    width = width + padding * 2
+    width = math.ceil(width + padding * 2)
 
-    local height = lineHeight * (#lines + 1) + padding * 3
+    local height = math.ceil(lineHeight * (#lines + 1) + padding * 3)
 
-    local tooltipX = mx + 16
-    local tooltipY = my + 16
+    local tooltipX = snap(mx + 16)
+    local tooltipY = snap(my + 16)
 
     local screenWidth, screenHeight = love.graphics.getDimensions()
 
@@ -235,17 +239,17 @@ function InventoryScene:drawTooltip()
 
     local titleY = tooltipY + padding
     love.graphics.setColor(rarityColor)
-    love.graphics.print(hovered.name, tooltipX + padding, titleY)
+    love.graphics.print(hovered.name, snap(tooltipX + padding), snap(titleY))
 
     love.graphics.setColor(0.75, 0.75, 0.85, 1)
-    love.graphics.print(hovered.rarityLabel, tooltipX + padding, titleY + lineHeight)
+    love.graphics.print(hovered.rarityLabel, snap(tooltipX + padding), snap(titleY + lineHeight))
 
     love.graphics.setColor(1, 1, 1, 1)
     for index, line in ipairs(lines) do
         love.graphics.print(
             line,
-            tooltipX + padding,
-            titleY + lineHeight * (index + 1)
+            snap(tooltipX + padding),
+            snap(titleY + lineHeight * (index + 1))
         )
     end
 
