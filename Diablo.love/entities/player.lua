@@ -7,6 +7,10 @@ Player.__index = Player
 function Player.new(opts)
     opts = opts or {}
 
+    local createInventory = require("components.inventory")
+    local createEquipment = require("components.equipment")
+    local createBaseStats = require("components.base_stats")
+
     local entity = {
         id = opts.id or "player",
         position = {
@@ -17,8 +21,9 @@ function Player.new(opts)
             w = opts.width or 16,
             h = opts.height or 24,
         },
-        inventory = opts.inventory or { items = {} },
-        equipment = opts.equipment or {},
+        inventory = createInventory(opts.inventory),
+        equipment = createEquipment(opts.equipment),
+        baseStats = createBaseStats(opts.baseStats),
     }
 
     return setmetatable(entity, Player)

@@ -107,3 +107,10 @@ function love.keypressed(key)
         scene:keypressed(key)
     end
 end
+
+function love.mousepressed(x, y, button, istouch, presses)
+    local scene = sceneManager:current()
+    if scene and scene.mousepressed then
+        scene:mousepressed(x, y, button, istouch, presses)
+    end
+end

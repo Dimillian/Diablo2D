@@ -1,4 +1,5 @@
 local ItemGenerator = require("items.generator")
+local EquipmentHelper = require("system_helpers.equipment")
 
 local rarityColors = {
     common = { 0.9, 0.9, 0.9, 1 },
@@ -10,6 +11,45 @@ local rarityColors = {
 
 local function snap(value)
     return math.floor(value + 0.5)
+end
+
+local statDisplayOrder = {
+    { key = "health", label = "Health", always = true, type = "int" },
+    { key = "defense", label = "Defense", type = "int" },
+    { key = "critChance", label = "Crit Chance", type = "percent" },
+    { key = "attackSpeed", label = "Attack Speed", type = "percent" },
+    { key = "lifeSteal", label = "Life Steal", type = "percent" },
+    { key = "moveSpeed", label = "Move Speed", type = "percent" },
+    { key = "dodgeChance", label = "Dodge Chance", type = "percent" },
+    { key = "goldFind", label = "Gold Find", type = "percent" },
+    { key = "resistAll", label = "All Resist", type = "percent" },
+}
+
+local function buildSummaryLines(total)
+    local lines = {}
+
+    local damageMin = total.damageMin or 0
+    local damageMax = total.damageMax or 0
+    if damageMin > 0 or damageMax > 0 then
+        lines[#lines + 1] = string.format("Damage: %d - %d", math.floor(damageMin + 0.5), math.floor(damageMax + 0.5))
+    end
+
+    for _, entry in ipairs(statDisplayOrder) do
+        local value = total[entry.key] or 0
+        if value ~= 0 or entry.always then
+            if entry.type == "percent" then
+                lines[#lines + 1] = string.format("%s: %.1f%%", entry.label, value * 100)
+            else
+                lines[#lines + 1] = string.format("%s: %d", entry.label, math.floor(value + 0.5))
+            end
+        end
+    end
+
+    if #lines == 0 then
+        lines[#lines + 1] = "No stats"
+    end
+
+    return lines
 end
 
 local InventoryScene = {}
@@ -31,6 +71,7 @@ end
 
 function InventoryScene:enter()
     self.itemRects = {}
+    self.equipmentRects = {}
 end
 
 function InventoryScene:exit()
@@ -66,47 +107,132 @@ function InventoryScene:draw()
     local dividerX = snap(panelX + (panelWidth * 0.45))
     love.graphics.line(dividerX, panelY, dividerX, panelY + panelHeight)
 
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("Equipment", snap(panelX + 20), snap(panelY + 20))
-    love.graphics.print("Inventory", snap(dividerX + 20), snap(panelY + 20))
+    local headerY = snap(panelY + 20)
+    local equipmentHeaderX = snap(panelX + 20)
+    local inventoryHeaderX = snap(dividerX + 20)
 
-    -- Draw inventory items list
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print("Equipment", equipmentHeaderX, headerY)
+    love.graphics.print("Inventory", inventoryHeaderX, headerY)
+
+    local equipmentAreaTop = snap(headerY + 30)
+    local equipmentAreaHeight = snap(panelHeight * 0.45)
+    local equipmentAreaBottom = equipmentAreaTop + equipmentAreaHeight
+    local equipmentAreaWidth = snap(dividerX - panelX - 40)
+    local equipmentAreaX = equipmentHeaderX
+
+    local statsDividerY = snap(equipmentAreaBottom + 12)
+    local statsHeaderY = snap(statsDividerY + 12)
+    local statsStartY = snap(statsHeaderY + 24)
+
     local player = self.world:getPlayer()
-    local inventory = player and player.inventory or { items = {} }
-    inventory.items = inventory.items or {}
-    local items = inventory.items
-    local lineHeight = 18
-    local startY = snap(panelY + 52)
-    local itemAreaX = snap(dividerX + 20)
-    local itemAreaWidth = snap((panelX + panelWidth) - 40 - itemAreaX)
+    local inventory, equipment = EquipmentHelper.ensure(player)
+    local items = inventory and inventory.items or {}
 
     self.itemRects = {}
+    self.equipmentRects = {}
+
+    -- Equipment slots
+    local columns = 2
+    local slotSpacingX = 14
+    local slotSpacingY = 12
+    local slotWidth = snap((equipmentAreaWidth - slotSpacingX * (columns - 1)) / columns)
+    local slotHeight = 64
+
+    local slots = EquipmentHelper.slots()
+    for index, slot in ipairs(slots) do
+        local col = ((index - 1) % columns)
+        local row = math.floor((index - 1) / columns)
+
+        local slotX = snap(equipmentAreaX + col * (slotWidth + slotSpacingX))
+        local slotY = snap(equipmentAreaTop + row * (slotHeight + slotSpacingY))
+
+        love.graphics.setColor(0.16, 0.16, 0.18, 0.95)
+        love.graphics.rectangle("fill", slotX, slotY, slotWidth, slotHeight, 6, 6)
+        love.graphics.setColor(0.45, 0.4, 0.3, 1)
+        love.graphics.rectangle("line", slotX, slotY, slotWidth, slotHeight, 6, 6)
+
+        local labelY = snap(slotY + 6)
+        love.graphics.setColor(0.85, 0.82, 0.7, 1)
+        love.graphics.print(slot.label, snap(slotX + 8), labelY)
+
+        local equippedItem = equipment[slot.id]
+        local itemTextY = snap(labelY + 20)
+
+        if equippedItem then
+            local rarityColor = rarityColors[equippedItem.rarity] or rarityColors.common
+            love.graphics.setColor(rarityColor)
+            love.graphics.print(equippedItem.name, snap(slotX + 8), itemTextY)
+            self.equipmentRects[#self.equipmentRects + 1] = {
+                slot = slot.id,
+                item = equippedItem,
+                x = slotX,
+                y = slotY,
+                w = slotWidth,
+                h = slotHeight,
+            }
+        else
+            love.graphics.setColor(0.5, 0.5, 0.5, 1)
+            love.graphics.print("Empty", snap(slotX + 8), itemTextY)
+            self.equipmentRects[#self.equipmentRects + 1] = {
+                slot = slot.id,
+                item = nil,
+                x = slotX,
+                y = slotY,
+                w = slotWidth,
+                h = slotHeight,
+            }
+        end
+    end
+
+    -- Stats section
+    local statsWidth = equipmentAreaWidth
+    love.graphics.setColor(0.35, 0.32, 0.28, 1)
+    love.graphics.line(equipmentAreaX, statsDividerY, equipmentAreaX + statsWidth, statsDividerY)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print("Stats", equipmentAreaX, statsHeaderY)
+
+    local totalStats = EquipmentHelper.computeTotalStats(player)
+    local statLines = buildSummaryLines(totalStats)
+    local statLineHeight = 18
+    for idx, line in ipairs(statLines) do
+        love.graphics.print(line, equipmentAreaX, snap(statsStartY + (idx - 1) * statLineHeight))
+    end
+
+    -- Inventory items list
+    local lineHeight = 18
+    local itemsStartY = snap(headerY + 32)
+    local itemAreaX = inventoryHeaderX
+    local itemAreaWidth = snap((panelX + panelWidth) - 40 - itemAreaX)
 
     for index, item in ipairs(items) do
-        local y = startY + (index - 1) * lineHeight
-        if y > panelY + panelHeight - 40 then
+        local y = itemsStartY + (index - 1) * lineHeight
+        if y > panelY + panelHeight - 60 then
             break
         end
+        local snappedY = snap(y)
 
         local color = rarityColors[item.rarity] or rarityColors.common
         love.graphics.setColor(color)
         love.graphics.print(
             string.format("%s [%s]", item.name, item.rarityLabel),
             itemAreaX,
-            snap(y)
+            snappedY
         )
 
         self.itemRects[#self.itemRects + 1] = {
             item = item,
+            index = index,
             x = itemAreaX,
-            y = y,
+            y = snappedY,
             w = itemAreaWidth,
             h = lineHeight,
         }
     end
 
     love.graphics.setColor(0.8, 0.8, 0.8, 1)
-    love.graphics.print("Press G to add random loot", snap(dividerX + 20), snap(panelY + panelHeight - 32))
+    love.graphics.print("Press G to add random loot", inventoryHeaderX, snap(panelY + panelHeight - 32))
 
     self:drawTooltip()
 
@@ -120,9 +246,47 @@ function InventoryScene:keypressed(key)
         if not player then
             return
         end
-        player.inventory = player.inventory or { items = {} }
-        player.inventory.items = player.inventory.items or {}
-        table.insert(player.inventory.items, item)
+        local inventory = EquipmentHelper.ensure(player)
+        if inventory and inventory.items then
+            table.insert(inventory.items, item)
+        end
+    end
+end
+
+function InventoryScene:mousepressed(x, y, button)
+    if button ~= 1 then
+        return
+    end
+
+    local player = self.world:getPlayer()
+    if not player then
+        return
+    end
+
+    local inventory, equipment = EquipmentHelper.ensure(player)
+    if not inventory or not equipment then
+        return
+    end
+
+    -- Inventory items: equip on click
+    for _, rect in ipairs(self.itemRects or {}) do
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            local item = rect.item
+            local slot = item.slot
+            if slot then
+                EquipmentHelper.removeFromInventory(player, rect.index)
+                EquipmentHelper.equip(player, item)
+            end
+            return
+        end
+    end
+
+    -- Equipment slots: unequip on click
+    for _, rect in ipairs(self.equipmentRects or {}) do
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            EquipmentHelper.unequip(player, rect.slot)
+            return
+        end
     end
 end
 
@@ -182,10 +346,6 @@ local function formatStatLines(item)
 end
 
 function InventoryScene:drawTooltip()
-    if not self.itemRects then
-        return
-    end
-
     local mx, my = love.mouse.getPosition()
     local hovered
 
@@ -193,6 +353,15 @@ function InventoryScene:drawTooltip()
         if mx >= rect.x and mx <= rect.x + rect.w and my >= rect.y and my <= rect.y + rect.h then
             hovered = rect.item
             break
+        end
+    end
+
+    if not hovered then
+        for _, rect in ipairs(self.equipmentRects or {}) do
+            if mx >= rect.x and mx <= rect.x + rect.w and my >= rect.y and my <= rect.y + rect.h then
+                hovered = rect.item
+                break
+            end
         end
     end
 
@@ -207,6 +376,7 @@ function InventoryScene:drawTooltip()
     local lineHeight = font:getHeight()
 
     local width = font:getWidth(hovered.name)
+    width = math.max(width, font:getWidth(hovered.rarityLabel or ""))
     for _, line in ipairs(lines) do
         width = math.max(width, font:getWidth(line))
     end
