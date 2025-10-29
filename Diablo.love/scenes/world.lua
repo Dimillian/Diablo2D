@@ -3,10 +3,12 @@ local createMovementComponent = require("components.movement")
 local createRenderableComponent = require("components.renderable")
 local createPlayerControlledComponent = require("components.player_controlled")
 local createWanderComponent = require("components.wander")
+local createHealthComponent = require("components.health")
 local playerInputSystem = require("systems.player_input")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
 local wanderSystem = require("systems.wander")
+local uiPlayerStatus = require("systems.ui_player_status")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -25,6 +27,7 @@ function WorldScene.new(opts)
             renderable = {},
             playerControlled = {},
             wander = {},
+            health = {},
         },
         systems = {
             update = {
@@ -34,6 +37,7 @@ function WorldScene.new(opts)
             },
             draw = {
                 renderSystem.draw,
+                uiPlayerStatus.draw,
             },
         },
     }
@@ -58,6 +62,10 @@ function WorldScene.new(opts)
         color = { 1, 1, 1, 1 },
     })
     scene.components.playerControlled[player.id] = createPlayerControlledComponent()
+    scene.components.health[player.id] = createHealthComponent({
+        max = opts.playerMaxHealth or 50,
+        current = opts.playerHealth or opts.playerMaxHealth or 50,
+    })
 
     -- Spawn a basic enemy entity to validate ECS flow.
     local enemyId = "enemy_1"
