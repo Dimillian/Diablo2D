@@ -1,4 +1,6 @@
-# Diablo (Working Title)
+# Diablo2D
+
+![Diablo2D](screenshot.png)
 
 Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua. Explore a procedurally generated forest, fight roaming packs, level up, and gather randomized gear before visiting small towns for vendors and respite.
 
