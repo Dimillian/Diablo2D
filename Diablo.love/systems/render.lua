@@ -13,15 +13,15 @@ function renderSystem.draw(world)
 
     for entityId, renderable in pairs(renderables) do
         local entity = world.entities[entityId]
-        if entity and entity.position then
+        if entity and entity.position and entity.size then
             if renderable.kind == "rect" then
                 love.graphics.setColor(renderable.color)
                 love.graphics.rectangle(
                     "fill",
                     entity.position.x,
                     entity.position.y,
-                    renderable.width,
-                    renderable.height
+                    entity.size.w,
+                    entity.size.h
                 )
             end
         end

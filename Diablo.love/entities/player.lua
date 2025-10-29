@@ -11,6 +11,7 @@ function Player.new(opts)
     local createEquipment = require("components.equipment")
     local createBaseStats = require("components.base_stats")
     local createPosition = require("components.position")
+    local createSize = require("components.size")
 
     local entity = {
         id = opts.id or "player",
@@ -18,10 +19,10 @@ function Player.new(opts)
             x = opts.x or 0,
             y = opts.y or 0,
         }),
-        size = {
-            w = opts.width or 16,
-            h = opts.height or 24,
-        },
+        size = createSize({
+            w = opts.width,
+            h = opts.height,
+        }),
         inventory = createInventory(opts.inventory),
         equipment = createEquipment(opts.equipment),
         baseStats = createBaseStats(opts.baseStats),

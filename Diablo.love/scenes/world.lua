@@ -5,6 +5,7 @@ local createPlayerControlledComponent = require("components.player_controlled")
 local createWanderComponent = require("components.wander")
 local createHealthComponent = require("components.health")
 local createPositionComponent = require("components.position")
+local createSizeComponent = require("components.size")
 local playerInputSystem = require("systems.player_input")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
@@ -61,8 +62,6 @@ function WorldScene.new(opts)
     })
     scene.components.renderable[player.id] = createRenderableComponent({
         kind = "rect",
-        width = player.size.w,
-        height = player.size.h,
         color = { 1, 1, 1, 1 },
     })
     scene.components.playerControlled[player.id] = createPlayerControlledComponent()
@@ -79,10 +78,10 @@ function WorldScene.new(opts)
             x = 300,
             y = 200,
         }),
-        size = {
+        size = createSizeComponent({
             w = 20,
             h = 20,
-        },
+        }),
     }
 
     scene.entities[enemyId] = enemy
@@ -91,8 +90,6 @@ function WorldScene.new(opts)
     })
     scene.components.renderable[enemyId] = createRenderableComponent({
         kind = "rect",
-        width = enemy.size.w,
-        height = enemy.size.h,
         color = { 1, 0, 0, 1 },
     })
     scene.components.wander[enemyId] = createWanderComponent({
