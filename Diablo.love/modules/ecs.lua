@@ -141,4 +141,44 @@ function ECS:hasComponent(entityId, componentName)
     return componentSet ~= nil and componentSet[entityId] == true
 end
 
+---Add a component to an existing entity and update component sets.
+---Use this when mutating entities at runtime (e.g., adding/removing chase component).
+---@param entityId string The ID of the entity
+---@param componentName string The name of the component field
+---@param component table The component data to add
+function ECS:addComponent(entityId, componentName, component)
+    local entity = self.entities[entityId]
+    if not entity then
+        return
+    end
+
+    -- Add component to entity
+    entity[componentName] = component
+
+    -- Update component sets
+    if not self.componentSets[componentName] then
+        self.componentSets[componentName] = {}
+    end
+    self.componentSets[componentName][entityId] = true
+end
+
+---Remove a component from an existing entity and update component sets.
+---Use this when mutating entities at runtime (e.g., removing chase component).
+---@param entityId string The ID of the entity
+---@param componentName string The name of the component field to remove
+function ECS:removeComponent(entityId, componentName)
+    local entity = self.entities[entityId]
+    if not entity then
+        return
+    end
+
+    -- Remove component from entity
+    entity[componentName] = nil
+
+    -- Update component sets
+    if self.componentSets[componentName] then
+        self.componentSets[componentName][entityId] = nil
+    end
+end
+
 return ECS

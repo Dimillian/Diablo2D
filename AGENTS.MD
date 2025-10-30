@@ -11,9 +11,9 @@
 - Entity factories (`entities/player.lua`, `entities/foe.lua`) follow a consistent pattern: `Entity.new(opts)` creates entities with component defaults, allowing easy variation (speed, detection range, etc.).
 - Scene orchestration handled by a shared `SceneManager` stack—allows overlay scenes (inventory) without coupling to the world.
 - Core world systems cover input, AI detection/chase, AI wander, movement, camera centering, rendering, and HUD (`ui_player_status`).
-- AI behavior: `detection` system checks distance to player and dynamically adds/removes `chase` component; `chase` system moves toward target; `wander` system skips entities with `chase` component (chase takes precedence).
+- AI behavior: `detection` system checks distance to player and dynamically adds/removes `chase` component using `addComponent`/`removeComponent`; `chase` system moves toward target; `wander` system skips entities with `chase` component (chase takes precedence).
 - `WorldScene` guarantees `getPlayer`/`getEntity` helpers so downstream systems can rely on unified entity retrieval (no guard checks needed).
-- ECS module provides: `addEntity`, `removeEntity`, `getEntity`, `queryEntities`, `hasComponent`—any scene can opt into ECS capabilities.
+- ECS module provides: `addEntity`, `removeEntity`, `getEntity`, `queryEntities`, `hasComponent`, `addComponent`, `removeComponent`—any scene can opt into ECS capabilities. Use `addComponent`/`removeComponent` for runtime component mutations to ensure component sets stay synchronized.
 - Debug mode: `WorldScene.debugMode` flag toggled via 't' key; `render` system conditionally draws detection circles when enabled.
 - Keep systems decoupled and data-driven to enable procedural content later.
 

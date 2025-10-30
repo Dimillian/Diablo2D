@@ -31,22 +31,13 @@ function detectionSystem.update(world, _dt)
             -- Player detected: add chase component if not already chasing
             if not foe.chase then
                 local createChase = require("components.chase")
-                foe.chase = createChase({ targetId = player.id })
-                -- Update component sets
-                if world.componentSets.chase then
-                    world.componentSets.chase[foe.id] = true
-                else
-                    world.componentSets.chase = { [foe.id] = true }
-                end
+                world:addComponent(foe.id, "chase", createChase({ targetId = player.id }))
             end
             detection.detectedTargetId = player.id
         else
             -- Player out of range: remove chase component
             if foe.chase then
-                foe.chase = nil
-                if world.componentSets.chase then
-                    world.componentSets.chase[foe.id] = nil
-                end
+                world:removeComponent(foe.id, "chase")
             end
             detection.detectedTargetId = nil
         end
