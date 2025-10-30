@@ -1,0 +1,8 @@
+{
+  "diagnostics": {
+    "globals": ["love"]
+  },
+  "runtime": {
+    "version": "LuaJIT"
+  }
+}
