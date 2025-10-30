@@ -1,5 +1,6 @@
 local ItemGenerator = require("items.generator")
 local EquipmentHelper = require("system_helpers.equipment")
+local Resources = require("modules.resources")
 
 local rarityColors = {
     common = { 0.9, 0.9, 0.9, 1 },
@@ -159,12 +160,18 @@ function InventoryScene:draw()
         love.graphics.print(slot.label, snap(slotX + 8), labelY)
 
         local equippedItem = equipment[slot.id]
-        local itemTextY = snap(labelY + 20)
 
         if equippedItem then
-            local rarityColor = rarityColors[equippedItem.rarity] or rarityColors.common
-            love.graphics.setColor(rarityColor)
-            love.graphics.print(equippedItem.name, snap(slotX + 8), itemTextY)
+            -- Draw sprite centered in slot
+            local sprite = Resources.loadImageSafe(equippedItem.spritePath)
+            if sprite then
+                local spriteSize = 40
+                local spriteX = snap(slotX + (slotWidth - spriteSize) / 2)
+                local spriteY = snap(labelY + 20)
+                love.graphics.setColor(1, 1, 1, 1)
+                love.graphics.draw(sprite, spriteX, spriteY, 0, spriteSize / sprite:getWidth(), spriteSize / sprite:getHeight())
+            end
+
             self.equipmentRects[#self.equipmentRects + 1] = {
                 slot = slot.id,
                 item = equippedItem,
@@ -175,7 +182,8 @@ function InventoryScene:draw()
             }
         else
             love.graphics.setColor(0.5, 0.5, 0.5, 1)
-            love.graphics.print("Empty", snap(slotX + 8), itemTextY)
+            local emptyTextY = snap(slotY + (slotHeight / 2))
+            love.graphics.print("Empty", snap(slotX + (slotWidth - love.graphics.getFont():getWidth("Empty")) / 2), emptyTextY)
             self.equipmentRects[#self.equipmentRects + 1] = {
                 slot = slot.id,
                 item = nil,
@@ -204,9 +212,11 @@ function InventoryScene:draw()
 
     -- Inventory items list
     local lineHeight = 18
+    local spriteIconSize = 16
     local itemsStartY = snap(headerY + 32)
     local itemAreaX = inventoryHeaderX
     local itemAreaWidth = snap((panelX + panelWidth) - 40 - itemAreaX)
+    local textOffsetX = itemAreaX + spriteIconSize + 8
 
     for index, item in ipairs(items) do
         local y = itemsStartY + (index - 1) * lineHeight
@@ -215,11 +225,18 @@ function InventoryScene:draw()
         end
         local snappedY = snap(y)
 
+        -- Draw sprite icon if available
+        local sprite = Resources.loadImageSafe(item.spritePath)
+        if sprite then
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.draw(sprite, itemAreaX, snappedY, 0, spriteIconSize / sprite:getWidth(), spriteIconSize / sprite:getHeight())
+        end
+
         local color = rarityColors[item.rarity] or rarityColors.common
         love.graphics.setColor(color)
         love.graphics.print(
             string.format("%s [%s]", item.name, item.rarityLabel),
-            itemAreaX,
+            textOffsetX,
             snappedY
         )
 

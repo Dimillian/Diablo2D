@@ -4,6 +4,28 @@ local ItemGenerator = {}
 
 local idCounter = 0
 
+-- Map item types to sprite folder names
+local spriteFolders = {
+    sword = { folder = "weapons/SwordOriginal", prefix = "SwordOriginal", maxCount = 56 },
+    axe = { folder = "weapons/AxeOriginal", prefix = "AxeOriginal", maxCount = 30 },
+    hammer = { folder = "weapons/MaceOriginal", prefix = "MaceOriginal", maxCount = 30 },
+    dagger = { folder = "weapons/DaggerOriginal", prefix = "DaggerOriginal", maxCount = 20 },
+    helmet = { folder = "armor/HelmetOriginal", prefix = "HelmetOriginal", maxCount = 50 },
+    chest = { folder = "armor/TorsoOriginal", prefix = "TorsoOriginal", maxCount = 55 },
+    boots = { folder = "armor/FeetOriginal", prefix = "FeetOriginal", maxCount = 38 },
+}
+
+local function selectRandomSprite(itemTypeId)
+    local folderInfo = spriteFolders[itemTypeId]
+    if not folderInfo then
+        return nil
+    end
+
+    local spriteNumber = math.random(1, folderInfo.maxCount)
+    local spritePath = string.format("resources/%s/%s %d.png", folderInfo.folder, folderInfo.prefix, spriteNumber)
+    return spritePath
+end
+
 local function nextId()
     idCounter = idCounter + 1
     return "item_" .. idCounter
@@ -296,6 +318,8 @@ function ItemGenerator.generate(opts)
 
     finalizeStats(stats)
 
+    local spritePath = selectRandomSprite(itemType.id)
+
     local item = {
         id = nextId(),
         name = buildName(itemType.label, prefixes, suffixes),
@@ -304,6 +328,7 @@ function ItemGenerator.generate(opts)
         rarity = rarity.id,
         rarityLabel = rarity.label,
         stats = stats,
+        spritePath = spritePath,
         affixes = {
             prefixes = serializeAffixList(prefixes),
             suffixes = serializeAffixList(suffixes),
