@@ -1,11 +1,9 @@
 local movementSystem = {}
 
 function movementSystem.update(world, dt)
-    local movementComponents = world.components.movement
-
-    for entityId, movement in pairs(movementComponents) do
-        local entity = world.entities[entityId]
-        if entity and entity.position then
+    for _, entity in pairs(world.entities) do
+        local movement = entity.movement
+        if movement and entity.position then
             local dx = movement.vx or 0
             local dy = movement.vy or 0
 

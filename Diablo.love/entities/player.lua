@@ -12,6 +12,10 @@ function Player.new(opts)
     local createBaseStats = require("components.base_stats")
     local createPosition = require("components.position")
     local createSize = require("components.size")
+    local createMovement = require("components.movement")
+    local createRenderable = require("components.renderable")
+    local createPlayerControlled = require("components.player_controlled")
+    local createHealth = require("components.health")
 
     local entity = {
         id = opts.id or "player",
@@ -26,6 +30,10 @@ function Player.new(opts)
         inventory = createInventory(opts.inventory),
         equipment = createEquipment(opts.equipment),
         baseStats = createBaseStats(opts.baseStats),
+        movement = createMovement(opts.movement),
+        renderable = createRenderable(opts.renderable),
+        playerControlled = createPlayerControlled(opts.playerControlled),
+        health = createHealth(opts.health),
     }
 
     return setmetatable(entity, Player)

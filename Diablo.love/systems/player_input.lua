@@ -1,11 +1,11 @@
 local playerInputSystem = {}
 
 function playerInputSystem.update(world, dt)
-    local movementComponents = world.components.movement
-    local playerControlled = world.components.playerControlled or {}
+    for _, entity in pairs(world.entities) do
+        local movement = entity.movement
+        local playerControlled = entity.playerControlled
 
-    for entityId, movement in pairs(movementComponents) do
-        if playerControlled[entityId] then
+        if movement and playerControlled then
             local dx, dy = 0, 0
 
             if love.keyboard.isDown("left", "a") then

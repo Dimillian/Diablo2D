@@ -1,9 +1,7 @@
 local Player = require("entities.player")
 local createMovementComponent = require("components.movement")
 local createRenderableComponent = require("components.renderable")
-local createPlayerControlledComponent = require("components.player_controlled")
 local createWanderComponent = require("components.wander")
-local createHealthComponent = require("components.health")
 local createPositionComponent = require("components.position")
 local createSizeComponent = require("components.size")
 local playerInputSystem = require("systems.player_input")
@@ -26,13 +24,6 @@ function WorldScene.new(opts)
         entities = {},
         kind = "world",
         camera = { x = 0, y = 0 },
-        components = {
-            movement = {},
-            renderable = {},
-            playerControlled = {},
-            wander = {},
-            health = {},
-        },
         systems = {
             update = {
                 playerInputSystem.update,
@@ -53,22 +44,22 @@ function WorldScene.new(opts)
         y = opts.playerY or 100,
         width = opts.playerWidth,
         height = opts.playerHeight,
+        movement = {
+            speed = opts.playerSpeed,
+        },
+        renderable = {
+            kind = "rect",
+            color = { 1, 1, 1, 1 },
+        },
+        playerControlled = opts.playerControlled,
+        health = {
+            max = opts.playerMaxHealth or 50,
+            current = opts.playerHealth or opts.playerMaxHealth or 50,
+        },
     })
 
     scene.playerId = player.id
     scene.entities[player.id] = player
-    scene.components.movement[player.id] = createMovementComponent({
-        speed = opts.playerSpeed,
-    })
-    scene.components.renderable[player.id] = createRenderableComponent({
-        kind = "rect",
-        color = { 1, 1, 1, 1 },
-    })
-    scene.components.playerControlled[player.id] = createPlayerControlledComponent()
-    scene.components.health[player.id] = createHealthComponent({
-        max = opts.playerMaxHealth or 50,
-        current = opts.playerHealth or opts.playerMaxHealth or 50,
-    })
 
     -- Spawn a basic enemy entity to validate ECS flow.
     local enemyId = "enemy_1"
@@ -82,19 +73,19 @@ function WorldScene.new(opts)
             w = 20,
             h = 20,
         }),
+        movement = createMovementComponent({
+            speed = 80,
+        }),
+        renderable = createRenderableComponent({
+            kind = "rect",
+            color = { 1, 0, 0, 1 },
+        }),
+        wander = createWanderComponent({
+            interval = 0.01,
+        }),
     }
 
     scene.entities[enemyId] = enemy
-    scene.components.movement[enemyId] = createMovementComponent({
-        speed = 80,
-    })
-    scene.components.renderable[enemyId] = createRenderableComponent({
-        kind = "rect",
-        color = { 1, 0, 0, 1 },
-    })
-    scene.components.wander[enemyId] = createWanderComponent({
-        interval = 0.01,
-    })
 
     return setmetatable(scene, WorldScene)
 end
