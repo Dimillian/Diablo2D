@@ -2,6 +2,7 @@ local Player = require("entities.player")
 local playerInputSystem = require("systems.player_input")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
+local renderEquipmentSystem = require("systems.render_equipment")
 local wanderSystem = require("systems.wander")
 local detectionSystem = require("systems.detection")
 local chaseSystem = require("systems.chase")
@@ -39,6 +40,7 @@ function WorldScene.new(opts)
             },
             draw = {
                 renderSystem.draw,
+                renderEquipmentSystem.draw,
                 uiPlayerStatus.draw,
             },
         },
