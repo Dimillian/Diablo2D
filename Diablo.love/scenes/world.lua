@@ -9,6 +9,7 @@ local spawnSystem = require("systems.spawn")
 local cullingSystem = require("systems.culling")
 local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
+local applyStatsSystem = require("systems.apply_stats")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -26,6 +27,7 @@ function WorldScene.new(opts)
         debugMode = false, -- Debug toggle flag
         systems = {
             update = {
+                applyStatsSystem.update,
                 playerInputSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
