@@ -1,6 +1,6 @@
 local cameraSystem = {}
 
-function cameraSystem.update(world, dt)
+function cameraSystem.update(world, _dt)
     local player = world:getPlayer()
     if not player or not player.position or not player.size then
         return

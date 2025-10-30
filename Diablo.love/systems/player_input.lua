@@ -1,6 +1,6 @@
 local playerInputSystem = {}
 
-function playerInputSystem.update(world, dt)
+function playerInputSystem.update(world, _dt)
     local entities = world:queryEntities({ "movement", "playerControlled" })
 
     for _, entity in ipairs(entities) do

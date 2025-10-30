@@ -74,10 +74,12 @@ function InventoryScene:enter()
     self.equipmentRects = {}
 end
 
+-- luacheck: ignore 212/self
 function InventoryScene:exit()
 end
 
-function InventoryScene:update(dt)
+-- luacheck: ignore 212/self
+function InventoryScene:update(_dt)
 end
 
 function InventoryScene:draw()

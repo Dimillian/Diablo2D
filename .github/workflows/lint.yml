@@ -1,0 +1,25 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Run luacheck
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install luacheck
+        run: |
+          brew install luacheck
+
+      - name: Run luacheck
+        run: |
+          luacheck Diablo.love --codes --ranges
