@@ -6,8 +6,7 @@ function uiPlayerStatus.draw(world)
         return
     end
 
-    local healthComponents = world.components.health or {}
-    local health = healthComponents[player.id]
+    local health = player.health
     if not health then
         return
     end

@@ -6,14 +6,11 @@ local function randomDirection()
 end
 
 function wanderSystem.update(world, dt)
-    local wanderComponents = world.components.wander
-    if not wanderComponents then
-        return
-    end
+    for _, entity in pairs(world.entities) do
+        local wander = entity.wander
+        local movement = entity.movement
 
-    for entityId, wander in pairs(wanderComponents) do
-        local movement = world.components.movement[entityId]
-        if movement then
+        if wander and movement then
             if wander.elapsed <= 0 then
                 movement.vx, movement.vy = randomDirection()
             end
