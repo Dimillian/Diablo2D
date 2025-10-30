@@ -5,7 +5,8 @@
 Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua. Explore a procedurally generated forest, fight roaming packs, level up, and gather randomized gear before visiting small towns for vendors and respite.
 
 ## Current State
-- Homegrown ECS in the world scene: entities are pure data, systems (`player_input`, `movement`, `wander`, `render`) operate on component tables.
+- Homegrown ECS module (`modules/ecs.lua`): reusable entity/component management with efficient component set queries. Any scene can opt into ECS via `ECS.init(scene)`.
+- `WorldScene` uses ECS: entities are pure data, systems (`player_input`, `movement`, `wander`, `render`) operate on component tables using efficient queries.
 - Basic sandbox world with a controllable hero and a wandering enemy to validate systems.
 - Scene manager with stack-based overlays; inventory scene renders as a modal without pausing the world draw order.
 - Inventory overlay UI stub (split equipment/inventory columns, translucent backdrop).
@@ -23,7 +24,7 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 3. Run `love .` from the project root, or open the bundled `Diablo.love` directly with LÖVE.
 
 ## Roadmap
-- Expand ECS scaffolding: shared entity helpers, additional components (health, AI, combat), and system registration utilities.
+- Expand ECS scaffolding: additional components (health, AI, combat), and system registry utilities.
 - Hook inventory/equipment data into the UI, add interactions (equip, drop, compare).
 - Prototype procedural world generation and encounter spawning.
 - Implement combat loop, loot tables, and progression pacing.

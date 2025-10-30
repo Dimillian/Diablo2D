@@ -10,6 +10,7 @@ local renderSystem = require("systems.render")
 local wanderSystem = require("systems.wander")
 local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
+local ECS = require("modules.ecs")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -21,7 +22,6 @@ function WorldScene.new(opts)
     opts = opts or {}
 
     local scene = {
-        entities = {},
         kind = "world",
         camera = { x = 0, y = 0 },
         systems = {
@@ -37,6 +37,12 @@ function WorldScene.new(opts)
             },
         },
     }
+
+    -- Initialize ECS capabilities on the scene
+    ECS.init(scene)
+
+    -- Set metatable early so methods are available
+    setmetatable(scene, WorldScene)
 
     -- Instantiate the player entity as part of the world setup.
     local player = Player.new({
@@ -59,7 +65,7 @@ function WorldScene.new(opts)
     })
 
     scene.playerId = player.id
-    scene.entities[player.id] = player
+    scene:addEntity(player)
 
     -- Spawn a basic enemy entity to validate ECS flow.
     local enemyId = "enemy_1"
@@ -85,9 +91,9 @@ function WorldScene.new(opts)
         }),
     }
 
-    scene.entities[enemyId] = enemy
+    scene:addEntity(enemy)
 
-    return setmetatable(scene, WorldScene)
+    return scene
 end
 
 function WorldScene:update(dt)
@@ -104,13 +110,6 @@ function WorldScene:draw()
     for _, system in ipairs(self.systems.draw) do
         system(self)
     end
-end
-
-function WorldScene:getEntity(entityId)
-    if not entityId then
-        return nil
-    end
-    return self.entities[entityId]
 end
 
 function WorldScene:getPlayer()

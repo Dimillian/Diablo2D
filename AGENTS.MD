@@ -6,11 +6,12 @@
 - Scope for this phase: capture architecture/gamedesign intent; no code generation yet.
 
 ## Architecture Guardrails
-- Use a lightweight, homemade ECS: `WorldScene` composes entities, component tables, and runs ordered systems. Systems operate on component sets; entities remain data.
+- Use a lightweight, homemade ECS: Entity/Component management lives in `modules/ecs.lua` and can be mixed into any scene via `ECS.init(scene)`. `WorldScene` uses ECS and composes entities, component tables, and runs ordered systems. Systems operate on component sets for efficient O(k) queries where k = matching entities; entities remain pure data.
 - Everything is an entity; behavior emerges from systems (`player_input`, `movement`, `wander`, `render`) consuming components (`movement`, `renderable`, `player_controlled`, `wander`).
 - Scene orchestration handled by a shared `SceneManager` stack—allows overlay scenes (inventory) without coupling to the world.
 - Core world systems cover input, AI wander, movement, camera centering, rendering, and HUD (`ui_player_status`).
 - `WorldScene` guarantees `getPlayer`/`getEntity` helpers so downstream systems can rely on unified entity retrieval (no guard checks needed).
+- ECS module provides: `addEntity`, `removeEntity`, `getEntity`, `queryEntities`, `hasComponent`—any scene can opt into ECS capabilities.
 - Keep systems decoupled and data-driven to enable procedural content later.
 
 ### Loot/Item System
@@ -25,7 +26,7 @@
 - Small towns that spawn intermittently with shops and vendor interactions.
 
 ## Near-Term Focus
-- Expand ECS scaffolding: shared entity helpers, additional components (health, combat) and system registry utilities.
+- Expand ECS scaffolding: additional components (health, combat) and system registry utilities.
 - Flesh out scene manager transitions (pause behavior, modal overlays) and input routing.
 - Stub world generator pipeline (biome params, spawn rules).
 - Draft inventory/equipment data schema; connect inventory scene to real data and interactions.
