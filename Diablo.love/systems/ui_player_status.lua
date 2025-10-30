@@ -1,6 +1,17 @@
 local uiPlayerStatus = {}
 
 function uiPlayerStatus.draw(world)
+    local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+
+    -- Draw debug info in top right corner
+    love.graphics.push("all")
+    love.graphics.setColor(1, 1, 1, 1)
+    local debugText = world.debugMode and "Debug: ON" or "Debug: OFF"
+    love.graphics.print(debugText, screenWidth - 120, 16)
+    love.graphics.pop()
+
+    -- Draw health bar in bottom left corner
     local player = world:getPlayer()
     if not player then
         return
@@ -15,11 +26,10 @@ function uiPlayerStatus.draw(world)
     local currentHealth = math.max(0, math.min(health.current, maxHealth))
     local ratio = maxHealth > 0 and (currentHealth / maxHealth) or 0
 
-    local screenWidth = love.graphics.getWidth()
     local barWidth = math.min(screenWidth * 0.3, 240)
     local barHeight = 24
     local barX = 32
-    local barY = 32
+    local barY = screenHeight - barHeight - 32 -- Bottom left corner
 
     barWidth = math.floor(barWidth + 0.5)
 

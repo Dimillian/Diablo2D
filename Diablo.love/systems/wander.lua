@@ -18,6 +18,11 @@ function wanderSystem.update(world, dt)
             goto continue
         end
 
+        -- Skip entities that are chasing (chase behavior takes precedence)
+        if entity.chase then
+            goto continue
+        end
+
         local wander = entity.wander
         local movement = entity.movement
 

@@ -1,13 +1,11 @@
 local Player = require("entities.player")
-local createMovementComponent = require("components.movement")
-local createRenderableComponent = require("components.renderable")
-local createWanderComponent = require("components.wander")
-local createPositionComponent = require("components.position")
-local createSizeComponent = require("components.size")
+local Foe = require("entities.foe")
 local playerInputSystem = require("systems.player_input")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
 local wanderSystem = require("systems.wander")
+local detectionSystem = require("systems.detection")
+local chaseSystem = require("systems.chase")
 local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
 local ECS = require("modules.ecs")
@@ -24,10 +22,13 @@ function WorldScene.new(opts)
     local scene = {
         kind = "world",
         camera = { x = 0, y = 0 },
+        debugMode = false, -- Debug toggle flag
         systems = {
             update = {
                 playerInputSystem.update,
+                detectionSystem.update,
                 wanderSystem.update,
+                chaseSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
             },
@@ -67,31 +68,37 @@ function WorldScene.new(opts)
     scene.playerId = player.id
     scene:addEntity(player)
 
-    -- Spawn a basic enemy entity to validate ECS flow.
-    local enemyId = "enemy_1"
-    local enemy = {
-        id = enemyId,
-        position = createPositionComponent({
-            x = 300,
-            y = 200,
-        }),
-        size = createSizeComponent({
-            w = 20,
-            h = 20,
-        }),
-        movement = createMovementComponent({
-            speed = 80,
-        }),
-        renderable = createRenderableComponent({
-            kind = "rect",
-            color = { 1, 0, 0, 1 },
-        }),
-        wander = createWanderComponent({
-            interval = 0.01,
-        }),
-    }
+    -- Spawn a basic foe entity to validate ECS flow.
+    local foe = Foe.new({
+        id = "foe_1",
+        x = 300,
+        y = 200,
+        width = 20,
+        height = 20,
+        speed = 80,
+        wanderInterval = 0.01,
+        detectionRange = 150, -- Standard detection range
+    })
 
-    scene:addEntity(enemy)
+    scene:addEntity(foe)
+
+    -- Spawn a faster foe to demonstrate different foe configurations.
+    local fastFoe = Foe.new({
+        id = "foe_2",
+        x = 400,
+        y = 300,
+        width = 20,
+        height = 20,
+        speed = 150,
+        wanderInterval = 0.01,
+        detectionRange = 250, -- Bigger detection range for faster foe
+        renderable = {
+            kind = "rect",
+            color = { 1, 0.5, 0, 1 }, -- Orange color to distinguish from slower foe
+        },
+    })
+
+    scene:addEntity(fastFoe)
 
     return scene
 end
@@ -114,6 +121,12 @@ end
 
 function WorldScene:getPlayer()
     return self:getEntity(self.playerId)
+end
+
+function WorldScene:keypressed(key)
+    if key == "t" then
+        self.debugMode = not self.debugMode
+    end
 end
 
 return WorldScene
