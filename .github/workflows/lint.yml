@@ -10,20 +10,15 @@ on:
 jobs:
   lint:
     name: Run luacheck
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Lua
-        uses: leafo/gh-actions-lua@v10
-        with:
-          lua-version: '5.4'
-
       - name: Install luacheck
         run: |
-          luarocks install luacheck
+          brew install luacheck
 
       - name: Run luacheck
         run: |
