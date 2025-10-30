@@ -1,0 +1,30 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Run luacheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          lua-version: '5.4'
+
+      - name: Install luacheck
+        run: |
+          luarocks install luacheck
+
+      - name: Run luacheck
+        run: |
+          luacheck Diablo.love --codes --ranges
