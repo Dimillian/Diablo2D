@@ -7,11 +7,14 @@
 
 ## Architecture Guardrails
 - Use a lightweight, homemade ECS: Entity/Component management lives in `modules/ecs.lua` and can be mixed into any scene via `ECS.init(scene)`. `WorldScene` uses ECS and composes entities, component tables, and runs ordered systems. Systems operate on component sets for efficient O(k) queries where k = matching entities; entities remain pure data.
-- Everything is an entity; behavior emerges from systems (`player_input`, `movement`, `wander`, `render`) consuming components (`movement`, `renderable`, `player_controlled`, `wander`).
+- Everything is an entity; behavior emerges from systems (`player_input`, `movement`, `wander`, `detection`, `chase`, `render`) consuming components (`movement`, `renderable`, `player_controlled`, `wander`, `detection`, `chase`).
+- Entity factories (`entities/player.lua`, `entities/foe.lua`) follow a consistent pattern: `Entity.new(opts)` creates entities with component defaults, allowing easy variation (speed, detection range, etc.).
 - Scene orchestration handled by a shared `SceneManager` stack—allows overlay scenes (inventory) without coupling to the world.
-- Core world systems cover input, AI wander, movement, camera centering, rendering, and HUD (`ui_player_status`).
+- Core world systems cover input, AI detection/chase, AI wander, movement, camera centering, rendering, and HUD (`ui_player_status`).
+- AI behavior: `detection` system checks distance to player and dynamically adds/removes `chase` component; `chase` system moves toward target; `wander` system skips entities with `chase` component (chase takes precedence).
 - `WorldScene` guarantees `getPlayer`/`getEntity` helpers so downstream systems can rely on unified entity retrieval (no guard checks needed).
 - ECS module provides: `addEntity`, `removeEntity`, `getEntity`, `queryEntities`, `hasComponent`—any scene can opt into ECS capabilities.
+- Debug mode: `WorldScene.debugMode` flag toggled via 't' key; `render` system conditionally draws detection circles when enabled.
 - Keep systems decoupled and data-driven to enable procedural content later.
 
 ### Loot/Item System
@@ -26,10 +29,11 @@
 - Small towns that spawn intermittently with shops and vendor interactions.
 
 ## Near-Term Focus
-- Expand ECS scaffolding: additional components (health, combat) and system registry utilities.
+- Expand ECS scaffolding: additional components (combat stats, damage) and system registry utilities.
 - Flesh out scene manager transitions (pause behavior, modal overlays) and input routing.
 - Stub world generator pipeline (biome params, spawn rules).
 - Draft inventory/equipment data schema; connect inventory scene to real data and interactions.
+- Extend foe types: create specialized foe factories with different detection ranges, speeds, and behaviors.
 
 ## Reminders
 - Stay light; expand this doc as systems/specs grow.
