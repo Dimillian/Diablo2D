@@ -6,6 +6,7 @@ local wanderSystem = require("systems.wander")
 local detectionSystem = require("systems.detection")
 local chaseSystem = require("systems.chase")
 local spawnSystem = require("systems.spawn")
+local cullingSystem = require("systems.culling")
 local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
 local ECS = require("modules.ecs")
@@ -27,6 +28,7 @@ function WorldScene.new(opts)
             update = {
                 playerInputSystem.update,
                 spawnSystem.update,
+                cullingSystem.update,
                 detectionSystem.update,
                 wanderSystem.update,
                 chaseSystem.update,

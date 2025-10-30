@@ -37,6 +37,11 @@ function renderSystem.draw(world)
     if world.debugMode then
         local entitiesWithDetection = world:queryEntities({ "detection", "position" })
         for _, entity in ipairs(entitiesWithDetection) do
+            -- Skip inactive entities
+            if entity.inactive then
+                goto continue
+            end
+
             local detection = entity.detection
             local pos = entity.position
 
@@ -49,6 +54,8 @@ function renderSystem.draw(world)
                 love.graphics.setColor(1, 0, 0, 0.5) -- Red when chasing
                 love.graphics.circle("line", pos.x, pos.y, detection.range)
             end
+
+            ::continue::
         end
     end
 
@@ -56,6 +63,11 @@ function renderSystem.draw(world)
     local entities = world:queryEntities({ "renderable", "position", "size" })
 
     for _, entity in ipairs(entities) do
+        -- Skip inactive entities (too far from player)
+        if entity.inactive then
+            goto continue
+        end
+
         local renderable = entity.renderable
         if renderable.kind == "rect" then
             love.graphics.setColor(renderable.color)
@@ -67,6 +79,8 @@ function renderSystem.draw(world)
                 entity.size.h
             )
         end
+
+        ::continue::
     end
 
     love.graphics.setColor(1, 1, 1, 1)

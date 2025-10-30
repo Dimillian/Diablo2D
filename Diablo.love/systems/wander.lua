@@ -13,6 +13,11 @@ function wanderSystem.update(world, dt)
     local entities = world:queryEntities({ "wander", "movement" })
 
     for _, entity in ipairs(entities) do
+        -- Skip inactive entities (too far from player)
+        if entity.inactive then
+            goto continue
+        end
+
         -- Skip player-controlled entities (player input should control them)
         if entity.playerControlled then
             goto continue

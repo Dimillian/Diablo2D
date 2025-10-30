@@ -15,6 +15,11 @@ function detectionSystem.update(world, _dt)
     local foes = world:queryEntities({ "detection", "position" })
 
     for _, foe in ipairs(foes) do
+        -- Skip inactive entities (too far from player)
+        if foe.inactive then
+            goto continue
+        end
+
         local detection = foe.detection
         local foePos = foe.position
         local playerPos = player.position
@@ -45,6 +50,8 @@ function detectionSystem.update(world, _dt)
             end
             detection.detectedTargetId = nil
         end
+
+        ::continue::
     end
 end
 

@@ -5,8 +5,8 @@ local foeTypes = require("data.foe_types")
 
 -- Spawn configuration
 local SPAWN_CONFIG = {
-    minDistanceFromPlayer = 400, -- Minimum distance from player to spawn
-    maxDistanceFromPlayer = 800, -- Maximum distance from player to spawn
+    minDistanceFromPlayer = 800, -- Minimum distance from player to spawn (off-screen)
+    maxDistanceFromPlayer = 1200, -- Maximum distance from player to spawn
     groupSpreadRadius = 60, -- How spread out foes in a group are
     minGroupsAtStart = 3,
     maxGroupsAtStart = 8,

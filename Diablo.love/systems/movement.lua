@@ -4,6 +4,11 @@ function movementSystem.update(world, dt)
     local entities = world:queryEntities({ "movement", "position" })
 
     for _, entity in ipairs(entities) do
+        -- Skip inactive entities (too far from player)
+        if entity.inactive then
+            goto continue
+        end
+
         local movement = entity.movement
         local dx = movement.vx or 0
         local dy = movement.vy or 0
@@ -23,6 +28,8 @@ function movementSystem.update(world, dt)
         -- Reset per-frame velocity after applying.
         movement.vx = 0
         movement.vy = 0
+
+        ::continue::
     end
 end
 

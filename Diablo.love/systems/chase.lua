@@ -10,6 +10,11 @@ function chaseSystem.update(world, _dt)
     local entities = world:queryEntities({ "chase", "movement", "position" })
 
     for _, entity in ipairs(entities) do
+        -- Skip inactive entities (too far from player)
+        if entity.inactive then
+            goto continue
+        end
+
         local chase = entity.chase
         local target = world:getEntity(chase.targetId)
 
