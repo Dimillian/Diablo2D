@@ -43,7 +43,14 @@ function renderEquipmentSystem.draw(world)
                     local spriteX = centerX - spriteSize / 2 + offset.x
                     local spriteY = centerY - spriteSize / 2 + offset.y
                     love.graphics.setColor(1, 1, 1, 1)
-                    love.graphics.draw(sprite, spriteX, spriteY, 0, spriteSize / sprite:getWidth(), spriteSize / sprite:getHeight())
+                    love.graphics.draw(
+                        sprite,
+                        spriteX,
+                        spriteY,
+                        0,
+                        spriteSize / sprite:getWidth(),
+                        spriteSize / sprite:getHeight()
+                    )
                 end
             end
         end

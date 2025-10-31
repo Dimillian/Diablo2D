@@ -169,7 +169,14 @@ function InventoryScene:draw()
                 local spriteX = snap(slotX + (slotWidth - spriteSize) / 2)
                 local spriteY = snap(labelY + 20)
                 love.graphics.setColor(1, 1, 1, 1)
-                love.graphics.draw(sprite, spriteX, spriteY, 0, spriteSize / sprite:getWidth(), spriteSize / sprite:getHeight())
+                love.graphics.draw(
+                    sprite,
+                    spriteX,
+                    spriteY,
+                    0,
+                    spriteSize / sprite:getWidth(),
+                    spriteSize / sprite:getHeight()
+                )
             end
 
             self.equipmentRects[#self.equipmentRects + 1] = {
@@ -183,7 +190,8 @@ function InventoryScene:draw()
         else
             love.graphics.setColor(0.5, 0.5, 0.5, 1)
             local emptyTextY = snap(slotY + (slotHeight / 2))
-            love.graphics.print("Empty", snap(slotX + (slotWidth - love.graphics.getFont():getWidth("Empty")) / 2), emptyTextY)
+            local emptyTextX = snap(slotX + (slotWidth - love.graphics.getFont():getWidth("Empty")) / 2)
+            love.graphics.print("Empty", emptyTextX, emptyTextY)
             self.equipmentRects[#self.equipmentRects + 1] = {
                 slot = slot.id,
                 item = nil,
@@ -229,7 +237,14 @@ function InventoryScene:draw()
         local sprite = Resources.loadImageSafe(item.spritePath)
         if sprite then
             love.graphics.setColor(1, 1, 1, 1)
-            love.graphics.draw(sprite, itemAreaX, snappedY, 0, spriteIconSize / sprite:getWidth(), spriteIconSize / sprite:getHeight())
+            love.graphics.draw(
+                sprite,
+                itemAreaX,
+                snappedY,
+                0,
+                spriteIconSize / sprite:getWidth(),
+                spriteIconSize / sprite:getHeight()
+            )
         end
 
         local color = rarityColors[item.rarity] or rarityColors.common

@@ -1,5 +1,6 @@
 ---Resource manager for loading and caching images and sprite sheets.
 ---Supports both standalone images and sprite atlases with quads.
+-- luacheck: globals pcall error
 local resources = {}
 
 local cache = {
