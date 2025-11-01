@@ -1,23 +1,28 @@
 # Upcoming Feature Master Plan
 
-## Movement: WASD With Mouse Steering
-- **Input capture (`Diablo.love/systems/player_input.lua`)**
-  - Keep the existing WASD mapping but augment `playerInputSystem.update(scene, dt)` to also read the mouse cursor in world coordinates. Use the world camera (`scene.camera`) to translate `love.mouse.getPosition()` into world space so the direction vector is computed relative to the player's `position` component.
-  - Instead of mutating components directly, use `scene:getPlayer()` and store intent state on the `movement` component (which already participates in ECS queries). Persist:
-    - `movement.intentForward` (boolean) when `w`/`up` is held.
-    - `movement.intentStrafe` as a normalized `{ x, y }` vector for `a/d` strafing and `s` backpedal input.
-  - When forward input is pressed, compute a `movement.targetHeading` vector pointing from the player position toward the mouse location. Smoothly interpolate the current `movement.heading` toward this target each frame using a lerp factor saved on the component so downstream systems only need to read component data.
+## Movement: Keyboard-Based With Mouse Look Indicator
+- **Movement remains keyboard-only (`Diablo.love/systems/player_input.lua`)**
+  - Keep the existing WASD/ZQSD/arrow key movement exactly as-is. No changes needed to `playerInputSystem.update(scene, dt)`—it should continue setting `movement.vx` and `movement.vy` based on keyboard input only.
 
-- **Movement resolution (`Diablo.love/systems/movement.lua`)**
-  - Extend the movement component to include `heading` (normalized `x/y`), `targetHeading`, `intentForward`, `intentStrafe`, and `headingLerp`. During `movementSystem.update(scene, dt)`, derive the velocity by blending the forward heading with any lateral intent, then normalize before scaling by `movement.speed`.
-  - Because entities are stored in ECS component sets, only mutate fields on the existing `movement` table—do not replace the table—to avoid breaking references. Clear transient intent values (`intentForward`, `intentStrafe`) after computing velocity so other systems do not accidentally reuse stale input.
-  - Ensure foes created through `entities/foe.lua` also seed the new fields so they continue to satisfy the `movement` component contract.
+- **Mouse look tracking (`Diablo.love/systems/mouse_look.lua`)**
+  - Create a new update system that runs after `player_input` and before `movement`. Query for entities with `movement` and `playerControlled` components.
+  - Use `love.mouse.getPosition()` and convert screen coordinates to world space using the coordinate helper (see below). Compute the direction vector from the player's `position` toward the mouse cursor position in world space.
+  - Store the normalized look direction on the `movement` component as `movement.lookDirection = { x, y }` (mutate the existing table, don't replace it). This look direction will be used later for combat targeting and attack direction.
+  - Update the look direction every frame so it always points toward the current mouse cursor position.
+
+- **Visual arrow indicator (`Diablo.love/systems/render_mouse_look.lua`)**
+  - Create a new draw system registered after `renderEquipmentSystem.draw` but before `uiPlayerStatus.draw`. It should query for the player entity using `scene:getPlayer()` and check for `movement.lookDirection`.
+  - Draw a small arrow sprite or simple triangle shape around the player (e.g., at a fixed offset from the player center, like `position.x + 20, position.y + 20`). The arrow should point in the direction of `movement.lookDirection` using `math.atan2(lookDirection.y, lookDirection.x)` to compute the rotation angle.
+  - Use `love.graphics.push()`/`pop()` with `love.graphics.translate()` and `love.graphics.rotate()` to position and orient the arrow. Draw it after the camera transform is applied (within the render system's camera context) so it appears in world space near the player.
+  - Style the arrow with a distinct color (e.g., light yellow or white) and moderate opacity so it's visible but not distracting. Consider making it slightly larger than the player sprite to ensure visibility.
 
 - **Component defaults (`Diablo.love/components/movement.lua`)**
-  - Add defaults for `heading = { x = 0, y = -1 }`, `targetHeading = { x = 0, y = -1 }`, `intentForward = false`, `intentStrafe = { x = 0, y = 0 }`, and `headingLerp = 0.2`. Update entity factories (`entities/player.lua`, `entities/foe.lua`) to call `MovementComponent.new(opts)` so ECS registration (`scene:addEntity`) automatically tracks the component in `componentSets`.
+  - Add default `lookDirection = { x = 0, y = -1 }` to the movement component factory. Initialize it to point upward (negative Y) by default so there's always a valid direction even before mouse movement.
+  - Foes don't need mouse look, so the default value is fine for them—they won't have `playerControlled` component and won't be processed by the mouse look system.
 
-- **Camera/world conversions (`Diablo.love/system_helpers/coordinates.lua`)**
-  - Introduce a helper (`Coordinates.toWorldFromScreen(camera, x, y)`) that player input and future mouse-driven systems can call. Store it under `scene.systemHelpers.coordinates` during scene setup to avoid circular requires and keep ECS systems data-oriented.
+- **Camera/world coordinate conversion (`Diablo.love/system_helpers/coordinates.lua`)**
+  - Create a helper module that provides `Coordinates.toWorldFromScreen(camera, screenX, screenY)`. The function should account for the camera transform: `worldX = screenX + camera.x`, `worldY = screenY + camera.y`.
+  - Initialize this helper during scene setup (`WorldScene.new`) and store it at `scene.systemHelpers.coordinates` to avoid circular requires. Both the mouse look system and future combat/targeting systems can reuse this helper for consistent coordinate transformations.
 
 ## New Game: Guaranteed Starter Item
 - **Starting inventory hookup (`Diablo.love/scenes/world.lua`)**
@@ -85,18 +90,19 @@
 - Register new systems in `Diablo.love/scenes/world.lua` in ECS-friendly order (update list):
   1. `applyStatsSystem.update`
   2. `playerInputSystem.update`
-  3. `playerAttackSystem.update`
-  4. `lootPickupSystem.update`
-  5. `spawnSystem.update`
-  6. `cullingSystem.update`
-  7. `detectionSystem.update`
-  8. `wanderSystem.update`
-  9. `chaseSystem.update`
-  10. `combatSystem.update`
-  11. `movementSystem.update`
-  12. `cameraSystem.update`
+  3. `mouseLookSystem.update`
+  4. `playerAttackSystem.update`
+  5. `lootPickupSystem.update`
+  6. `spawnSystem.update`
+  7. `cullingSystem.update`
+  8. `detectionSystem.update`
+  9. `wanderSystem.update`
+  10. `chaseSystem.update`
+  11. `combatSystem.update`
+  12. `movementSystem.update`
+  13. `cameraSystem.update`
 
-  Draw list should append `renderHealthSystem.draw` and `uiTargetSystem.draw` after existing renderers so ECS-managed entities stay in sync with the HUD.
+  Draw list should append `renderMouseLookSystem.draw`, `renderHealthSystem.draw`, and `uiTargetSystem.draw` after existing renderers so ECS-managed entities stay in sync with the HUD.
 - When adding components at runtime, prefer `scene:addComponent`/`scene:removeComponent` to keep `componentSets` authoritative. Only mutate fields on existing component tables to maintain references used by systems.
 - Update `Readme.md` once features land to describe combat controls and loot loop.
 - Run `luacheck .` after implementation to maintain lint cleanliness (per AGENTS instructions).
