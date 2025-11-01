@@ -31,14 +31,24 @@ function wanderSystem.update(world, dt)
         local wander = entity.wander
         local movement = entity.movement
 
-        if wander.elapsed <= 0 then
-            movement.vx, movement.vy = randomDirection()
+        if not wander.dirX or not wander.dirY then
+            wander.dirX, wander.dirY = randomDirection()
         end
 
-        wander.elapsed = wander.elapsed + dt
+        wander.elapsed = (wander.elapsed or 0) + dt
         if wander.elapsed >= wander.interval then
             wander.elapsed = wander.elapsed - wander.interval
-            movement.vx, movement.vy = randomDirection()
+            wander.dirX, wander.dirY = randomDirection()
+        end
+
+        movement.targetHeading.x = wander.dirX
+        movement.targetHeading.y = wander.dirY
+        movement.heading.x = wander.dirX
+        movement.heading.y = wander.dirY
+        movement.intentForward = true
+        if movement.intentStrafe then
+            movement.intentStrafe.x = 0
+            movement.intentStrafe.y = 0
         end
 
         ::continue::

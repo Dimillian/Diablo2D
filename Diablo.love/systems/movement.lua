@@ -12,18 +12,34 @@ function movementSystem.update(world, dt)
         end
 
         local movement = entity.movement
-        local dx = movement.vx or 0
-        local dy = movement.vy or 0
+        local heading = movement.heading
+        local intentStrafe = movement.intentStrafe
 
-        local ndx, ndy = vector.normalize(dx, dy)
+        local moveX, moveY = 0, 0
 
-        local distance = movement.speed * dt
-        entity.position.x = entity.position.x + ndx * distance
-        entity.position.y = entity.position.y + ndy * distance
+        if movement.intentForward and heading then
+            moveX = moveX + heading.x
+            moveY = moveY + heading.y
+        end
 
-        -- Reset per-frame velocity after applying.
-        movement.vx = 0
-        movement.vy = 0
+        if intentStrafe then
+            moveX = moveX + (intentStrafe.x or 0)
+            moveY = moveY + (intentStrafe.y or 0)
+        end
+
+        local ndx, ndy = vector.normalize(moveX, moveY)
+
+        if ndx ~= 0 or ndy ~= 0 then
+            local distance = movement.speed * dt
+            entity.position.x = entity.position.x + ndx * distance
+            entity.position.y = entity.position.y + ndy * distance
+        end
+
+        movement.intentForward = false
+        if intentStrafe then
+            intentStrafe.x = 0
+            intentStrafe.y = 0
+        end
 
         ::continue::
     end

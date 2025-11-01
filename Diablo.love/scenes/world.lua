@@ -12,6 +12,7 @@ local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
 local applyStatsSystem = require("systems.apply_stats")
 local ECS = require("modules.ecs")
+local Coordinates = require("system_helpers.coordinates")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -26,6 +27,9 @@ function WorldScene.new(opts)
         kind = "world",
         camera = { x = 0, y = 0 },
         debugMode = false, -- Debug toggle flag
+        systemHelpers = {
+            coordinates = Coordinates,
+        },
         systems = {
             update = {
                 applyStatsSystem.update,

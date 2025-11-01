@@ -27,9 +27,16 @@ function chaseSystem.update(world, _dt)
         local ndx, ndy, magnitude = vector.normalize(dx, dy)
 
         if magnitude > 0 then
-            -- Normalize direction and set velocity
-            entity.movement.vx = ndx
-            entity.movement.vy = ndy
+            local movement = entity.movement
+            movement.targetHeading.x = ndx
+            movement.targetHeading.y = ndy
+            movement.heading.x = ndx
+            movement.heading.y = ndy
+            movement.intentForward = true
+            if movement.intentStrafe then
+                movement.intentStrafe.x = 0
+                movement.intentStrafe.y = 0
+            end
         end
 
         ::continue::
