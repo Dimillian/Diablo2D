@@ -2,7 +2,7 @@ local vector = require("modules.vector")
 
 local chaseSystem = {}
 
-local DEFAULT_SEPARATION_BUFFER = 12
+local DEFAULT_SEPARATION_BUFFER = 20
 
 local function getCenterAndRadius(entity)
     local pos = entity.position
