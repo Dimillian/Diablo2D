@@ -14,9 +14,12 @@ function Foe.new(opts)
     local createWander = require("components.wander")
     local createHealth = require("components.health")
     local createDetection = require("components.detection")
+    local createFoeTag = require("components.foe")
+    local createCombat = require("components.combat")
 
     local entity = {
         id = opts.id or ("foe_" .. math.random(10000, 99999)),
+        name = opts.name or "Foe",
         position = createPosition({
             x = opts.x or 0,
             y = opts.y or 0,
@@ -38,12 +41,13 @@ function Foe.new(opts)
         detection = createDetection({
             range = opts.detectionRange or 150,
         }),
+        foe = createFoeTag(),
+        health = createHealth(opts.health or {
+            max = 30,
+            current = 30,
+        }),
+        combat = createCombat(opts.combat),
     }
-
-    -- Optional health component
-    if opts.health then
-        entity.health = createHealth(opts.health)
-    end
 
     return setmetatable(entity, Foe)
 end

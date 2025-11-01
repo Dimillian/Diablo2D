@@ -27,7 +27,7 @@ end
 function renderSystem.draw(world)
     local camera = world.camera or { x = 0, y = 0 }
 
-    love.graphics.push()
+    love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
     -- Draw grid background first

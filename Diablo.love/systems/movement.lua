@@ -18,12 +18,18 @@ function movementSystem.update(world, dt)
         local ndx, ndy = vector.normalize(dx, dy)
 
         local distance = movement.speed * dt
+        local maxDistance = movement.maxDistance
+        if maxDistance ~= nil then
+            -- Clamp how far we can travel this frame (used by chase separation logic)
+            distance = math.min(distance, math.max(maxDistance, 0))
+        end
         entity.position.x = entity.position.x + ndx * distance
         entity.position.y = entity.position.y + ndy * distance
 
         -- Reset per-frame velocity after applying.
         movement.vx = 0
         movement.vy = 0
+        movement.maxDistance = nil
 
         ::continue::
     end

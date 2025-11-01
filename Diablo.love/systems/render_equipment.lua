@@ -6,7 +6,7 @@ local renderEquipmentSystem = {}
 function renderEquipmentSystem.draw(world)
     local camera = world.camera or { x = 0, y = 0 }
 
-    love.graphics.push()
+    love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
     local entities = world:queryEntities({ "equipment", "position", "size" })
@@ -73,8 +73,27 @@ function renderEquipmentSystem.draw(world)
                     else
                         -- Normal rendering for other slots
                         local offset = offsets[slotId] or { x = 0, y = 0 }
-                        local spriteX = centerX - spriteSize / 2 + offset.x
-                        local spriteY = centerY - spriteSize / 2 + offset.y
+                        local swingOffsetX = 0
+                        local swingOffsetY = 0
+
+                        if slotId == "weapon" and entity.combat and entity.combat.swingTimer then
+                            local swingTimer = entity.combat.swingTimer
+                            if swingTimer > 0 then
+                                local swingDuration = entity.combat.swingDuration or 0.35
+                                local ratio = math.max(0, math.min(swingTimer / swingDuration, 1))
+                                local progress = 1 - ratio
+                                local amplitude = math.max(size.w, size.h) * 0.15
+                                local movement = entity.movement
+                                local lookDirection = (movement and movement.lookDirection) or { x = 1, y = 0 }
+
+                                local sine = math.sin(progress * math.pi)
+                                swingOffsetX = lookDirection.x * amplitude * sine
+                                swingOffsetY = lookDirection.y * amplitude * sine
+                            end
+                        end
+
+                        local spriteX = centerX - spriteSize / 2 + offset.x + swingOffsetX
+                        local spriteY = centerY - spriteSize / 2 + offset.y + swingOffsetY
                         love.graphics.setColor(1, 1, 1, 1)
                         love.graphics.draw(
                             sprite,

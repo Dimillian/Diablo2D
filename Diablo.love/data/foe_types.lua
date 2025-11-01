@@ -8,6 +8,10 @@ foeTypes.types = {
         detectionRange = 100,
         color = { 0.8, 0.2, 0.2, 1 }, -- Red
         wanderInterval = 0.01,
+        health = 40,
+        damageMin = 4,
+        damageMax = 6,
+        attackSpeed = 0.8,
     },
     medium = {
         name = "Medium Foe",
@@ -15,6 +19,10 @@ foeTypes.types = {
         detectionRange = 180,
         color = { 1, 0.5, 0, 1 }, -- Orange
         wanderInterval = 0.01,
+        health = 55,
+        damageMin = 6,
+        damageMax = 9,
+        attackSpeed = 1.1,
     },
     aggressive = {
         name = "Aggressive Foe",
@@ -22,6 +30,10 @@ foeTypes.types = {
         detectionRange = 250,
         color = { 0.8, 0.1, 0.8, 1 }, -- Purple/magenta
         wanderInterval = 0.01,
+        health = 65,
+        damageMin = 7,
+        damageMax = 12,
+        attackSpeed = 1.3,
     },
 }
 

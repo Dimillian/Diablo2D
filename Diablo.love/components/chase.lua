@@ -3,6 +3,7 @@ local function createChaseComponent(opts)
 
     return {
         targetId = opts.targetId or nil, -- ID of the entity being chased
+        removeOnDeath = true,
     }
 end
 
