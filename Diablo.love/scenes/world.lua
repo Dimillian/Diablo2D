@@ -1,6 +1,7 @@
 local Player = require("entities.player")
 local playerInputSystem = require("systems.player_input")
 local mouseLookSystem = require("systems.mouse_look")
+local mouseMovementSystem = require("systems.mouse_movement")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
 local renderEquipmentSystem = require("systems.render_equipment")
@@ -36,6 +37,7 @@ function WorldScene.new(opts)
                 applyStatsSystem.update,
                 playerInputSystem.update,
                 mouseLookSystem.update,
+                mouseMovementSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
                 detectionSystem.update,

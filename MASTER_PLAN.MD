@@ -36,32 +36,32 @@
   - ✅ Initialized during scene setup (`WorldScene.new`) and stored at `scene.systemHelpers.coordinates`.
   - ✅ Available for reuse by future combat/targeting systems.
 
-## Movement: Mouse-Based Right-Click Movement
-- **Right-click movement system (`Diablo.love/systems/mouse_movement.lua`)**
-  - Create a new update system that runs after `mouseLookSystem` and before `movement`. Query for entities with `movement` and `playerControlled` components.
-  - Check `love.mouse.isDown(2)` (right mouse button) each frame. When held, override keyboard movement.
-  - Use `love.mouse.getPosition()` to get current mouse cursor position in screen coordinates.
-  - Convert mouse position to world space using the existing coordinate helper (`scene.systemHelpers.coordinates.toWorldFromScreen`).
-  - Compute direction vector from player center position to mouse cursor position in world space.
-  - Calculate distance to target using `vector.distance()` or `math.sqrt(dx^2 + dy^2)`. If within a small threshold (e.g., 5-10 pixels), set `movement.vx = 0` and `movement.vy = 0` to stop movement (prevents jitter when reaching destination).
-  - If beyond threshold, normalize the direction vector using `vector.normalize()` and set `movement.vx` and `movement.vy` using the normalized direction (same pattern as keyboard input: values of -1, 0, or 1).
-  - When right-click is not held, the system should not modify `movement.vx`/`movement.vy`, allowing keyboard input to work normally.
-  - The existing `movementSystem` will handle applying speed and moving the entity based on these velocity values.
+## Movement: Mouse-Based Right-Click Movement ✅ COMPLETED
+- **Right-click movement system (`Diablo.love/systems/mouse_movement.lua`)** ✅
+  - ✅ Created a new update system that runs after `mouseLookSystem` and before `movement`. Queries entities with `movement` and `playerControlled` components.
+  - ✅ Checks `love.mouse.isDown(2)` (right mouse button) each frame. When held, overrides keyboard movement.
+  - ✅ Uses `love.mouse.getPosition()` to get current mouse cursor position in screen coordinates.
+  - ✅ Converts mouse position to world space using the existing coordinate helper (`scene.systemHelpers.coordinates.toWorldFromScreen`).
+  - ✅ Computes direction vector from player center position to mouse cursor position in world space.
+  - ✅ Calculates distance to target using `vector.distance()`. If within threshold (8 pixels), sets `movement.vx = 0` and `movement.vy = 0` to stop movement (prevents jitter when reaching destination).
+  - ✅ If beyond threshold, normalizes the direction vector using `vector.normalize()` and sets `movement.vx` and `movement.vy` using the normalized direction values.
+  - ✅ When right-click is not held, the system returns early without modifying `movement.vx`/`movement.vy`, allowing keyboard input to work normally.
+  - ✅ The existing `movementSystem` handles applying speed and moving the entity based on these velocity values.
 
-- **Integration with keyboard movement**
-  - Right-click movement takes precedence over keyboard input. When right-click is held, keyboard input is overridden for that frame.
-  - System execution order: `playerInputSystem` (sets keyboard velocities) → `mouseLookSystem` (updates look direction) → `mouseMovementSystem` (overrides velocities if right-click held) → `movementSystem` (applies velocities).
-  - This allows seamless switching between keyboard and mouse movement without conflicts.
+- **Integration with keyboard movement** ✅
+  - ✅ Right-click movement takes precedence over keyboard input. When right-click is held, keyboard input is overridden for that frame.
+  - ✅ System execution order: `playerInputSystem` (sets keyboard velocities) → `mouseLookSystem` (updates look direction) → `mouseMovementSystem` (overrides velocities if right-click held) → `movementSystem` (applies velocities).
+  - ✅ Allows seamless switching between keyboard and mouse movement without conflicts.
 
-- **System registration (`Diablo.love/scenes/world.lua`)**
-  - Register `mouseMovementSystem.update` in the update list after `mouseLookSystem.update` and before `movementSystem.update`.
-  - Update list order should be: `playerInputSystem.update` → `mouseLookSystem.update` → `mouseMovementSystem.update` → `movementSystem.update`.
-  - This ensures mouse look updates first (for visual indicator), then mouse movement can override velocities, then movement system applies them.
+- **System registration (`Diablo.love/scenes/world.lua`)** ✅
+  - ✅ Registered `mouseMovementSystem.update` in the update list after `mouseLookSystem.update` and before `movementSystem.update`.
+  - ✅ Update list order: `playerInputSystem.update` → `mouseLookSystem.update` → `mouseMovementSystem.update` → `movementSystem.update`.
+  - ✅ Ensures mouse look updates first (for visual indicator), then mouse movement can override velocities, then movement system applies them.
 
-- **Reuse existing infrastructure**
-  - Leverage the coordinate helper already created for mouse look system.
-  - Use the same ECS query pattern (`queryEntities({ "movement", "playerControlled" })`).
-  - Mutate existing `movement.vx` and `movement.vy` values (same pattern as keyboard input) to maintain ECS component references.
+- **Reuse existing infrastructure** ✅
+  - ✅ Leverages the coordinate helper already created for mouse look system.
+  - ✅ Uses the same ECS query pattern (`queryEntities({ "movement", "playerControlled" })`).
+  - ✅ Mutates existing `movement.vx` and `movement.vy` values (same pattern as keyboard input) to maintain ECS component references.
 
 ## New Game: Guaranteed Starter Item
 - **Starting inventory hookup (`Diablo.love/scenes/world.lua`)**
@@ -131,7 +131,7 @@
     1. ✅ `applyStatsSystem.update`
     2. ✅ `playerInputSystem.update`
     3. ✅ `mouseLookSystem.update` (registered after playerInputSystem, before movementSystem)
-    4. `mouseMovementSystem.update` (pending - right-click movement, after mouseLookSystem, before movementSystem)
+    4. ✅ `mouseMovementSystem.update` (registered after mouseLookSystem, before movementSystem)
     5. `playerAttackSystem.update` (pending)
     6. `lootPickupSystem.update` (pending)
     7. ✅ `spawnSystem.update`
