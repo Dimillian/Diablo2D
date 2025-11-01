@@ -1,3 +1,5 @@
+local vector = require("modules.vector")
+
 local movementSystem = {}
 
 function movementSystem.update(world, dt)
@@ -13,17 +15,11 @@ function movementSystem.update(world, dt)
         local dx = movement.vx or 0
         local dy = movement.vy or 0
 
-        if dx ~= 0 or dy ~= 0 then
-            local length = math.sqrt(dx * dx + dy * dy)
-            if length > 0 then
-                dx = dx / length
-                dy = dy / length
-            end
-        end
+        local ndx, ndy = vector.normalize(dx, dy)
 
         local distance = movement.speed * dt
-        entity.position.x = entity.position.x + dx * distance
-        entity.position.y = entity.position.y + dy * distance
+        entity.position.x = entity.position.x + ndx * distance
+        entity.position.y = entity.position.y + ndy * distance
 
         -- Reset per-frame velocity after applying.
         movement.vx = 0

@@ -1,10 +1,6 @@
-local chaseSystem = {}
+local vector = require("modules.vector")
 
-local function distance(x1, y1, x2, y2)
-    local dx = x2 - x1
-    local dy = y2 - y1
-    return math.sqrt(dx * dx + dy * dy)
-end
+local chaseSystem = {}
 
 function chaseSystem.update(world, _dt)
     local entities = world:queryEntities({ "chase", "movement", "position" })
@@ -28,12 +24,12 @@ function chaseSystem.update(world, _dt)
         -- Calculate direction to target
         local dx = targetPos.x - myPos.x
         local dy = targetPos.y - myPos.y
-        local dist = distance(myPos.x, myPos.y, targetPos.x, targetPos.y)
+        local ndx, ndy, magnitude = vector.normalize(dx, dy)
 
-        if dist > 0 then
+        if magnitude > 0 then
             -- Normalize direction and set velocity
-            entity.movement.vx = dx / dist
-            entity.movement.vy = dy / dist
+            entity.movement.vx = ndx
+            entity.movement.vy = ndy
         end
 
         ::continue::
