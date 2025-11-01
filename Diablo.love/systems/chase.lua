@@ -2,6 +2,22 @@ local vector = require("modules.vector")
 
 local chaseSystem = {}
 
+local DEFAULT_SEPARATION_BUFFER = 12
+
+local function getCenterAndRadius(entity)
+    local pos = entity.position
+    local size = entity.size or { w = 0, h = 0 }
+
+    local width = size.w or 0
+    local height = size.h or 0
+
+    local centerX = pos.x + width * 0.5
+    local centerY = pos.y + height * 0.5
+    local radius = math.max(width, height) * 0.5
+
+    return centerX, centerY, radius
+end
+
 function chaseSystem.update(world, _dt)
     local entities = world:queryEntities({ "chase", "movement", "position" })
 
@@ -18,19 +34,35 @@ function chaseSystem.update(world, _dt)
             goto continue
         end
 
-        local myPos = entity.position
-        local targetPos = target.position
+        local myCenterX, myCenterY, myRadius = getCenterAndRadius(entity)
+        local targetCenterX, targetCenterY, targetRadius = getCenterAndRadius(target)
 
         -- Calculate direction to target
-        local dx = targetPos.x - myPos.x
-        local dy = targetPos.y - myPos.y
-        local ndx, ndy, magnitude = vector.normalize(dx, dy)
+        local dx = targetCenterX - myCenterX
+        local dy = targetCenterY - myCenterY
+        local ndx, ndy, distance = vector.normalize(dx, dy)
 
-        if magnitude > 0 then
-            -- Normalize direction and set velocity
-            entity.movement.vx = ndx
-            entity.movement.vy = ndy
+        if distance <= 0 then
+            entity.movement.vx = 0
+            entity.movement.vy = 0
+            entity.movement.maxDistance = 0
+            goto continue
         end
+
+        local separationBuffer = chase.separationBuffer or DEFAULT_SEPARATION_BUFFER
+        local stopDistance = math.max(0, (myRadius + targetRadius) + separationBuffer)
+
+        if distance <= stopDistance then
+            entity.movement.vx = 0
+            entity.movement.vy = 0
+            entity.movement.maxDistance = 0
+            goto continue
+        end
+
+        -- Instruct movement to advance only up to the separation threshold
+        entity.movement.vx = ndx
+        entity.movement.vy = ndy
+        entity.movement.maxDistance = distance - stopDistance
 
         ::continue::
     end
