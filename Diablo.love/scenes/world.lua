@@ -1,8 +1,10 @@
 local Player = require("entities.player")
 local playerInputSystem = require("systems.player_input")
+local mouseLookSystem = require("systems.mouse_look")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
 local renderEquipmentSystem = require("systems.render_equipment")
+local renderMouseLookSystem = require("systems.render_mouse_look")
 local wanderSystem = require("systems.wander")
 local detectionSystem = require("systems.detection")
 local chaseSystem = require("systems.chase")
@@ -26,10 +28,14 @@ function WorldScene.new(opts)
         kind = "world",
         camera = { x = 0, y = 0 },
         debugMode = false, -- Debug toggle flag
+        systemHelpers = {
+            coordinates = require("system_helpers.coordinates"),
+        },
         systems = {
             update = {
                 applyStatsSystem.update,
                 playerInputSystem.update,
+                mouseLookSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
                 detectionSystem.update,
@@ -41,6 +47,7 @@ function WorldScene.new(opts)
             draw = {
                 renderSystem.draw,
                 renderEquipmentSystem.draw,
+                renderMouseLookSystem.draw,
                 uiPlayerStatus.draw,
             },
         },

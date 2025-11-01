@@ -1,28 +1,40 @@
 # Upcoming Feature Master Plan
 
-## Movement: Keyboard-Based With Mouse Look Indicator
-- **Movement remains keyboard-only (`Diablo.love/systems/player_input.lua`)**
-  - Keep the existing WASD/ZQSD/arrow key movement exactly as-is. No changes needed to `playerInputSystem.update(scene, dt)`—it should continue setting `movement.vx` and `movement.vy` based on keyboard input only.
+## Movement: Keyboard-Based With Mouse Look Indicator ✅ COMPLETED
+- **Movement remains keyboard-only (`Diablo.love/systems/player_input.lua`)** ✅
+  - ✅ No changes made—existing WASD/ZQSD/arrow key movement remains exactly as-is.
 
-- **Mouse look tracking (`Diablo.love/systems/mouse_look.lua`)**
-  - Create a new update system that runs after `player_input` and before `movement`. Query for entities with `movement` and `playerControlled` components.
-  - Use `love.mouse.getPosition()` and convert screen coordinates to world space using the coordinate helper (see below). Compute the direction vector from the player's `position` toward the mouse cursor position in world space.
-  - Store the normalized look direction on the `movement` component as `movement.lookDirection = { x, y }` (mutate the existing table, don't replace it). This look direction will be used later for combat targeting and attack direction.
-  - Update the look direction every frame so it always points toward the current mouse cursor position.
+- **Mouse look tracking (`Diablo.love/systems/mouse_look.lua`)** ✅
+  - ✅ Created update system that runs after `player_input` and before `movement`.
+  - ✅ Queries entities with `movement` and `playerControlled` components.
+  - ✅ Uses `love.mouse.getPosition()` and converts to world space via coordinate helper.
+  - ✅ Computes direction vector from player center to mouse cursor in world space.
+  - ✅ Stores normalized look direction as `movement.lookDirection = { x, y }` (mutates existing table).
+  - ✅ Updates every frame to track current mouse position.
+  - ✅ Includes safety check to ensure `lookDirection` exists before mutation.
 
-- **Visual arrow indicator (`Diablo.love/systems/render_mouse_look.lua`)**
-  - Create a new draw system registered after `renderEquipmentSystem.draw` but before `uiPlayerStatus.draw`. It should query for the player entity using `scene:getPlayer()` and check for `movement.lookDirection`.
-  - Draw a small arrow sprite or simple triangle shape around the player (e.g., at a fixed offset from the player center, like `position.x + 20, position.y + 20`). The arrow should point in the direction of `movement.lookDirection` using `math.atan2(lookDirection.y, lookDirection.x)` to compute the rotation angle.
-  - Use `love.graphics.push()`/`pop()` with `love.graphics.translate()` and `love.graphics.rotate()` to position and orient the arrow. Draw it after the camera transform is applied (within the render system's camera context) so it appears in world space near the player.
-  - Style the arrow with a distinct color (e.g., light yellow or white) and moderate opacity so it's visible but not distracting. Consider making it slightly larger than the player sprite to ensure visibility.
+- **Visual arrow indicator (`Diablo.love/systems/render_mouse_look.lua`)** ✅
+  - ✅ Created draw system registered after `renderEquipmentSystem.draw` and before `uiPlayerStatus.draw`.
+  - ✅ Queries player entity using `scene:getPlayer()` and checks for `movement.lookDirection`.
+  - ✅ Draws arrow shape as triangle polygon using `love.graphics.polygon()`.
+  - ✅ Arrow positioned on fixed-radius circle around player center: `playerRadius + 20` pixels (prevents overlap with player sprite).
+  - ✅ Arrow moves along invisible circle based on `lookDirection` vector, rotating around player center.
+  - ✅ Arrow rotation computed using `math.atan2(lookDirection.y, lookDirection.x)`.
+  - ✅ Uses `love.graphics.push()`/`pop()` with `translate()` and `rotate()` for positioning/orientation.
+  - ✅ Drawn within camera transform context (appears in world space).
+  - ✅ Styled with light yellow color (RGB: 1, 1, 0.7) and 0.7 opacity.
+  - ✅ Sized at 1.2x player sprite size for visibility.
 
-- **Component defaults (`Diablo.love/components/movement.lua`)**
-  - Add default `lookDirection = { x = 0, y = -1 }` to the movement component factory. Initialize it to point upward (negative Y) by default so there's always a valid direction even before mouse movement.
-  - Foes don't need mouse look, so the default value is fine for them—they won't have `playerControlled` component and won't be processed by the mouse look system.
+- **Component defaults (`Diablo.love/components/movement.lua`)** ✅
+  - ✅ Added default `lookDirection = { x = 0, y = -1 }` to movement component factory.
+  - ✅ Initializes to point upward (negative Y) by default.
+  - ✅ Foes use default value but aren't processed by mouse look system (no `playerControlled` component).
 
-- **Camera/world coordinate conversion (`Diablo.love/system_helpers/coordinates.lua`)**
-  - Create a helper module that provides `Coordinates.toWorldFromScreen(camera, screenX, screenY)`. The function should account for the camera transform: `worldX = screenX + camera.x`, `worldY = screenY + camera.y`.
-  - Initialize this helper during scene setup (`WorldScene.new`) and store it at `scene.systemHelpers.coordinates` to avoid circular requires. Both the mouse look system and future combat/targeting systems can reuse this helper for consistent coordinate transformations.
+- **Camera/world coordinate conversion (`Diablo.love/system_helpers/coordinates.lua`)** ✅
+  - ✅ Created helper module with `toWorldFromScreen(camera, screenX, screenY)` function.
+  - ✅ Implements coordinate transform: `worldX = screenX + camera.x`, `worldY = screenY + camera.y`.
+  - ✅ Initialized during scene setup (`WorldScene.new`) and stored at `scene.systemHelpers.coordinates`.
+  - ✅ Available for reuse by future combat/targeting systems.
 
 ## New Game: Guaranteed Starter Item
 - **Starting inventory hookup (`Diablo.love/scenes/world.lua`)**
@@ -87,22 +99,29 @@
 - **Persistence & cleanup**
   - Ensure loot entities are ignored by systems that only care about `movement` or AI components. If the loot should despawn, store `lootable.despawnTimer` and decrement it in the pickup system, removing the entity via ECS when the timer elapses.
 
-- Register new systems in `Diablo.love/scenes/world.lua` in ECS-friendly order (update list):
-  1. `applyStatsSystem.update`
-  2. `playerInputSystem.update`
-  3. `mouseLookSystem.update`
-  4. `playerAttackSystem.update`
-  5. `lootPickupSystem.update`
-  6. `spawnSystem.update`
-  7. `cullingSystem.update`
-  8. `detectionSystem.update`
-  9. `wanderSystem.update`
-  10. `chaseSystem.update`
-  11. `combatSystem.update`
-  12. `movementSystem.update`
-  13. `cameraSystem.update`
+- Register new systems in `Diablo.love/scenes/world.lua` in ECS-friendly order:
+  - ✅ **Update list (completed):**
+    1. ✅ `applyStatsSystem.update`
+    2. ✅ `playerInputSystem.update`
+    3. ✅ `mouseLookSystem.update` (registered after playerInputSystem, before movementSystem)
+    4. `playerAttackSystem.update` (pending)
+    5. `lootPickupSystem.update` (pending)
+    6. ✅ `spawnSystem.update`
+    7. ✅ `cullingSystem.update`
+    8. ✅ `detectionSystem.update`
+    9. ✅ `wanderSystem.update`
+    10. ✅ `chaseSystem.update`
+    11. `combatSystem.update` (pending)
+    12. ✅ `movementSystem.update`
+    13. ✅ `cameraSystem.update`
 
-  Draw list should append `renderMouseLookSystem.draw`, `renderHealthSystem.draw`, and `uiTargetSystem.draw` after existing renderers so ECS-managed entities stay in sync with the HUD.
+  - ✅ **Draw list (completed):**
+    - ✅ `renderSystem.draw`
+    - ✅ `renderEquipmentSystem.draw`
+    - ✅ `renderMouseLookSystem.draw` (registered after renderEquipmentSystem, before uiPlayerStatus)
+    - ✅ `uiPlayerStatus.draw`
+    - `renderHealthSystem.draw` (pending)
+    - `uiTargetSystem.draw` (pending)
 - When adding components at runtime, prefer `scene:addComponent`/`scene:removeComponent` to keep `componentSets` authoritative. Only mutate fields on existing component tables to maintain references used by systems.
 - Update `Readme.md` once features land to describe combat controls and loot loop.
 - Run `luacheck .` after implementation to maintain lint cleanliness (per AGENTS instructions).
