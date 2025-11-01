@@ -117,11 +117,31 @@
   - Either extend `Diablo.love/systems/render.lua` or create `systems/render_health.lua` to query foes with `health` and a `recentlyDamaged` component/flag. Populate or clear that flag inside the combat system when handling `scene.pendingCombatEvents`.
   - Use the active camera transform already applied in `renderSystem` to draw the health bar above the enemy (`position.y - offset`). Keep timers (`recentlyDamaged.timer`) inside the component and decrement them during the render system to manage visibility.
 
+- **Floating damage numbers (`Diablo.love/systems/render_damage_numbers.lua`)**
+  - Create a new draw system registered after `renderHealthSystem.draw` and before `uiTargetSystem.draw`. It should query `scene.pendingCombatEvents` for damage events and spawn floating damage number entities.
+  - Each damage event should create a temporary entity with a `floatingDamage` component containing: `damage` (numeric value), `position` (initial spawn position at target entity's position), `velocity` (initial upward/outward movement vector), `timer` (lifetime counter), `color` (damage-based color: red for normal, yellow/orange for critical hits if applicable).
+  - The render system should query entities with `floatingDamage` component each frame:
+    - Decrement `floatingDamage.timer` using `dt`.
+    - Update position: `position.y = position.y + velocity.y * dt`, `velocity.y = velocity.y - gravity * dt` (optional gravity/slowdown).
+    - Apply fade-out opacity based on remaining timer percentage.
+    - Draw the damage number as text using `love.graphics.setFont()` with appropriate size, positioned above the entity (`position.y - offset`), colored based on `floatingDamage.color`.
+    - Remove entities when `timer <= 0` using `scene:removeEntity(id)` to keep ECS clean.
+  - Combat system should push damage events with target position into `scene.pendingCombatEvents` so the render system can spawn damage numbers at the correct world coordinates.
+
 - **State tracking**
   - Maintain combat focus on the scene (`scene.currentTargetId` and `scene.targetDisplayTimer`). Clear the target when the entity dies (`health.current <= 0`) or when the timer expires so systems automatically stop drawing UI.
 
 - **Monster death handling**
-  - Extend the combat system so when `health.current` reaches `0`, it removes AI-specific components (`scene:removeComponent(id, "chase")`, etc.) and queues a `death` payload in `scene.pendingCombatEvents`. Defer entity removal until any death animation or loot spawn has finished to keep systems deterministic.
+  - Extend the combat system so when `health.current` reaches `0`:
+    - Remove AI-specific components (`scene:removeComponent(id, "chase")`, `scene:removeComponent(id, "detection")`, `scene:removeComponent(id, "wander")`) to stop AI behavior immediately.
+    - Queue a `death` payload in `scene.pendingCombatEvents` with the entity ID and position for loot spawning.
+    - Mark the entity with a `dead` flag component or add a `dead` tag component so other systems can skip processing.
+    - After any death animation completes (or immediately if no animation), call `scene:removeEntity(id)` to fully remove the entity from ECS. This ensures:
+      - Component sets are cleaned up (`componentSets` dictionary entries removed).
+      - Entity is removed from all queries (`queryEntities` won't return it).
+      - Prevents memory leaks and stale entity references.
+    - Clear `scene.currentTargetId` if the dead entity was the current target.
+    - Spawn loot entity (if applicable) before removing the foe entity, using the position from the death event payload.
 
 - **Loot entity & components (`Diablo.love/components/lootable.lua`, `Diablo.love/entities/loot.lua`)**
   - Create a loot entity factory that returns an entity table with an `id`, `position`, `lootable`, `renderable`, and optional `hoverable` component. Call `scene:addEntity(lootEntity)` so ECS registers every component set.
@@ -163,6 +183,7 @@
     - ✅ `renderMouseLookSystem.draw` (registered after renderEquipmentSystem, before uiPlayerStatus)
     - ✅ `uiPlayerStatus.draw`
     - `renderHealthSystem.draw` (pending)
+    - `renderDamageNumbersSystem.draw` (pending - registered after renderHealthSystem, before uiTargetSystem)
     - `uiTargetSystem.draw` (pending)
 - When adding components at runtime, prefer `scene:addComponent`/`scene:removeComponent` to keep `componentSets` authoritative. Only mutate fields on existing component tables to maintain references used by systems.
 - Update `Readme.md` once features land to describe combat controls and loot loop.
