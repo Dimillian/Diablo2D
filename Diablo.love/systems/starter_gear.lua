@@ -19,7 +19,7 @@ function starterGearSystem.update(world, _dt)
     -- Ensure player has inventory and equipment components
     EquipmentHelper.ensure(player)
 
-    -- Generate starter gear: weapon + 3 armor pieces (helmet, chest, boots)
+    -- Generate starter gear: weapon + 4 armor pieces (helmet, chest, gloves, boots)
     local starterWeapon = ItemGenerator.roll({
         rarity = "common",
         allowedTypes = { "sword", "axe" },
@@ -38,6 +38,12 @@ function starterGearSystem.update(world, _dt)
         source = "starter",
     })
 
+    local starterGloves = ItemGenerator.roll({
+        rarity = "common",
+        itemType = "gloves",
+        source = "starter",
+    })
+
     local starterBoots = ItemGenerator.roll({
         rarity = "common",
         itemType = "boots",
@@ -48,6 +54,7 @@ function starterGearSystem.update(world, _dt)
     EquipmentHelper.equip(player, starterWeapon)
     EquipmentHelper.equip(player, starterHelmet)
     EquipmentHelper.equip(player, starterChest)
+    EquipmentHelper.equip(player, starterGloves)
     EquipmentHelper.equip(player, starterBoots)
 
     -- Mark as generated to prevent re-running

@@ -24,14 +24,16 @@ function renderEquipmentSystem.draw(world)
 
         -- Slot-specific offsets (relative to entity size)
         local offsets = {
-            weapon = { x = size.w * 1, y = 0 }, -- Forward (right)
+            weapon = { x = size.w * 3, y = 0.5 }, -- Forward (right)
             head = { x = 0, y = -size.h * 1 }, -- Up
             chest = { x = 0, y = 0 }, -- Center
             feet = { x = 0, y = size.h * 1 }, -- Down
+            glovesLeft = { x = -size.w * 1.5, y = 0.5 }, -- Left side
+            glovesRight = { x = size.w * 1.5, y = 0.5 }, -- Right side
         }
 
-        -- Draw equipped items in order: feet (bottom), chest, head, weapon (top)
-        local drawOrder = { "feet", "chest", "head", "weapon" }
+        -- Draw equipped items in order: feet (bottom), chest, gloves, head, weapon (top)
+        local drawOrder = { "feet", "chest", "gloves", "head", "weapon" }
 
         for _, slotId in ipairs(drawOrder) do
             local item = entity.equipment[slotId]
@@ -39,18 +41,50 @@ function renderEquipmentSystem.draw(world)
                 local sprite = Resources.loadImageSafe(item.spritePath)
                 if sprite then
                     local spriteSize = math.max(size.w, size.h) * 1.2 -- Slightly larger than entity
-                    local offset = offsets[slotId] or { x = 0, y = 0 }
-                    local spriteX = centerX - spriteSize / 2 + offset.x
-                    local spriteY = centerY - spriteSize / 2 + offset.y
-                    love.graphics.setColor(1, 1, 1, 1)
-                    love.graphics.draw(
-                        sprite,
-                        spriteX,
-                        spriteY,
-                        0,
-                        spriteSize / sprite:getWidth(),
-                        spriteSize / sprite:getHeight()
-                    )
+
+                    -- Special handling for gloves: render both left and right
+                    if slotId == "gloves" then
+                        -- Left glove (normal)
+                        local leftOffset = offsets.glovesLeft or { x = 0, y = 0 }
+                        local leftSpriteX = centerX - spriteSize / 2 + leftOffset.x
+                        local leftSpriteY = centerY - spriteSize / 2 + leftOffset.y
+                        love.graphics.setColor(1, 1, 1, 1)
+                        love.graphics.draw(
+                            sprite,
+                            leftSpriteX,
+                            leftSpriteY,
+                            0,
+                            spriteSize / sprite:getWidth(),
+                            spriteSize / sprite:getHeight()
+                        )
+
+                        -- Right glove (flipped horizontally)
+                        local rightOffset = offsets.glovesRight or { x = 0, y = 0 }
+                        local rightSpriteX = centerX - spriteSize / 2 + rightOffset.x
+                        local rightSpriteY = centerY - spriteSize / 2 + rightOffset.y
+                        love.graphics.draw(
+                            sprite,
+                            rightSpriteX + spriteSize, -- Adjust origin for horizontal flip
+                            rightSpriteY,
+                            0,
+                            -spriteSize / sprite:getWidth(), -- Negative scaleX to flip horizontally
+                            spriteSize / sprite:getHeight()
+                        )
+                    else
+                        -- Normal rendering for other slots
+                        local offset = offsets[slotId] or { x = 0, y = 0 }
+                        local spriteX = centerX - spriteSize / 2 + offset.x
+                        local spriteY = centerY - spriteSize / 2 + offset.y
+                        love.graphics.setColor(1, 1, 1, 1)
+                        love.graphics.draw(
+                            sprite,
+                            spriteX,
+                            spriteY,
+                            0,
+                            spriteSize / sprite:getWidth(),
+                            spriteSize / sprite:getHeight()
+                        )
+                    end
                 end
             end
         end

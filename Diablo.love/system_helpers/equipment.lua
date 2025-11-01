@@ -4,6 +4,7 @@ local equipmentSlots = {
     { id = "weapon", label = "Weapon" },
     { id = "head", label = "Head" },
     { id = "chest", label = "Chest" },
+    { id = "gloves", label = "Gloves" },
     { id = "feet", label = "Boots" },
 }
 

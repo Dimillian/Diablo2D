@@ -109,6 +109,15 @@ Items.types = {
             moveSpeed = 0.05,
         },
     },
+    gloves = {
+        id = "gloves",
+        label = "Gloves",
+        slot = "gloves",
+        base = {
+            damage = { min = 0, max = 0 },
+            defense = { min = 2, max = 4 },
+        },
+    },
 }
 
 Items.prefixes = {
@@ -135,7 +144,7 @@ Items.prefixes = {
     },
     {
         name = "Guarded",
-        slots = { "head", "chest", "feet" },
+        slots = { "head", "chest", "feet", "gloves" },
         stats = {
             defense = { flat = { 2, 4 } },
         },
@@ -163,14 +172,14 @@ Items.prefixes = {
     },
     {
         name = "Stalwart",
-        slots = { "head", "chest" },
+        slots = { "head", "chest", "gloves" },
         stats = {
             health = { flat = { 15, 30 } },
         },
     },
     {
         name = "Reinforced",
-        slots = { "head", "chest", "feet" },
+        slots = { "head", "chest", "feet", "gloves" },
         stats = {
             defense = { percent = { 0.1, 0.2 } },
         },
@@ -183,33 +192,40 @@ Items.prefixes = {
             dodgeChance = { flat = { 0.02, 0.05 } },
         },
     },
+    {
+        name = "Swift Strikes",
+        slots = { "gloves" },
+        stats = {
+            attackSpeed = { percent = { 0.08, 0.15 } },
+        },
+    },
 }
 
 Items.suffixes = {
     {
         name = "of Vitality",
-        slots = { "head", "chest", "weapon" },
+        slots = { "head", "chest", "weapon", "gloves" },
         stats = {
             health = { flat = { 10, 20 } },
         },
     },
     {
         name = "of the Fox",
-        slots = { "head", "chest", "feet" },
+        slots = { "head", "chest", "feet", "gloves" },
         stats = {
             dodgeChance = { flat = { 0.03, 0.08 } },
         },
     },
     {
         name = "of the Bear",
-        slots = { "head", "chest", "feet" },
+        slots = { "head", "chest", "feet", "gloves" },
         stats = {
             defense = { percent = { 0.06, 0.12 } },
         },
     },
     {
         name = "of Greed",
-        slots = { "weapon", "head", "chest", "feet" },
+        slots = { "weapon", "head", "chest", "feet", "gloves" },
         stats = {
             goldFind = { percent = { 0.1, 0.25 } },
         },
@@ -230,7 +246,7 @@ Items.suffixes = {
     },
     {
         name = "of the Sentinel",
-        slots = { "head", "chest" },
+        slots = { "head", "chest", "gloves" },
         stats = {
             health = { flat = { 20, 35 } },
             defense = { percent = { 0.08, 0.15 } },
@@ -246,7 +262,7 @@ Items.suffixes = {
     },
     {
         name = "of Resolve",
-        slots = { "head", "chest", "feet" },
+        slots = { "head", "chest", "feet", "gloves" },
         stats = {
             resistAll = { percent = { 0.05, 0.12 } },
         },
