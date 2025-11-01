@@ -4,6 +4,7 @@ local function createWanderComponent(opts)
     return {
         interval = opts.interval or 1.5,
         elapsed = 0,
+        removeOnDeath = true,
     }
 end
 

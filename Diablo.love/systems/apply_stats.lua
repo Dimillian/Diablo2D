@@ -12,6 +12,10 @@ function applyStatsSystem.update(world, _dt)
 
     local totalStats = EquipmentHelper.computeTotalStats(player)
 
+    player.stats = player.stats or {}
+    player.stats.total = totalStats
+    player.stats.base = player.baseStats
+
     -- Apply movement speed: base speed * (1 + moveSpeed percentage bonuses)
     if player.movement then
         local baseSpeed = 140 -- Default base movement speed in pixels/second

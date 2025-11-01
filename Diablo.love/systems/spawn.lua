@@ -42,9 +42,19 @@ local function spawnGroup(world, centerX, centerY, foeType)
             y = y,
             width = 20,
             height = 20,
+            name = config.name,
             speed = config.speed,
             detectionRange = config.detectionRange,
             wanderInterval = config.wanderInterval,
+            health = {
+                max = config.health,
+                current = config.health,
+            },
+            combat = {
+                attackSpeed = config.attackSpeed,
+                baseDamageMin = config.damageMin,
+                baseDamageMax = config.damageMax,
+            },
             renderable = {
                 kind = "rect",
                 color = config.color,

@@ -2,10 +2,14 @@ local Player = require("entities.player")
 local playerInputSystem = require("systems.player_input")
 local mouseLookSystem = require("systems.mouse_look")
 local mouseMovementSystem = require("systems.mouse_movement")
+local playerAttackSystem = require("systems.player_attack")
 local movementSystem = require("systems.movement")
 local renderSystem = require("systems.render")
+local renderLootSystem = require("systems.render_loot")
 local renderEquipmentSystem = require("systems.render_equipment")
 local renderMouseLookSystem = require("systems.render_mouse_look")
+local renderHealthSystem = require("systems.render_health")
+local renderDamageNumbersSystem = require("systems.render_damage_numbers")
 local wanderSystem = require("systems.wander")
 local detectionSystem = require("systems.detection")
 local chaseSystem = require("systems.chase")
@@ -15,6 +19,11 @@ local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
 local applyStatsSystem = require("systems.apply_stats")
 local starterGearSystem = require("systems.starter_gear")
+local combatSystem = require("systems.combat")
+local lootPickupSystem = require("systems.loot_pickup")
+local lootDropSystem = require("systems.loot_drops")
+local uiTargetSystem = require("systems.ui_target")
+local lootTooltipSystem = require("systems.loot_tooltip")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -30,6 +39,11 @@ function WorldScene.new(opts)
         kind = "world",
         camera = { x = 0, y = 0 },
         debugMode = false, -- Debug toggle flag
+        time = 0,
+        lastUpdateDt = 0,
+        pendingCombatEvents = {},
+        currentTargetId = nil,
+        targetDisplayTimer = 0,
         systemHelpers = {
             coordinates = require("system_helpers.coordinates"),
         },
@@ -40,19 +54,28 @@ function WorldScene.new(opts)
                 playerInputSystem.update,
                 mouseLookSystem.update,
                 mouseMovementSystem.update,
+                playerAttackSystem.update,
+                lootPickupSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
                 detectionSystem.update,
                 wanderSystem.update,
                 chaseSystem.update,
+                combatSystem.update,
+                lootDropSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
             },
             draw = {
                 renderSystem.draw,
+                renderLootSystem.draw,
                 renderEquipmentSystem.draw,
                 renderMouseLookSystem.draw,
+                renderHealthSystem.draw,
+                renderDamageNumbersSystem.draw,
                 uiPlayerStatus.draw,
+                uiTargetSystem.draw,
+                lootTooltipSystem.draw,
             },
         },
     }
@@ -93,6 +116,11 @@ function WorldScene.new(opts)
 end
 
 function WorldScene:update(dt)
+    dt = dt or 0
+    self.lastUpdateDt = dt
+    self.time = (self.time or 0) + dt
+    self.pendingCombatEvents = self.pendingCombatEvents or {}
+
     for _, system in ipairs(self.systems.update) do
         system(self, dt)
     end
@@ -106,6 +134,8 @@ function WorldScene:draw()
     for _, system in ipairs(self.systems.draw) do
         system(self)
     end
+
+    self.pendingCombatEvents = {}
 end
 
 function WorldScene:getPlayer()
