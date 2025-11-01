@@ -2,6 +2,7 @@
 
 ## Movement: WASD With Mouse Steering ✅
 - Mouse-facing movement now drives the player's heading and strafe intents via component state, with smoothing handled directly on the movement component for downstream systems. (`Diablo.love/systems/player_input.lua`, `Diablo.love/systems/movement.lua`, `Diablo.love/components/movement.lua`)
+- Keyboard controls now recognize both WASD and AZERTY-friendly ZQSD layouts alongside arrow keys so movement works regardless of layout. (`Diablo.love/systems/player_input.lua`)
 - Non-player entities were updated to follow the new intent-driven contract so wander and chase behaviors continue to function without manual velocity writes. (`Diablo.love/systems/wander.lua`, `Diablo.love/systems/chase.lua`)
 - Added a reusable coordinate helper registered on the scene for translating screen positions into world space, enabling mouse steering and future cursor-driven features. (`Diablo.love/system_helpers/coordinates.lua`, `Diablo.love/scenes/world.lua`)
 
