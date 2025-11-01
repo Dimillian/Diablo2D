@@ -1,104 +1,102 @@
 # Upcoming Feature Master Plan
 
 ## Movement: WASD With Mouse Steering
-- **Input capture (systems/player_input.lua)**
-  - Keep the existing WASD mapping but augment `playerInputSystem.update` to also read the mouse cursor in world coordinates. Use the world camera (`world.camera`) to translate `love.mouse.getPosition()` into world space so the direction vector is computed relative to the player's `position` component.
-  - Replace the current `dx/dy` assignment with logic that stores two pieces of state on the player entity:
-    - `movement.intentForward` (boolean) is true when `w`/`up` is held.
-    - `movement.intentStrafe` keeps the lateral keyboard vector for optional strafe/backpedal moves (still allow `a/d` and `s` to move without mouse steering).
-  - When forward input is pressed, set a `movement.targetHeading` vector pointing from player position toward the mouse location. Smoothly interpolate the current heading toward this target each frame (e.g., using `movement.headingLerp = 0.2`).
+- **Input capture (`Diablo.love/systems/player_input.lua`)**
+  - Keep the existing WASD mapping but augment `playerInputSystem.update(scene, dt)` to also read the mouse cursor in world coordinates. Use the world camera (`scene.camera`) to translate `love.mouse.getPosition()` into world space so the direction vector is computed relative to the player's `position` component.
+  - Instead of mutating components directly, use `scene:getPlayer()` and store intent state on the `movement` component (which already participates in ECS queries). Persist:
+    - `movement.intentForward` (boolean) when `w`/`up` is held.
+    - `movement.intentStrafe` as a normalized `{ x, y }` vector for `a/d` strafing and `s` backpedal input.
+  - When forward input is pressed, compute a `movement.targetHeading` vector pointing from the player position toward the mouse location. Smoothly interpolate the current `movement.heading` toward this target each frame using a lerp factor saved on the component so downstream systems only need to read component data.
 
-- **Movement resolution (systems/movement.lua)**
-  - Extend movement components to include `heading` (normalized `x/y`) and `currentSpeed`. During `movementSystem.update`, derive the final velocity from:
-    - Forward component: `movement.intentForward` * `movement.heading`.
-    - Strafe/backpedal: reuse raw keyboard vector when `movement.intentStrafe` or backward input is active.
-  - Normalize the combined vector and scale by `movement.speed`. Apply smooth heading updates so the player rotates toward the mouse even when stationary by gradually adjusting `movement.heading` each frame.
-  - Reset `intent` flags after applying so the ECS component only carries persistent heading/orientation values between frames.
+- **Movement resolution (`Diablo.love/systems/movement.lua`)**
+  - Extend the movement component to include `heading` (normalized `x/y`), `targetHeading`, `intentForward`, `intentStrafe`, and `headingLerp`. During `movementSystem.update(scene, dt)`, derive the velocity by blending the forward heading with any lateral intent, then normalize before scaling by `movement.speed`.
+  - Because entities are stored in ECS component sets, only mutate fields on the existing `movement` table—do not replace the table—to avoid breaking references. Clear transient intent values (`intentForward`, `intentStrafe`) after computing velocity so other systems do not accidentally reuse stale input.
+  - Ensure foes created through `entities/foe.lua` also seed the new fields so they continue to satisfy the `movement` component contract.
 
-- **Component updates (components/movement.lua)**
-  - Add defaults for `heading = { x = 0, y = -1 }`, `intentForward = false`, `intentStrafe = { x = 0, y = 0 }`, and `headingLerp = 0.2`. Ensure new fields are included when foes are instantiated so AI systems can reuse them if needed.
+- **Component defaults (`Diablo.love/components/movement.lua`)**
+  - Add defaults for `heading = { x = 0, y = -1 }`, `targetHeading = { x = 0, y = -1 }`, `intentForward = false`, `intentStrafe = { x = 0, y = 0 }`, and `headingLerp = 0.2`. Update entity factories (`entities/player.lua`, `entities/foe.lua`) to call `MovementComponent.new(opts)` so ECS registration (`scene:addEntity`) automatically tracks the component in `componentSets`.
 
-- **Camera-facing utilities (system_helpers)**
-  - Introduce a helper (e.g., `system_helpers.coordinates.toWorldFromScreen(camera, x, y)`) to centralize screen→world conversion so both player input and future mouse-driven systems share identical math.
+- **Camera/world conversions (`Diablo.love/system_helpers/coordinates.lua`)**
+  - Introduce a helper (`Coordinates.toWorldFromScreen(camera, x, y)`) that player input and future mouse-driven systems can call. Store it under `scene.systemHelpers.coordinates` during scene setup to avoid circular requires and keep ECS systems data-oriented.
 
 ## New Game: Guaranteed Starter Item
-- **Starting inventory hookup (scenes/world.lua)**
-  - After creating the player entity, generate a starter item via `items/generator.lua` with rarity forced to common. Add a utility in the generator to accept an options table `{ forcedRarity = "common", allowedTypes = {"sword", "axe"} }`.
-  - Equip the item automatically by inserting it into `player.equipment.slots.weapon`. Also push a copy into `player.inventory.items` so the UI sees it. Ensure the equipment system recomputes stats by invoking `EquipmentHelper.computeTotalStats` on first update.
+- **Starting inventory hookup (`Diablo.love/scenes/world.lua`)**
+  - After creating the player entity via `scene:addEntity(Player.new(...))`, call into the item generator with forced options (`{ rarity = "common", allowedTypes = { "sword", "axe" } }`).
+  - Use ECS-safe helpers when wiring the item into components: mutate the existing `player.inventory` and `player.equipment` tables in place rather than swapping tables so ECS component sets stay valid. If the player does not yet have an `equipment` component, attach it with `scene:addComponent(player.id, "equipment", EquipmentComponent.new())` before populating slots.
+  - Trigger a stat recompute by flagging the player for the existing `apply_stats` system (e.g., set `player.stats.needsRefresh = true` if present) so the ECS update loop handles derived data.
 
-- **Generator extension (items/generator.lua)**
-  - Provide an API `ItemGenerator.roll(opts)` that respects optional parameters for rarity and type overrides. Reuse the existing weighted logic when overrides are absent so spawn/loot tables keep their behavior.
-  - Mark starter gear as `source = "starter"` to support future quest logic or exclusion from drops.
+- **Generator extension (`Diablo.love/items/generator.lua`)**
+  - Provide an API `ItemGenerator.roll(opts)` that respects optional parameters for rarity and type overrides while keeping the weighted defaults for normal drops. Document that passing `source = "starter"` tags the payload for later filtering.
 
 ## Combat System Foundations
 ### Combat 1: Click-to-Attack With Cooldown
-- **Player combat component (components/combat.lua)**
-  - Create a new component storing combat stats: `attackSpeed`, `cooldown`, `range`, `queuedAttack`, and `animationTime`. Attach it to the player entity in `entities/player.lua`, seeding `attackSpeed` from `baseStats.attackSpeed` or equipment stats.
+- **Player combat component (`Diablo.love/components/combat.lua`)**
+  - Create a new component storing combat stats: `attackSpeed`, `cooldown`, `range`, `queuedAttack`, and `swingTimer`. Attach it to the player entity inside `entities/player.lua` by calling `CombatComponent.new(opts)` so the entity is created with the component before `scene:addEntity(player)`. For NPCs that need combat later, reuse the same constructor to keep component shape consistent.
 
-- **Attack input system (systems/player_attack.lua)**
-  - New update system inserted after `player_input` but before `movement`. Detect `love.mouse.isDown(1)` and, if the player has a valid target (see detection below), schedule an attack by setting `queuedAttack = { targetId, timestamp }` when `cooldown <= 0`.
-  - Maintain `player.combat.cooldown` by decrementing with `dt`. When an attack is triggered, set `cooldown = 1 / effectiveAttackSpeed`. Use total stats (`EquipmentHelper.computeTotalStats`) to determine `effectiveAttackSpeed = 1 + totalStats.attackSpeed`.
+- **Attack input system (`Diablo.love/systems/player_attack.lua`)**
+  - Register a new update system after `player_input` and before `movement`. It should:
+    - Read `love.mouse.isDown(1)` and, if pressed, look up the player's current target (see targeting helper below).
+    - Decrement `combat.cooldown` using `dt` while leaving the table reference intact.
+    - When `cooldown <= 0`, populate `combat.queuedAttack = { targetId = target.id, time = scene.time }` and reset `cooldown = 1 / effectiveAttackSpeed` using aggregated stats from `systems.apply_stats` (read-only).
+  - Because systems operate on entities retrieved through `scene:getPlayer()` or `scene:queryEntities`, avoid storing per-system state; rely on component data instead.
 
 - **Target acquisition**
-  - Extend detection/chase systems or add a helper to find the closest foe under the cursor when clicking. Reuse `world:queryEntities({"foeTag", "position", "health"})` (add a simple `foeTag` component when foes are created). Intersect the mouse ray or simple distance check to allow attacks only within `combat.range` (~120px).
+  - Add a helper under `Diablo.love/system_helpers/targeting.lua` that queries foes using `scene:queryEntities({ "foe", "position", "health" })`. Foes should gain a lightweight `foe` tag component (`entities/foe.lua`) so they are discoverable.
+  - Reuse the new coordinate helper to convert the mouse cursor to world space and perform a simple distance check capped by `combat.range` (~120px). Store the resolved entity ID on the scene (`scene.currentTargetId`) so other systems (UI, damage) can read it without recomputing.
 
 - **Animation stub**
-  - During an active attack, add a minor oscillation to the equipped weapon sprite in `systems/render_equipment.lua` using `player.combat.animationTime` (sine wave scaled by time remaining). Reset when cooldown completes.
+  - During an active attack, let `systems/render_equipment.lua` read `combat.swingTimer`. While `swingTimer > 0`, offset the weapon sprite by a small sine wave. Decrement `swingTimer` in the attack system when an attack is queued and let it reach zero naturally to reset the animation.
 
 ### Combat 2: Damage Resolution
-- **Damage system (systems/combat.lua)**
-  - Consume queued attacks each frame. Validate the target entity still exists, is alive (`health.current > 0`), and within range before applying damage.
-  - Compute damage using:
-    - Base weapon damage from equipped item (`EquipmentHelper.computeTotalStats` already aggregates `damageMin`/`damageMax`).
-    - Apply random roll between min/max and add crit handling via `totalStats.critChance`.
-    - Subtract target defense/resistance once foe stats are introduced (stub with constant for now).
-  - Apply damage by mutating `target.health.current = max(0, current - damageAmount)`. Emit an event-like table (`world:dispatchEvent("damage", {...})`) so UI and loot logic can react without tight coupling.
+- **Damage system (`Diablo.love/systems/combat.lua`)**
+  - Consume queued attacks each frame. Use `scene:queryEntities({ "combat" })` to iterate combatants, validate queued attacks (target exists via `scene:getEntity`, target still has `health`, target within range), and then resolve damage.
+  - Compute outgoing damage from aggregated stats already cached by `apply_stats` (`entity.stats.total.damageMin`, etc.). Avoid replacing the `health` table; mutate `target.health.current` in place so ECS bookkeeping stays intact.
+  - When a target takes damage, push a structured payload into `scene.pendingCombatEvents` (create this table during scene init). Other systems can read and clear this queue during their update pass, which keeps communication data-oriented without inventing a new dispatcher API.
 
-### Combat 3: Monster Health UI
-- **Top-of-screen target frame (systems/ui_target.lua)**
-  - Add a new draw system after `ui_player_status`. When `world.currentTargetId` is set (attack target or last hit foe), render a framed bar at the top center showing `monsterName` and `health.current/max`. Use `love.graphics.printf` similar to the player HUD.
+- **Top-of-screen target frame (`Diablo.love/systems/ui_target.lua`)**
+  - Add a draw system registered after `systems.ui_player_status.draw`. It should read `scene.currentTargetId` and fetch the entity via `scene:getEntity`. Render a framed bar showing `health.current/max` using the same coordinate transforms already applied in the HUD.
 
 - **Floating enemy bars**
-  - Augment `systems/render.lua` (or a dedicated `systems/render_health.lua`) to iterate foes with `health` and `recentlyDamaged` flags. Draw a small bar above the enemy's position using camera translation already in effect. Toggle `recentlyDamaged` when the damage system processes a hit and decay it over ~2 seconds via a timer stored in the foe component.
+  - Either extend `Diablo.love/systems/render.lua` or create `systems/render_health.lua` to query foes with `health` and a `recentlyDamaged` component/flag. Populate or clear that flag inside the combat system when handling `scene.pendingCombatEvents`.
+  - Use the active camera transform already applied in `renderSystem` to draw the health bar above the enemy (`position.y - offset`). Keep timers (`recentlyDamaged.timer`) inside the component and decrement them during the render system to manage visibility.
 
 - **State tracking**
-  - Store combat focus on the world object (`world.currentTargetId`, `world.targetDisplayTimer`). Reset when the target dies or timer expires so UI hides when leaving combat.
+  - Maintain combat focus on the scene (`scene.currentTargetId` and `scene.targetDisplayTimer`). Clear the target when the entity dies (`health.current <= 0`) or when the timer expires so systems automatically stop drawing UI.
 
-## Loot Flow
 - **Monster death handling**
-  - Extend the combat system to detect when `target.health.current` reaches 0. Remove combat-related components (e.g., `chase`, `wander`) and flag for removal once the death animation finishes. Trigger a loot spawn routine.
+  - Extend the combat system so when `health.current` reaches `0`, it removes AI-specific components (`scene:removeComponent(id, "chase")`, etc.) and queues a `death` payload in `scene.pendingCombatEvents`. Defer entity removal until any death animation or loot spawn has finished to keep systems deterministic.
 
-- **Loot entity & components (components/lootable.lua, entities/loot.lua)**
-  - Create a lightweight entity with `position`, `loot` (item payload), `renderable` (sprite or icon), and `pickupRadius`. Store the generated item (again using `ItemGenerator.roll`) with rarity weighting but allow overrides from monster templates later.
-  - Add this entity to the world when a monster dies. Optionally push to a `world.lootEntities` list for quick queries.
+- **Loot entity & components (`Diablo.love/components/lootable.lua`, `Diablo.love/entities/loot.lua`)**
+  - Create a loot entity factory that returns an entity table with an `id`, `position`, `lootable`, `renderable`, and optional `hoverable` component. Call `scene:addEntity(lootEntity)` so ECS registers every component set.
+  - The `lootable` component should carry the rolled item payload, a `pickupRadius`, and a `source` tag. Because ECS tracks components by table identity, mutate fields rather than replacing the `lootable` table if the item changes.
 
 - **Tooltip reuse**
-  - The inventory scene already draws item tooltips; extract that logic into `system_helpers.tooltip` so both the inventory UI and the world scene can call it. When the cursor hovers over a loot entity (distance check), invoke the helper to render the tooltip near the cursor.
+  - Extract inventory tooltip rendering into `Diablo.love/system_helpers/tooltips.lua`. Both the inventory scene and a new `systems/loot_tooltip.lua` draw system can call it by passing the hovered entity and item payload.
 
 - **Pickup interaction**
-  - Detect `love.mouse.isDown(1)` while hovering or implement a simple `love.mousepressed` hook in `WorldScene` to collect the loot. On pickup:
-    - Remove the loot entity via `world:removeEntity(id)`.
-    - Insert the item into `player.inventory.items` and, if the slot is empty, auto-equip.
-    - Emit a short-lived floating text via a planned `systems/combat_feedback.lua` (optional future work) or at least log a message to the console for debugging.
+  - Handle click-to-pickup inside a dedicated system (`Diablo.love/systems/loot_pickup.lua`) that runs after player input. It should query `scene:queryEntities({ "lootable", "position" })`, test cursor distance using the coordinate helper, and when the player clicks:
+    - Transfer the item into `player.inventory.items` (mutate existing tables).
+    - Optionally auto-equip if the slot is empty by mutating `player.equipment.slots`.
+    - Remove the entity with `scene:removeEntity(lootEntity.id)` to keep component sets accurate.
 
 - **Persistence & cleanup**
-  - Ensure loot entities respect `cullingSystem` so off-screen drops stay active but are skipped from costly updates. Add a timeout or manual cleanup when leaving the scene.
+  - Ensure loot entities are ignored by systems that only care about `movement` or AI components. If the loot should despawn, store `lootable.despawnTimer` and decrement it in the pickup system, removing the entity via ECS when the timer elapses.
 
-## Integration Checklist
-- Register new systems in `scenes/world.lua` update/draw lists in sensible order:
-  1. `applyStatsSystem`
-  2. `playerInputSystem`
-  3. `playerAttackSystem`
-  4. `spawnSystem`
-  5. `cullingSystem`
-  6. `detectionSystem`
-  7. `wanderSystem`
-  8. `chaseSystem`
-  9. `combatSystem`
-  10. `movementSystem`
-  11. `cameraSystem`
+- Register new systems in `Diablo.love/scenes/world.lua` in ECS-friendly order (update list):
+  1. `applyStatsSystem.update`
+  2. `playerInputSystem.update`
+  3. `playerAttackSystem.update`
+  4. `lootPickupSystem.update`
+  5. `spawnSystem.update`
+  6. `cullingSystem.update`
+  7. `detectionSystem.update`
+  8. `wanderSystem.update`
+  9. `chaseSystem.update`
+  10. `combatSystem.update`
+  11. `movementSystem.update`
+  12. `cameraSystem.update`
 
-  Draw order should append `uiTargetSystem.draw` and the new foe health overlay.
-- Add any new component modules to entity factories (player, foe, loot) and ensure ECS `componentSets` remain consistent by using `addComponent` when mutating at runtime.
-- Update `Readme.md` after implementation to describe combat controls and loot loop.
-- Run `luacheck .` to keep lint clean (per AGENTS instructions) once features are implemented.
+  Draw list should append `renderHealthSystem.draw` and `uiTargetSystem.draw` after existing renderers so ECS-managed entities stay in sync with the HUD.
+- When adding components at runtime, prefer `scene:addComponent`/`scene:removeComponent` to keep `componentSets` authoritative. Only mutate fields on existing component tables to maintain references used by systems.
+- Update `Readme.md` once features land to describe combat controls and loot loop.
+- Run `luacheck .` after implementation to maintain lint cleanliness (per AGENTS instructions).
