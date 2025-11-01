@@ -335,7 +335,55 @@ function ItemGenerator.generate(opts)
         },
     }
 
+    -- Add source tag if provided (e.g., "starter" for filtering later)
+    if opts.source then
+        item.source = opts.source
+    end
+
     return item
+end
+
+---Roll an item with optional rarity and type overrides.
+---Supports weighted defaults for normal drops, or forced options for special cases.
+---@param opts table|nil Optional parameters:
+---   - rarity: String rarity ID (e.g., "common") or ItemData.rarities entry
+---   - itemType: String type ID (e.g., "sword") or ItemData.types entry
+---   - allowedTypes: Array of string type IDs (e.g., {"sword", "axe"}) or entries
+---   - source: String tag (e.g., "starter") for filtering/labeling purposes
+---@return table Generated item payload
+function ItemGenerator.roll(opts)
+    opts = opts or {}
+
+    -- Resolve rarity: if string, look up in ItemData.rarities
+    local rarity = opts.rarity
+    if type(rarity) == "string" and ItemData.rarities[rarity] then
+        rarity = ItemData.rarities[rarity]
+    end
+
+    -- Resolve itemType: handle allowedTypes (array of strings or entries) or single itemType
+    local itemType = opts.itemType
+    if opts.allowedTypes and #opts.allowedTypes > 0 then
+        -- Randomly select from allowedTypes
+        local selected = chooseRandom(opts.allowedTypes)
+        -- If it's a string, look it up; otherwise use the entry directly
+        if type(selected) == "string" and ItemData.types[selected] then
+            itemType = ItemData.types[selected]
+        else
+            itemType = selected
+        end
+    elseif type(itemType) == "string" and ItemData.types[itemType] then
+        -- Single itemType provided as string, look it up
+        itemType = ItemData.types[itemType]
+    end
+
+    -- Build generate options
+    local generateOpts = {
+        rarity = rarity,
+        itemType = itemType,
+        source = opts.source,
+    }
+
+    return ItemGenerator.generate(generateOpts)
 end
 
 return ItemGenerator

@@ -63,14 +63,27 @@
   - ✅ Uses the same ECS query pattern (`queryEntities({ "movement", "playerControlled" })`).
   - ✅ Mutates existing `movement.vx` and `movement.vy` values (same pattern as keyboard input) to maintain ECS component references.
 
-## New Game: Guaranteed Starter Item
-- **Starting inventory hookup (`Diablo.love/scenes/world.lua`)**
-  - After creating the player entity via `scene:addEntity(Player.new(...))`, call into the item generator with forced options (`{ rarity = "common", allowedTypes = { "sword", "axe" } }`).
-  - Use ECS-safe helpers when wiring the item into components: mutate the existing `player.inventory` and `player.equipment` tables in place rather than swapping tables so ECS component sets stay valid. If the player does not yet have an `equipment` component, attach it with `scene:addComponent(player.id, "equipment", EquipmentComponent.new())` before populating slots.
-  - Trigger a stat recompute by flagging the player for the existing `apply_stats` system (e.g., set `player.stats.needsRefresh = true` if present) so the ECS update loop handles derived data.
+## New Game: Guaranteed Starter Item ✅ COMPLETED
+- **Starter gear system (`Diablo.love/systems/starter_gear.lua`)** ✅
+  - ✅ Created dedicated update system that runs once per world scene initialization.
+  - ✅ Uses flag (`world.starterGearGenerated`) to prevent re-running on subsequent update cycles.
+  - ✅ Generates full starter set: weapon (sword or axe) + 3 armor pieces (helmet, chest, boots).
+  - ✅ All items generated with `ItemGenerator.roll()` using `rarity = "common"` and `source = "starter"` tag.
+  - ✅ Uses ECS-safe helpers: mutate existing `player.inventory.items` table in place and `EquipmentHelper.ensure()` to guarantee components exist.
+  - ✅ Auto-equips all starter gear via `EquipmentHelper.equip()` which mutates the existing equipment table.
+  - ✅ Stats recompute automatically via `applyStatsSystem` which runs after starter gear generation.
 
-- **Generator extension (`Diablo.love/items/generator.lua`)**
-  - Provide an API `ItemGenerator.roll(opts)` that respects optional parameters for rarity and type overrides while keeping the weighted defaults for normal drops. Document that passing `source = "starter"` tags the payload for later filtering.
+- **System registration (`Diablo.love/scenes/world.lua`)** ✅
+  - ✅ Registered `starterGearSystem.update` at the start of the update list (runs first, before `applyStatsSystem`).
+  - ✅ World scene constructor simplified—removed inline starter gear generation code (now handled by dedicated system).
+  - ✅ Follows ECS pattern: world scene handles entity setup, system handles gear generation logic.
+
+- **Generator extension (`Diablo.love/items/generator.lua`)** ✅
+  - ✅ Added `ItemGenerator.roll(opts)` API that accepts optional parameters for rarity and type overrides.
+  - ✅ Supports string IDs (e.g., `rarity = "common"`) or full ItemData entries for flexibility.
+  - ✅ Supports `allowedTypes` array (e.g., `{"sword", "axe"}`) to randomly select from multiple types.
+  - ✅ Supports `source` tag (e.g., `source = "starter"`) which is added to item payload for filtering.
+  - ✅ Falls back to weighted defaults when options not provided (maintains existing drop behavior).
 
 ## Combat System Foundations
 ### Combat 1: Click-to-Attack With Cooldown
@@ -128,20 +141,21 @@
 
 - Register new systems in `Diablo.love/scenes/world.lua` in ECS-friendly order:
   - ✅ **Update list (completed):**
-    1. ✅ `applyStatsSystem.update`
-    2. ✅ `playerInputSystem.update`
-    3. ✅ `mouseLookSystem.update` (registered after playerInputSystem, before movementSystem)
-    4. ✅ `mouseMovementSystem.update` (registered after mouseLookSystem, before movementSystem)
-    5. `playerAttackSystem.update` (pending)
-    6. `lootPickupSystem.update` (pending)
-    7. ✅ `spawnSystem.update`
-    8. ✅ `cullingSystem.update`
-    9. ✅ `detectionSystem.update`
-    10. ✅ `wanderSystem.update`
-    11. ✅ `chaseSystem.update`
-    12. `combatSystem.update` (pending)
-    13. ✅ `movementSystem.update`
-    14. ✅ `cameraSystem.update`
+    1. ✅ `starterGearSystem.update` (registered first, generates starter gear on new game)
+    2. ✅ `applyStatsSystem.update`
+    3. ✅ `playerInputSystem.update`
+    4. ✅ `mouseLookSystem.update` (registered after playerInputSystem, before movementSystem)
+    5. ✅ `mouseMovementSystem.update` (registered after mouseLookSystem, before movementSystem)
+    6. `playerAttackSystem.update` (pending)
+    7. `lootPickupSystem.update` (pending)
+    8. ✅ `spawnSystem.update`
+    9. ✅ `cullingSystem.update`
+    10. ✅ `detectionSystem.update`
+    11. ✅ `wanderSystem.update`
+    12. ✅ `chaseSystem.update`
+    13. `combatSystem.update` (pending)
+    14. ✅ `movementSystem.update`
+    15. ✅ `cameraSystem.update`
 
   - ✅ **Draw list (completed):**
     - ✅ `renderSystem.draw`

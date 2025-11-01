@@ -14,6 +14,7 @@ local cullingSystem = require("systems.culling")
 local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
 local applyStatsSystem = require("systems.apply_stats")
+local starterGearSystem = require("systems.starter_gear")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -34,6 +35,7 @@ function WorldScene.new(opts)
         },
         systems = {
             update = {
+                starterGearSystem.update,
                 applyStatsSystem.update,
                 playerInputSystem.update,
                 mouseLookSystem.update,

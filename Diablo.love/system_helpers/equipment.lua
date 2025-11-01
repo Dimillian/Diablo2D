@@ -45,6 +45,17 @@ function EquipmentHelper.equip(player, item)
     local previous = equipment[slotId]
     equipment[slotId] = item
 
+    -- Remove item from inventory if it exists there (prevents duplication)
+    if inventoryItems then
+        for i = #inventoryItems, 1, -1 do
+            if inventoryItems[i] == item then
+                table.remove(inventoryItems, i)
+                break
+            end
+        end
+    end
+
+    -- Add previously equipped item back to inventory
     if previous and inventoryItems then
         table.insert(inventoryItems, previous)
     end
