@@ -19,8 +19,10 @@ Add offensive capabilities to foes so they can attack the player when in melee r
 
 **New System: `systems/foe_attack.lua`**
 - Query entities with `foe`, `chase`, `combat`, `position`, `health` components
+- **IMPORTANT**: Decrement cooldown each frame (like `player_attack.lua` does): `combat.cooldown = math.max((combat.cooldown or 0) - dt, 0)`
 - For each foe that has a `chase` component (already chasing player):
   - Get player entity via `world:getPlayer()`
+  - Skip if player is dead or missing health component
   - Calculate distance between foe center and player center using `getEntityCenter()` helper (similar to `combat.lua`)
   - Check if foe is within attack range: `distance <= (foe.combat.range or 80)` (80 = shorter than player's 120 range)
   - Check if cooldown is ready: `foe.combat.cooldown <= 0`
@@ -30,10 +32,11 @@ Add offensive capabilities to foes so they can attack the player when in melee r
     - Set swing timer: `foe.combat.swingTimer = foe.combat.swingDuration or 0.3`
     - Optionally add visual feedback component (see below)
 
-**Modify: `systems/chase.lua`**
-- Update `separationBuffer` logic to account for attack range
-- When foe is within attack range (but not yet attacking), reduce movement to prevent overshooting
-- Stop movement when foe is close enough to attack but cooldown is active
+**Modify: `systems/chase.lua`** (Optional Enhancement)
+- Current chase system uses `separationBuffer` to stop foes short of target
+- Enhancement: When foe is within attack range, reduce movement speed or stop completely
+- Alternative: Let `foe_attack` system handle stopping foes when attacking (simpler)
+- If enhancing chase: Check `distance <= (entity.combat and entity.combat.range or 80)` and reduce `maxDistance` accordingly
 
 **Modify: `components/combat.lua`**
 - Ensure foes created via `Foe.new()` have appropriate `combat` defaults:
@@ -82,9 +85,33 @@ Add offensive capabilities to foes so they can attack the player when in melee r
 - Default foe attack range: 80 pixels (vs player's 120 pixels)
 
 **Modify: `data/foe_types.lua`**
-- Add per-type combat stats if different foe types exist:
-  - Fast attackers: `attackSpeed = 1.0`, `range = 70`
-  - Slow tanky: `attackSpeed = 0.6`, `range = 90`, `baseDamageMin = 5`, `baseDamageMax = 8`
+- Current structure: `foeTypes.types` table with `slow`, `medium`, `aggressive` types
+- Each type already has: `damageMin`, `damageMax`, `attackSpeed` fields
+- Add `range` field to each type configuration:
+  ```lua
+  slow = {
+      -- ... existing fields ...
+      range = 90,  -- Slower but longer reach
+  },
+  medium = {
+      -- ... existing fields ...
+      range = 80,  -- Standard range
+  },
+  aggressive = {
+      -- ... existing fields ...
+      range = 70,  -- Fast but shorter reach
+  },
+  ```
+**Modify: `systems/spawn.lua`**
+- Update `spawnGroup()` function to include `range` from foe type config:
+  ```lua
+  combat = {
+      range = config.range or 80,  -- Add this line
+      attackSpeed = config.attackSpeed,
+      baseDamageMin = config.damageMin,
+      baseDamageMax = config.damageMax,
+  },
+  ```
 
 #### System Registration
 
@@ -120,6 +147,8 @@ local function createPotionsComponent(opts)
     return {
         healthPotionCount = opts.healthPotionCount or 3,
         maxHealthPotionCount = opts.maxHealthPotionCount or 10, -- max carry limit
+        lastUseTime = opts.lastUseTime or nil,  -- Track last use time for cooldown
+        cooldownRemaining = opts.cooldownRemaining or 0,  -- Current cooldown timer
     }
 end
 ```
@@ -128,12 +157,12 @@ end
 - Inventory can hold potions as items, but `potions` component tracks consumable potions separately (quicker access, doesn't clutter inventory)
 
 **Modify: `data/items.lua`**
-- Add potion item type:
+- Add potion item type to `Items.types` table:
 ```lua
 health_potion = {
     id = "health_potion",
     label = "Health Potion",
-    slot = "consumable",
+    slot = "consumable",  -- Special slot that doesn't use equipment slots
     consumable = true,
     restoreHealth = 25,
     base = {
@@ -142,32 +171,61 @@ health_potion = {
     },
 },
 ```
+- Note: Potions won't use item generator prefixes/suffixes (they're consumables, not equipment)
 
 #### Systems
 
 **New System: `systems/potion_consumption.lua`**
-- Query player entity (via `world:getPlayer()`)
-- Check for keypress: `love.keyboard.isDown("1")` or `love.keyboard.isDown("q")` (configurable)
-- Verify player has potions: `player.potions.healthPotionCount > 0`
-- Verify player needs healing: `player.health.current < player.health.max`
-- Apply cooldown mechanism (prevent spam): `player.potions.lastUseTime` + `potionCooldown = 0.5` seconds
-- When conditions met:
-  - Restore health: `player.health.current = math.min(player.health.max, player.health.current + 25)`
-  - Decrement count: `player.potions.healthPotionCount = player.potions.healthPotionCount - 1`
-  - Set cooldown: `player.potions.lastUseTime = world.time`
-  - Optional: Create visual feedback (particle effect, sound, etc.)
+- **IMPORTANT**: Use `love.keypressed()` callback, NOT `love.keyboard.isDown()` (potions should trigger on single press, not continuous)
+- Decrement cooldown each frame in `update()`:
+  ```lua
+  function potionConsumptionSystem.update(world, dt)
+      local player = world:getPlayer()
+      if player and player.potions and player.potions.lastUseTime then
+          player.potions.cooldownRemaining = math.max(0, (player.potions.cooldownRemaining or 0) - dt)
+      end
+  end
+  ```
+- Handle keypress in `WorldScene:keypressed()` method (add to `scenes/world.lua`):
+  ```lua
+  function WorldScene:keypressed(key)
+      if key == "t" then
+          self.debugMode = not self.debugMode
+          return
+      end
+
+      -- Potion consumption (key "1" or "q")
+      if key == "1" or key == "q" then
+          potionConsumptionSystem.handleKeypress(self, key)
+      end
+  end
+  ```
+- In `handleKeypress()` function:
+  - Get player entity: `world:getPlayer()`
+  - Verify player has potions: `player.potions.healthPotionCount > 0`
+  - Verify player needs healing: `player.health.current < player.health.max`
+  - Check cooldown: `player.potions.cooldownRemaining <= 0`
+  - When conditions met:
+    - Restore health: `player.health.current = math.min(player.health.max, player.health.current + 25)`
+    - Decrement count: `player.potions.healthPotionCount = player.potions.healthPotionCount - 1`
+    - Set cooldown: `player.potions.cooldownRemaining = 0.5` (0.5 seconds)
+    - Optional: Create visual feedback (particle effect, sound, etc.)
 
 **Modify: `systems/loot_pickup.lua`**
-- When player picks up loot item:
+- In `transferItemToPlayer()` function, before adding to inventory/equipment:
   - Check if item type is `health_potion`
-  - If yes, add to potion count instead of/in addition to inventory:
+  - If yes, add to potion count and skip inventory transfer:
     ```lua
     if item.type == "health_potion" then
-        player.potions.healthPotionCount = math.min(
-            player.potions.maxHealthPotionCount,
-            player.potions.healthPotionCount + 1
-        )
-        -- Optionally also add to inventory or skip inventory entirely
+        if player.potions then
+            player.potions.healthPotionCount = math.min(
+                player.potions.maxHealthPotionCount,
+                player.potions.healthPotionCount + 1
+            )
+        end
+        lootable.item = nil
+        world:removeEntity(lootEntity.id)
+        return  -- Skip inventory/equipment transfer
     end
     ```
 
@@ -238,7 +296,8 @@ health_potion = {
 #### System Registration
 
 **Modify: `scenes/world.lua`**
-- Add `potionConsumptionSystem.update` to update systems (after `playerInputSystem.update`)
+- Add `potionConsumptionSystem.update` to update systems (after `playerInputSystem.update`) - handles cooldown decrement
+- Add `potionConsumptionSystem.handleKeypress` call in `WorldScene:keypressed()` method (see system details above)
 - Add `uiPotionsSystem.draw` to draw systems (after `uiPlayerStatus.draw`)
 
 #### Item Generator
@@ -329,7 +388,6 @@ return Leveling
 ```lua
 local function checkLevelUp(world, player)
     local exp = player.experience
-    local xpRequired = Leveling.getXPRequiredForNextLevel(exp.level)
     local totalXPForCurrentLevel = Leveling.getXPForLevel(exp.level)
     local totalXPForNextLevel = Leveling.getXPForLevel(exp.level + 1)
 
@@ -345,15 +403,21 @@ local function checkLevelUp(world, player)
             player.health.current = player.health.max -- Full heal on level up
         end
 
-        -- Update XP tracking
-        exp.xpForNextLevel = Leveling.getXPRequiredForNextLevel(exp.level)
+        -- Recalculate for potential multiple level ups
+        local newTotalXPForNextLevel = Leveling.getXPForLevel(exp.level + 1)
+        if exp.currentXP >= newTotalXPForNextLevel then
+            -- Recursively check for additional level ups
+            checkLevelUp(world, player)
+            return
+        end
 
         -- Optional: Create level up event/notification
         -- Could add to pendingCombatEvents or separate event queue
-    else
-        -- Update XP required for next level display
-        exp.xpForNextLevel = totalXPForNextLevel - exp.currentXP
     end
+
+    -- Update XP required for next level display (always update for UI)
+    local xpRequired = Leveling.getXPRequiredForNextLevel(exp.level)
+    exp.xpForNextLevel = xpRequired
 end
 ```
 
@@ -431,10 +495,21 @@ end
 
 **Optional Enhancement:**
 - On level up, grant stat bonuses:
-  - +5 max health
-  - +1 damage
-  - +1 defense
-- Store base stats in `components/base_stats.lua` and apply level bonuses via `systems/apply_stats.lua`
+  - +5 max health (already implemented in level up logic above)
+  - +1 damage min/max (add to `baseStats` component)
+  - +1 defense (add to `baseStats` component)
+- **Integration with `systems/apply_stats.lua`**:
+  - Current system reads `player.baseStats` and combines with equipment stats
+  - Level bonuses should be stored in `baseStats` component, so they automatically combine with equipment
+  - Modify level up logic to update `player.baseStats`:
+    ```lua
+    if player.baseStats then
+        player.baseStats.damageMin = (player.baseStats.damageMin or 5) + 1
+        player.baseStats.damageMax = (player.baseStats.damageMax or 8) + 1
+        player.baseStats.defense = (player.baseStats.defense or 2) + 1
+    end
+    ```
+  - `apply_stats` system will automatically recalculate total stats on next frame
 
 ---
 
