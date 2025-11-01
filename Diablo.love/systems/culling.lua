@@ -12,6 +12,9 @@ local CULLING_CONFIG = {
     checkInterval = 0.5,
 }
 
+local INACTIVE_DISTANCE_SQUARED = CULLING_CONFIG.inactiveDistance * CULLING_CONFIG.inactiveDistance
+local DESPAWN_DISTANCE_SQUARED = CULLING_CONFIG.despawnDistance * CULLING_CONFIG.despawnDistance
+
 function cullingSystem.update(world, dt)
     local player = world:getPlayer()
     if not player or not player.position then
@@ -43,7 +46,7 @@ function cullingSystem.update(world, dt)
             goto continue
         end
 
-        local dist = vector.distance(
+        local distSquared = vector.distanceSquared(
             playerX,
             playerY,
             entity.position.x,
@@ -51,13 +54,13 @@ function cullingSystem.update(world, dt)
         )
 
         -- Despawn entities that are very far away
-        if dist > CULLING_CONFIG.despawnDistance then
+        if distSquared > DESPAWN_DISTANCE_SQUARED then
             table.insert(entitiesToRemove, entity.id)
             goto continue
         end
 
         -- Mark entities as active/inactive based on distance
-        if dist > CULLING_CONFIG.inactiveDistance then
+        if distSquared > INACTIVE_DISTANCE_SQUARED then
             entity.inactive = true
         else
             entity.inactive = false

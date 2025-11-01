@@ -1,3 +1,5 @@
+local coordinates = require("system_helpers.coordinates")
+
 local cameraSystem = {}
 
 function cameraSystem.update(world, _dt)
@@ -16,8 +18,10 @@ function cameraSystem.update(world, _dt)
     local halfWidth = screenWidth / 2
     local halfHeight = screenHeight / 2
 
-    local playerCenterX = player.position.x + (player.size.w / 2)
-    local playerCenterY = player.position.y + (player.size.h / 2)
+    local playerCenterX, playerCenterY = coordinates.getEntityCenter(player)
+    if not playerCenterX or not playerCenterY then
+        return
+    end
 
     camera.x = playerCenterX - halfWidth
     camera.y = playerCenterY - halfHeight

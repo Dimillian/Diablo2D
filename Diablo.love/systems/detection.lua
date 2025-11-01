@@ -20,10 +20,12 @@ function detectionSystem.update(world, _dt)
         local foePos = foe.position
         local playerPos = player.position
 
-        local dist = vector.distance(foePos.x, foePos.y, playerPos.x, playerPos.y)
+        local distSquared = vector.distanceSquared(foePos.x, foePos.y, playerPos.x, playerPos.y)
+        local range = detection.range or 0
+        local rangeSquared = range * range
 
         -- Check if player is within detection range
-        if dist <= detection.range then
+        if distSquared <= rangeSquared then
             -- Player detected: add chase component if not already chasing
             if not foe.chase then
                 local createChase = require("components.chase")
