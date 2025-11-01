@@ -2,6 +2,21 @@ local vector = require("modules.vector")
 
 local playerInputSystem = {}
 
+local function isAnyKeyDown(keys)
+    for i = 1, #keys do
+        if love.keyboard.isDown(keys[i]) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local FORWARD_KEYS = { "up", "w", "z" }
+local BACKWARD_KEYS = { "down", "s" }
+local LEFT_KEYS = { "left", "a", "q" }
+local RIGHT_KEYS = { "right", "d" }
+
 function playerInputSystem.update(world, _dt)
     local player = world:getPlayer()
     if not player or not player.movement or not player.position then
@@ -21,10 +36,10 @@ function playerInputSystem.update(world, _dt)
     local rightX = -heading.y
     local rightY = heading.x
 
-    local isForward = love.keyboard.isDown("up", "w")
-    local isBackward = love.keyboard.isDown("down", "s")
-    local isLeft = love.keyboard.isDown("left", "a")
-    local isRight = love.keyboard.isDown("right", "d")
+    local isForward = isAnyKeyDown(FORWARD_KEYS)
+    local isBackward = isAnyKeyDown(BACKWARD_KEYS)
+    local isLeft = isAnyKeyDown(LEFT_KEYS)
+    local isRight = isAnyKeyDown(RIGHT_KEYS)
 
     movement.intentForward = isForward
 
