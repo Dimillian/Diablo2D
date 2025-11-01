@@ -1,10 +1,6 @@
-local detectionSystem = {}
+local vector = require("modules.vector")
 
-local function distance(x1, y1, x2, y2)
-    local dx = x2 - x1
-    local dy = y2 - y1
-    return math.sqrt(dx * dx + dy * dy)
-end
+local detectionSystem = {}
 
 function detectionSystem.update(world, _dt)
     local player = world:getPlayer()
@@ -24,7 +20,7 @@ function detectionSystem.update(world, _dt)
         local foePos = foe.position
         local playerPos = player.position
 
-        local dist = distance(foePos.x, foePos.y, playerPos.x, playerPos.y)
+        local dist = vector.distance(foePos.x, foePos.y, playerPos.x, playerPos.y)
 
         -- Check if player is within detection range
         if dist <= detection.range then

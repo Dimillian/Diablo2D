@@ -1,3 +1,5 @@
+local vector = require("modules.vector")
+
 local cullingSystem = {}
 
 -- Configuration
@@ -9,12 +11,6 @@ local CULLING_CONFIG = {
     -- Check every N seconds instead of every frame for performance
     checkInterval = 0.5,
 }
-
-local function calcDistance(x1, y1, x2, y2)
-    local dx = x2 - x1
-    local dy = y2 - y1
-    return math.sqrt(dx * dx + dy * dy)
-end
 
 function cullingSystem.update(world, dt)
     local player = world:getPlayer()
@@ -47,7 +43,7 @@ function cullingSystem.update(world, dt)
             goto continue
         end
 
-        local dist = calcDistance(
+        local dist = vector.distance(
             playerX,
             playerY,
             entity.position.x,

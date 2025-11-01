@@ -1,3 +1,5 @@
+local vector = require("modules.vector")
+
 local spawnSystem = {}
 
 local Foe = require("entities.foe")
@@ -14,12 +16,6 @@ local SPAWN_CONFIG = {
     maxFoesPerGroup = 5,
     respawnDistance = 600, -- Distance player needs to move before spawning new groups
 }
-
-local function calcDistance(x1, y1, x2, y2)
-    local dx = x2 - x1
-    local dy = y2 - y1
-    return math.sqrt(dx * dx + dy * dy)
-end
 
 local function getRandomPositionAroundPlayer(playerX, playerY, minDist, maxDist)
     local angle = math.random() * math.pi * 2
@@ -86,7 +82,7 @@ function spawnSystem.spawnInitialGroups(world)
         -- Ensure spawn points aren't too close to each other
         local tooClose = false
         for _, point in ipairs(spawnPoints) do
-            if calcDistance(x, y, point.x, point.y) < SPAWN_CONFIG.minDistanceFromPlayer * 0.5 then
+            if vector.distance(x, y, point.x, point.y) < SPAWN_CONFIG.minDistanceFromPlayer * 0.5 then
                 tooClose = true
                 break
             end
@@ -121,7 +117,7 @@ function spawnSystem.update(world, _dt)
     end
 
     -- Check if player has moved far enough to spawn new groups
-    local distMoved = calcDistance(
+    local distMoved = vector.distance(
         playerX,
         playerY,
         world.lastSpawnPlayerX,
