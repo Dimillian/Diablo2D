@@ -68,6 +68,16 @@ function renderSystem.draw(world)
             goto continue
         end
 
+        -- Skip dead entities
+        if entity.dead then
+            goto continue
+        end
+
+        -- Skip loot entities (rendered by renderLootSystem)
+        if entity.lootable then
+            goto continue
+        end
+
         local renderable = entity.renderable
         if renderable.kind == "rect" then
             love.graphics.setColor(renderable.color)

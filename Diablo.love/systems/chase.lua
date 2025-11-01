@@ -11,6 +11,11 @@ function chaseSystem.update(world, _dt)
             goto continue
         end
 
+        -- Skip dead entities
+        if entity.dead then
+            goto continue
+        end
+
         local chase = entity.chase
         local target = world:getEntity(chase.targetId)
 

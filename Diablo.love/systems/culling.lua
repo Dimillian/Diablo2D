@@ -43,6 +43,11 @@ function cullingSystem.update(world, dt)
             goto continue
         end
 
+        -- Skip culling for loot entities (they should always be visible)
+        if entity.lootable then
+            goto continue
+        end
+
         local dist = vector.distance(
             playerX,
             playerY,

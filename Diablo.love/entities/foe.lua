@@ -14,6 +14,7 @@ function Foe.new(opts)
     local createWander = require("components.wander")
     local createHealth = require("components.health")
     local createDetection = require("components.detection")
+    local createFoe = require("components.foe")
 
     local entity = {
         id = opts.id or ("foe_" .. math.random(10000, 99999)),
@@ -38,12 +39,9 @@ function Foe.new(opts)
         detection = createDetection({
             range = opts.detectionRange or 150,
         }),
+        foe = createFoe(),
+        health = createHealth(opts.health),
     }
-
-    -- Optional health component
-    if opts.health then
-        entity.health = createHealth(opts.health)
-    end
 
     return setmetatable(entity, Foe)
 end

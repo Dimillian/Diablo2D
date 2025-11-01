@@ -16,6 +16,11 @@ function detectionSystem.update(world, _dt)
             goto continue
         end
 
+        -- Skip dead entities
+        if foe.dead then
+            goto continue
+        end
+
         local detection = foe.detection
         local foePos = foe.position
         local playerPos = player.position

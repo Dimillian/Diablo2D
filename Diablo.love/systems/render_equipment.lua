@@ -75,6 +75,13 @@ function renderEquipmentSystem.draw(world)
                         local offset = offsets[slotId] or { x = 0, y = 0 }
                         local spriteX = centerX - spriteSize / 2 + offset.x
                         local spriteY = centerY - spriteSize / 2 + offset.y
+
+                        -- Apply weapon swing animation if combat component exists
+                        if slotId == "weapon" and entity.combat and entity.combat.swingTimer > 0 then
+                            local swingOffset = math.sin(entity.combat.swingTimer * 10) * 8
+                            spriteX = spriteX + swingOffset
+                        end
+
                         love.graphics.setColor(1, 1, 1, 1)
                         love.graphics.draw(
                             sprite,

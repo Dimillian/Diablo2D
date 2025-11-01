@@ -15,6 +15,14 @@ local uiPlayerStatus = require("systems.ui_player_status")
 local cameraSystem = require("systems.camera")
 local applyStatsSystem = require("systems.apply_stats")
 local starterGearSystem = require("systems.starter_gear")
+local playerAttackSystem = require("systems.player_attack")
+local lootPickupSystem = require("systems.loot_pickup")
+local combatSystem = require("systems.combat")
+local renderHealthSystem = require("systems.render_health")
+local renderDamageNumbersSystem = require("systems.render_damage_numbers")
+local renderLootSystem = require("systems.render_loot") -- luacheck: ignore
+local lootTooltipSystem = require("systems.loot_tooltip") -- luacheck: ignore
+local uiTargetSystem = require("systems.ui_target")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -30,8 +38,11 @@ function WorldScene.new(opts)
         kind = "world",
         camera = { x = 0, y = 0 },
         debugMode = false, -- Debug toggle flag
+        time = 0,
+        pendingCombatEvents = {},
         systemHelpers = {
             coordinates = require("system_helpers.coordinates"),
+            targeting = require("system_helpers.targeting"),
         },
         systems = {
             update = {
@@ -40,11 +51,14 @@ function WorldScene.new(opts)
                 playerInputSystem.update,
                 mouseLookSystem.update,
                 mouseMovementSystem.update,
+                playerAttackSystem.update,
+                lootPickupSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
                 detectionSystem.update,
                 wanderSystem.update,
                 chaseSystem.update,
+                combatSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
             },
@@ -52,6 +66,11 @@ function WorldScene.new(opts)
                 renderSystem.draw,
                 renderEquipmentSystem.draw,
                 renderMouseLookSystem.draw,
+                renderHealthSystem.draw,
+                renderDamageNumbersSystem.draw,
+                renderLootSystem.draw,
+                lootTooltipSystem.draw,
+                uiTargetSystem.draw,
                 uiPlayerStatus.draw,
             },
         },
@@ -93,6 +112,7 @@ function WorldScene.new(opts)
 end
 
 function WorldScene:update(dt)
+    self.time = self.time + dt
     for _, system in ipairs(self.systems.update) do
         system(self, dt)
     end
@@ -103,8 +123,15 @@ function WorldScene:draw()
         return
     end
 
+    -- Get dt from love.timer for draw systems that need it
+    local dt = love.timer.getDelta()
+
     for _, system in ipairs(self.systems.draw) do
-        system(self)
+        if system == renderHealthSystem.draw or system == renderDamageNumbersSystem.draw then
+            system(self, dt)
+        else
+            system(self)
+        end
     end
 end
 

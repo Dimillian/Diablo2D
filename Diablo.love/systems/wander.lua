@@ -18,6 +18,11 @@ function wanderSystem.update(world, dt)
             goto continue
         end
 
+        -- Skip dead entities
+        if entity.dead then
+            goto continue
+        end
+
         -- Skip player-controlled entities (player input should control them)
         if entity.playerControlled then
             goto continue

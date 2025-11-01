@@ -16,6 +16,7 @@ function Player.new(opts)
     local createRenderable = require("components.renderable")
     local createPlayerControlled = require("components.player_controlled")
     local createHealth = require("components.health")
+    local createCombat = require("components.combat")
 
     local entity = {
         id = opts.id or "player",
@@ -34,6 +35,7 @@ function Player.new(opts)
         renderable = createRenderable(opts.renderable),
         playerControlled = createPlayerControlled(opts.playerControlled),
         health = createHealth(opts.health),
+        combat = createCombat(opts.combat),
     }
 
     return setmetatable(entity, Player)

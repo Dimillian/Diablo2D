@@ -11,6 +11,11 @@ function movementSystem.update(world, dt)
             goto continue
         end
 
+        -- Skip dead entities
+        if entity.dead then
+            goto continue
+        end
+
         local movement = entity.movement
         local dx = movement.vx or 0
         local dy = movement.vy or 0
