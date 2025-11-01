@@ -7,13 +7,13 @@ function playerInputSystem.update(world, _dt)
         local movement = entity.movement
         local dx, dy = 0, 0
 
-        if love.keyboard.isDown("left", "a") then
+        if love.keyboard.isDown("left", "a", "q") then
             dx = dx - 1
         end
         if love.keyboard.isDown("right", "d") then
             dx = dx + 1
         end
-        if love.keyboard.isDown("up", "w") then
+        if love.keyboard.isDown("up", "w", "z") then
             dy = dy - 1
         end
         if love.keyboard.isDown("down", "s") then
