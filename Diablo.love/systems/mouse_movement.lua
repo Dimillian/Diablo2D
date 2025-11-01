@@ -1,5 +1,3 @@
-local vector = require("modules.vector")
-
 local mouseMovementSystem = {}
 
 function mouseMovementSystem.update(scene, _dt)
@@ -27,16 +25,11 @@ function mouseMovementSystem.update(scene, _dt)
 
         local worldX, worldY = coordinates.toWorldFromScreen(camera, screenX, screenY)
 
-        -- Compute player center position
-        local playerCenterX = entity.position.x + (entity.size and entity.size.w / 2 or 0)
-        local playerCenterY = entity.position.y + (entity.size and entity.size.h / 2 or 0)
-
         -- Compute direction vector from player to mouse cursor
-        local dx = worldX - playerCenterX
-        local dy = worldY - playerCenterY
-
-        -- Calculate distance to target
-        local distance = vector.distance(playerCenterX, playerCenterY, worldX, worldY)
+        local ndx, ndy, distance = coordinates.directionFromEntityToWorld(entity, worldX, worldY)
+        if not ndx or not ndy or not distance then
+            goto continue
+        end
 
         -- Threshold for stopping movement (prevents jitter when reaching destination)
         local threshold = 8
@@ -46,8 +39,6 @@ function mouseMovementSystem.update(scene, _dt)
             entity.movement.vx = 0
             entity.movement.vy = 0
         else
-            -- Normalize direction vector and set velocities
-            local ndx, ndy = vector.normalize(dx, dy)
             entity.movement.vx = ndx
             entity.movement.vy = ndy
         end

@@ -1,5 +1,3 @@
-local vector = require("modules.vector")
-
 local mouseLookSystem = {}
 
 function mouseLookSystem.update(scene, _dt)
@@ -23,14 +21,10 @@ function mouseLookSystem.update(scene, _dt)
         local worldX, worldY = coordinates.toWorldFromScreen(camera, screenX, screenY)
 
         -- Compute direction vector from player position to mouse cursor
-        local playerCenterX = entity.position.x + (entity.size and entity.size.w / 2 or 0)
-        local playerCenterY = entity.position.y + (entity.size and entity.size.h / 2 or 0)
-
-        local dx = worldX - playerCenterX
-        local dy = worldY - playerCenterY
-
-        -- Normalize the direction vector
-        local ndx, ndy = vector.normalize(dx, dy)
+        local ndx, ndy = coordinates.directionFromEntityToWorld(entity, worldX, worldY)
+        if not ndx or not ndy then
+            goto continue
+        end
 
         -- Ensure lookDirection exists (should always exist due to component default, but safety check)
         if not entity.movement.lookDirection then

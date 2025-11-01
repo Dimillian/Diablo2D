@@ -32,14 +32,20 @@ function renderMouseLookSystem.draw(scene)
     end
 
     local camera = scene.camera or { x = 0, y = 0 }
+    local coordinates = scene.systemHelpers and scene.systemHelpers.coordinates
+    if not coordinates then
+        return
+    end
 
     love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
-    local pos = player.position
     local size = player.size or { w = 32, h = 32 }
-    local centerX = pos.x + (size.w / 2)
-    local centerY = pos.y + (size.h / 2)
+    local centerX, centerY = coordinates.getEntityCenter(player)
+    if not centerX or not centerY then
+        love.graphics.pop()
+        return
+    end
 
     -- Position arrow on a fixed-radius circle around the player center
     -- The arrow moves along this invisible circle based on look direction
