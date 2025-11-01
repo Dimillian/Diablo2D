@@ -10,7 +10,7 @@
 - Everything is an entity; behavior emerges from systems (`player_input`, `mouse_look`, `mouse_movement`, `movement`, `wander`, `detection`, `chase`, `render`, `starter_gear`) consuming components (`movement`, `renderable`, `player_controlled`, `wander`, `detection`, `chase`).
 - Entity factories (`entities/player.lua`, `entities/foe.lua`) follow a consistent pattern: `Entity.new(opts)` creates entities with component defaults, allowing easy variation (speed, detection range, etc.).
 - Scene orchestration handled by a shared `SceneManager` stack—allows overlay scenes (inventory) without coupling to the world.
-- Core world systems cover input (keyboard + mouse), AI detection/chase, AI wander, movement, camera centering, rendering, and HUD (`ui_player_status`).
+- Core world systems cover input (keyboard + mouse), AI detection/chase, AI wander, movement, camera centering, rendering, and HUD (`ui_player_status`). Chase maintains a configurable separation buffer so foes stop short of overlapping their target while still staying within melee range.
 - Input systems: `player_input` handles keyboard movement (WASD/QZ for AZERTY keyboards); `mouse_look` tracks cursor position and updates player look direction; `mouse_movement` enables right-click-to-move that overrides keyboard movement when active.
 - Movement component includes `lookDirection` field (normalized vector) that tracks where the player is facing; used for combat targeting and visual feedback.
 - `render_mouse_look` system draws a visual arrow indicator around the player showing current look direction.
@@ -21,7 +21,15 @@
 - `WorldScene` guarantees `getPlayer`/`getEntity` helpers so downstream systems can rely on unified entity retrieval (no guard checks needed).
 - ECS module provides: `addEntity`, `removeEntity`, `getEntity`, `queryEntities`, `hasComponent`, `addComponent`, `removeComponent`—any scene can opt into ECS capabilities. Use `addComponent`/`removeComponent` for runtime component mutations to ensure component sets stay synchronized.
 - Debug mode: `WorldScene.debugMode` flag toggled via 't' key; `render` system conditionally draws detection circles when enabled.
+- Target HUD: `ui_target` frame keeps padded spacing between enemy name text and health bar to remain legible across font sizes.
 - Keep systems decoupled and data-driven to enable procedural content later.
+
+### Combat System Notes
+- Player attacks originate in `systems/player_attack.lua`: it ticks the targeting helper, respects attack speed modifiers, and raises a `combat.queuedAttack` payload when the mouse button is held and the foe is in range.
+- `systems/combat.lua` is the central executor: validates target state/range, computes damage using base combat stats plus `player.stats.total`, handles crit rolls, marks recently damaged entities, raises `damage`/`death` events, and cleans up dead foes.
+- Events live on `world.pendingCombatEvents` for the frame; downstream systems (`render_damage_numbers`, `loot_drops`, `loot_tooltip`, `loot_pickup`, `ui_target`) consume these without tight coupling.
+- Foes use the updated chase logic to stop outside the player by combining radius checks with a configurable separation buffer; movement honors a per-frame `maxDistance` clamp so positional corrections stay granular.
+- Loot pickup requires both cursor hover and proximity; equipment helper ensures items move cleanly between inventory/equipment without duplicates.
 
 ### Loot/Item System
 - Item metadata lives in `data/items.lua`: types, rarity weights, base stat ranges, and slot-gated prefix/suffix pools.
