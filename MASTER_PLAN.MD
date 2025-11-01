@@ -1,136 +1,472 @@
-# Upcoming Feature Master Plan
+# Master Plan - Upcoming Features
 
-## Movement: Keyboard-Based With Mouse Look Indicator ✅ COMPLETED
-- **Movement remains keyboard-only (`Diablo.love/systems/player_input.lua`)** ✅
-  - ✅ No changes made—existing WASD/ZQSD/arrow key movement remains exactly as-is.
+This document outlines concrete implementation details for upcoming features. Each section provides actionable guidance that fits within the existing ECS architecture.
 
-- **Mouse look tracking (`Diablo.love/systems/mouse_look.lua`)** ✅
-  - ✅ Created update system that runs after `player_input` and before `movement`.
-  - ✅ Queries entities with `movement` and `playerControlled` components.
-  - ✅ Uses `love.mouse.getPosition()` and converts to world space via coordinate helper.
-  - ✅ Computes direction vector from player center to mouse cursor in world space.
-  - ✅ Stores normalized look direction as `movement.lookDirection = { x, y }` (mutates existing table).
-  - ✅ Updates every frame to track current mouse position.
-  - ✅ Includes safety check to ensure `lookDirection` exists before mutation.
+---
 
-- **Visual arrow indicator (`Diablo.love/systems/render_mouse_look.lua`)** ✅
-  - ✅ Created draw system registered after `renderEquipmentSystem.draw` and before `uiPlayerStatus.draw`.
-  - ✅ Queries player entity using `scene:getPlayer()` and checks for `movement.lookDirection`.
-  - ✅ Draws arrow shape as triangle polygon using `love.graphics.polygon()`.
-  - ✅ Arrow positioned on fixed-radius circle around player center: `playerRadius + 20` pixels (prevents overlap with player sprite).
-  - ✅ Arrow moves along invisible circle based on `lookDirection` vector, rotating around player center.
-  - ✅ Arrow rotation computed using `math.atan2(lookDirection.y, lookDirection.x)`.
-  - ✅ Uses `love.graphics.push()`/`pop()` with `translate()` and `rotate()` for positioning/orientation.
-  - ✅ Drawn within camera transform context (appears in world space).
-  - ✅ Styled with light yellow color (RGB: 1, 1, 0.7) and 0.7 opacity.
-  - ✅ Sized at 1.2x player sprite size for visibility.
+## 1. Foe Attack System
 
-- **Component defaults (`Diablo.love/components/movement.lua`)** ✅
-  - ✅ Added default `lookDirection = { x = 0, y = -1 }` to movement component factory.
-  - ✅ Initializes to point upward (negative Y) by default.
-  - ✅ Foes use default value but aren't processed by mouse look system (no `playerControlled` component).
+### Overview
+Add offensive capabilities to foes so they can attack the player when in melee range. Foes should visually strike the player, show damage numbers, apply a brief knockback effect, and have a cooldown between attacks. Player attack range must be longer than foe attack range to maintain gameplay balance.
 
-- **Camera/world coordinate conversion (`Diablo.love/system_helpers/coordinates.lua`)** ✅
-  - ✅ Created helper module with `toWorldFromScreen(camera, screenX, screenY)` function.
-  - ✅ Implements coordinate transform: `worldX = screenX + camera.x`, `worldY = screenY + camera.y`.
-  - ✅ Initialized during scene setup (`WorldScene.new`) and stored at `scene.systemHelpers.coordinates`.
-  - ✅ Available for reuse by future combat/targeting systems.
+### Implementation Details
 
-## Movement: Mouse-Based Right-Click Movement ✅ COMPLETED
-- **Right-click movement system (`Diablo.love/systems/mouse_movement.lua`)** ✅
-  - ✅ Created a new update system that runs after `mouseLookSystem` and before `movement`. Queries entities with `movement` and `playerControlled` components.
-  - ✅ Checks `love.mouse.isDown(2)` (right mouse button) each frame. When held, overrides keyboard movement.
-  - ✅ Uses `love.mouse.getPosition()` to get current mouse cursor position in screen coordinates.
-  - ✅ Converts mouse position to world space using the existing coordinate helper (`scene.systemHelpers.coordinates.toWorldFromScreen`).
-  - ✅ Computes direction vector from player center position to mouse cursor position in world space.
-  - ✅ Calculates distance to target using `vector.distance()`. If within threshold (8 pixels), sets `movement.vx = 0` and `movement.vy = 0` to stop movement (prevents jitter when reaching destination).
-  - ✅ If beyond threshold, normalizes the direction vector using `vector.normalize()` and sets `movement.vx` and `movement.vy` using the normalized direction values.
-  - ✅ When right-click is not held, the system returns early without modifying `movement.vx`/`movement.vy`, allowing keyboard input to work normally.
-  - ✅ The existing `movementSystem` handles applying speed and moving the entity based on these velocity values.
+#### Components
 
-- **Integration with keyboard movement** ✅
-  - ✅ Right-click movement takes precedence over keyboard input. When right-click is held, keyboard input is overridden for that frame.
-  - ✅ System execution order: `playerInputSystem` (sets keyboard velocities) → `mouseLookSystem` (updates look direction) → `mouseMovementSystem` (overrides velocities if right-click held) → `movementSystem` (applies velocities).
-  - ✅ Allows seamless switching between keyboard and mouse movement without conflicts.
+**No new components needed** - Existing `combat` component already supports attack mechanics via `queuedAttack`, `cooldown`, `range`, `baseDamageMin`, `baseDamageMax`.
 
-- **System registration (`Diablo.love/scenes/world.lua`)** ✅
-  - ✅ Registered `mouseMovementSystem.update` in the update list after `mouseLookSystem.update` and before `movementSystem.update`.
-  - ✅ Update list order: `playerInputSystem.update` → `mouseLookSystem.update` → `mouseMovementSystem.update` → `movementSystem.update`.
-  - ✅ Ensures mouse look updates first (for visual indicator), then mouse movement can override velocities, then movement system applies them.
+#### Systems
 
-- **Reuse existing infrastructure** ✅
-  - ✅ Leverages the coordinate helper already created for mouse look system.
-  - ✅ Uses the same ECS query pattern (`queryEntities({ "movement", "playerControlled" })`).
-  - ✅ Mutates existing `movement.vx` and `movement.vy` values (same pattern as keyboard input) to maintain ECS component references.
+**New System: `systems/foe_attack.lua`**
+- Query entities with `foe`, `chase`, `combat`, `position`, `health` components
+- For each foe that has a `chase` component (already chasing player):
+  - Get player entity via `world:getPlayer()`
+  - Calculate distance between foe center and player center using `getEntityCenter()` helper (similar to `combat.lua`)
+  - Check if foe is within attack range: `distance <= (foe.combat.range or 80)` (80 = shorter than player's 120 range)
+  - Check if cooldown is ready: `foe.combat.cooldown <= 0`
+  - If conditions met:
+    - Set `foe.combat.queuedAttack = { targetId = player.id, range = foe.combat.range or 80 }`
+    - Set cooldown: `foe.combat.cooldown = 1 / (foe.combat.attackSpeed or 0.8)` (slower than player)
+    - Set swing timer: `foe.combat.swingTimer = foe.combat.swingDuration or 0.3`
+    - Optionally add visual feedback component (see below)
 
-## New Game: Guaranteed Starter Item ✅ COMPLETED
-- **Starter gear system (`Diablo.love/systems/starter_gear.lua`)** ✅
-  - ✅ Created dedicated update system that runs once per world scene initialization.
-  - ✅ Uses flag (`world.starterGearGenerated`) to prevent re-running on subsequent update cycles.
-  - ✅ Generates full starter set: weapon (sword or axe) + 3 armor pieces (helmet, chest, boots).
-  - ✅ All items generated with `ItemGenerator.roll()` using `rarity = "common"` and `source = "starter"` tag.
-  - ✅ Uses ECS-safe helpers: mutate existing `player.inventory.items` table in place and `EquipmentHelper.ensure()` to guarantee components exist.
-  - ✅ Auto-equips all starter gear via `EquipmentHelper.equip()` which mutates the existing equipment table.
-  - ✅ Stats recompute automatically via `applyStatsSystem` which runs after starter gear generation.
+**Modify: `systems/chase.lua`**
+- Update `separationBuffer` logic to account for attack range
+- When foe is within attack range (but not yet attacking), reduce movement to prevent overshooting
+- Stop movement when foe is close enough to attack but cooldown is active
 
-- **System registration (`Diablo.love/scenes/world.lua`)** ✅
-  - ✅ Registered `starterGearSystem.update` at the start of the update list (runs first, before `applyStatsSystem`).
-  - ✅ World scene constructor simplified—removed inline starter gear generation code (now handled by dedicated system).
-  - ✅ Follows ECS pattern: world scene handles entity setup, system handles gear generation logic.
+**Modify: `components/combat.lua`**
+- Ensure foes created via `Foe.new()` have appropriate `combat` defaults:
+  - `range = 80` (shorter than player's 120)
+  - `attackSpeed = 0.8` (slower than player's base 1.0)
+  - `baseDamageMin = 3`, `baseDamageMax = 6` (adjust per foe type if needed)
 
-- **Generator extension (`Diablo.love/items/generator.lua`)** ✅
-  - ✅ Added `ItemGenerator.roll(opts)` API that accepts optional parameters for rarity and type overrides.
-  - ✅ Supports string IDs (e.g., `rarity = "common"`) or full ItemData entries for flexibility.
-  - ✅ Supports `allowedTypes` array (e.g., `{"sword", "axe"}`) to randomly select from multiple types.
-  - ✅ Supports `source` tag (e.g., `source = "starter"`) which is added to item payload for filtering.
-  - ✅ Falls back to weighted defaults when options not provided (maintains existing drop behavior).
+**Modify: `entities/foe.lua`**
+- Update `Foe.new()` to pass combat defaults:
+  ```lua
+  combat = createCombat(opts.combat or {
+      range = 80,
+      attackSpeed = 0.8,
+      baseDamageMin = 3,
+      baseDamageMax = 6,
+  })
+  ```
 
-## Combat System Foundations
-### Combat 1: Click-to-Attack With Cooldown
-- **Player combat component (`Diablo.love/components/combat.lua`)** ✅
-  - ✅ Added reusable combat stats (attack speed, range, cooldown, swing state, base damage, crit chance) with safe defaults so systems mutate shared tables in place.
-  - ✅ Player and foe factories attach the component; foes also gained a `foe` tag for reliable queries.
+**Existing System: `systems/combat.lua`**
+- Already handles `queuedAttack` processing
+- Already computes damage via `computeDamage()`
+- Already creates damage events and applies to target health
+- Already triggers `recentlyDamaged` component
+- Already spawns floating damage numbers via events
 
-- **Attack input system (`Diablo.love/systems/player_attack.lua`)** ✅
-  - ✅ Runs after mouse movement, decrements cooldown, resolves mouse targets, and queues attacks using aggregated stats to reset timers.
-  - ✅ Updates `scene.currentTargetId` and `scene.targetDisplayTimer` to feed downstream HUD systems.
+**New Component: `components/knockback.lua` (Optional Visual Feedback)**
+- Optional enhancement for visual impact
+- Fields: `x`, `y`, `timer`, `maxTimer`, `strength`
+- If added, create in `systems/foe_attack.lua` when foe attacks:
+  ```lua
+  local knockback = createKnockback({
+      x = directionToPlayer.x * 20,
+      y = directionToPlayer.y * 20,
+      timer = 0.15,
+      maxTimer = 0.15,
+      strength = 20,
+  })
+  world:addComponent(player.id, "knockback", knockback)
+  ```
+- Apply in `systems/movement.lua` by modifying velocity when `knockback` component exists
 
-- **Target acquisition (`Diablo.love/system_helpers/targeting.lua`)** ✅
-  - ✅ Converts cursor coordinates to world space, selects the closest foe in range, and auto-clears when foes die or timers expire.
+#### Entity Changes
 
-- **Animation stub (`Diablo.love/systems/render_equipment.lua`)** ✅
-  - ✅ Weapon sprites swing via sine offsets while `combat.swingTimer` is active, giving instant attack feedback.
+**Modify: `entities/foe.lua`**
+- Ensure all foes have `combat` component with appropriate ranges
+- Default foe attack range: 80 pixels (vs player's 120 pixels)
 
-### Combat 2: Damage Resolution ✅ COMPLETED
-- **Damage system (`Diablo.love/systems/combat.lua`)** ✅
-  - ✅ Consumes queued attacks, rolls damage from aggregated stats, mutates health in place, marks recently damaged foes, and pushes structured `damage`/`death` events.
-  - ✅ Removes AI components, marks entities dead, clears targeting, and removes foes from ECS after death cleanup.
+**Modify: `data/foe_types.lua`**
+- Add per-type combat stats if different foe types exist:
+  - Fast attackers: `attackSpeed = 1.0`, `range = 70`
+  - Slow tanky: `attackSpeed = 0.6`, `range = 90`, `baseDamageMin = 5`, `baseDamageMax = 8`
 
-- **World scene integration (`Diablo.love/scenes/world.lua`)** ✅
-  - ✅ Scene tracks `time`, `lastUpdateDt`, and `pendingCombatEvents`; update loop includes attack, loot pickup, combat, loot drop, and existing AI/movement systems.
+#### System Registration
 
-- **Top-of-screen target frame (`Diablo.love/systems/ui_target.lua`)** ✅
-  - ✅ Renders focus name and health bar after the player HUD, fading automatically when timers expire.
+**Modify: `scenes/world.lua`**
+- Add `foeAttackSystem.update` to update systems (before `combatSystem.update`)
+- Order: `detectionSystem.update`, `chaseSystem.update`, `foeAttackSystem.update`, `combatSystem.update`
 
-- **Floating enemy bars (`Diablo.love/systems/render_health.lua`, `Diablo.love/components/recently_damaged.lua`)** ✅
-  - ✅ Recently damaged foes display overhead health bars while their timer is active.
+#### Visual Feedback
 
-- **Floating damage numbers (`Diablo.love/systems/render_damage_numbers.lua`, `Diablo.love/components/floating_damage.lua`)** ✅
-  - ✅ Damage events spawn temporary entities that float, fade, and self-remove using world delta time and gravity tweaks.
+**Existing: `systems/render_damage_numbers.lua`**
+- Already handles damage number display via combat events
+- No changes needed
 
-- **Loot loop (`Diablo.love/systems/loot_drops.lua`, `Diablo.love/systems/render_loot.lua`, `Diablo.love/entities/loot.lua`, `Diablo.love/systems/loot_pickup.lua`, `Diablo.love/systems/loot_tooltip.lua`, `Diablo.love/system_helpers/tooltips.lua`)** ✅
-  - ✅ Death events roll loot, spawn rarity-bordered drops with centered sprites, support click-to-pickup/auto-equip, despawn timers, and shared tooltip rendering.
+**Optional: Visual Strike Indicator**
+- Add brief color flash to player when damaged (via `recentlyDamaged` component)
+- Modify `systems/render.lua` to tint player renderable when `recentlyDamaged` component exists
 
-- **System registration (`Diablo.love/scenes/world.lua`)** ✅
-  - ✅ Update order: `starterGear`, `applyStats`, `playerInput`, `mouseLook`, `mouseMovement`, `playerAttack`, `lootPickup`, `spawn`, `culling`, `detection`, `wander`, `chase`, `combat`, `lootDrop`, `movement`, `camera`.
-  - ✅ Draw order adds `renderLoot`, `renderHealth`, `renderDamageNumbers`, `uiTarget`, and `lootTooltip` between existing world and HUD layers.
+---
 
-- **Foe templates (`Diablo.love/data/foe_types.lua`, `Diablo.love/systems/spawn.lua`)** ✅
-  - ✅ Foes spawn with health/combat stats per archetype so combat resolution produces meaningful values.
+## 2. Potion System
 
-- ✅ `luacheck .` passes after integration; README refresh pending once combat controls and loot loop are documented.
+### Overview
+Implement a health potion system where players start with 3 potions, can consume them to restore 25 HP, and see visual representation near the health bar. Monsters can drop potions as loot (in addition to regular items).
 
+### Implementation Details
 
-- When adding components at runtime, prefer `scene:addComponent`/`scene:removeComponent` to keep `componentSets` authoritative. Only mutate fields on existing component tables to maintain references used by systems.
-- Update `Readme.md` once features land to describe combat controls and loot loop.
-- Run `luacheck .` after implementation to maintain lint cleanliness (per AGENTS instructions).
+#### Components
+
+**New Component: `components/potions.lua`**
+```lua
+local function createPotionsComponent(opts)
+    opts = opts or {}
+    return {
+        healthPotionCount = opts.healthPotionCount or 3,
+        maxHealthPotionCount = opts.maxHealthPotionCount or 10, -- max carry limit
+    }
+end
+```
+
+**Modify: `components/inventory.lua`**
+- Inventory can hold potions as items, but `potions` component tracks consumable potions separately (quicker access, doesn't clutter inventory)
+
+**Modify: `data/items.lua`**
+- Add potion item type:
+```lua
+health_potion = {
+    id = "health_potion",
+    label = "Health Potion",
+    slot = "consumable",
+    consumable = true,
+    restoreHealth = 25,
+    base = {
+        damage = { min = 0, max = 0 },
+        defense = 0,
+    },
+},
+```
+
+#### Systems
+
+**New System: `systems/potion_consumption.lua`**
+- Query player entity (via `world:getPlayer()`)
+- Check for keypress: `love.keyboard.isDown("1")` or `love.keyboard.isDown("q")` (configurable)
+- Verify player has potions: `player.potions.healthPotionCount > 0`
+- Verify player needs healing: `player.health.current < player.health.max`
+- Apply cooldown mechanism (prevent spam): `player.potions.lastUseTime` + `potionCooldown = 0.5` seconds
+- When conditions met:
+  - Restore health: `player.health.current = math.min(player.health.max, player.health.current + 25)`
+  - Decrement count: `player.potions.healthPotionCount = player.potions.healthPotionCount - 1`
+  - Set cooldown: `player.potions.lastUseTime = world.time`
+  - Optional: Create visual feedback (particle effect, sound, etc.)
+
+**Modify: `systems/loot_pickup.lua`**
+- When player picks up loot item:
+  - Check if item type is `health_potion`
+  - If yes, add to potion count instead of/in addition to inventory:
+    ```lua
+    if item.type == "health_potion" then
+        player.potions.healthPotionCount = math.min(
+            player.potions.maxHealthPotionCount,
+            player.potions.healthPotionCount + 1
+        )
+        -- Optionally also add to inventory or skip inventory entirely
+    end
+    ```
+
+**Modify: `systems/loot_drops.lua`**
+- Add potion drop chance to death events
+- In `spawnLoot()` function, after regular item roll:
+  - Roll chance: `math.random() < 0.15` (15% chance to drop potion)
+  - If successful, create potion item:
+    ```lua
+    local potionItem = {
+        type = "health_potion",
+        rarity = "common",
+        source = "monster",
+        -- ... other item metadata
+    }
+    local potionLoot = LootEntity.new({
+        x = event.position.x - 13,
+        y = event.position.y - 13,
+        width = 26,
+        height = 26,
+        renderable = {
+            kind = "loot",
+            color = { 0.8, 0.2, 0.2, 1 }, -- Red color for potion
+        },
+        lootable = {
+            item = potionItem,
+            pickupRadius = 64,
+            source = event.targetId,
+            despawnTimer = 45,
+            maxDespawnTimer = 45,
+        },
+    })
+    world:addEntity(potionLoot)
+    ```
+
+**New System: `systems/ui_potions.lua`**
+- Draw potion UI near health bar (bottom left)
+- Position: Right of health bar or above it
+- Visual representation:
+  - Icon/bottle shape: Small filled rectangle or circle
+  - Count text: `player.potions.healthPotionCount`
+  - Color: Red tint `{0.8, 0.2, 0.2, 1}` for health potions
+- Layout example:
+  ```lua
+  local potionX = barX + barWidth + 16
+  local potionY = barY
+  local potionSize = 24
+  -- Draw potion icon/bottle
+  love.graphics.setColor(0.8, 0.2, 0.2, 1)
+  love.graphics.rectangle("fill", potionX, potionY, potionSize, potionSize, 2, 2)
+  -- Draw count
+  love.graphics.setColor(1, 1, 1, 1)
+  love.graphics.print(player.potions.healthPotionCount, potionX + potionSize/2, potionY + potionSize/2)
+  ```
+
+#### Entity Changes
+
+**Modify: `entities/player.lua`**
+- Add `potions` component to player creation:
+  ```lua
+  local createPotions = require("components.potions")
+  -- ...
+  potions = createPotions(opts.potions or {
+      healthPotionCount = 3,
+  }),
+  ```
+
+#### System Registration
+
+**Modify: `scenes/world.lua`**
+- Add `potionConsumptionSystem.update` to update systems (after `playerInputSystem.update`)
+- Add `uiPotionsSystem.draw` to draw systems (after `uiPlayerStatus.draw`)
+
+#### Item Generator
+
+**Modify: `items/generator.lua`**
+- Add potion type to item generation (if using generator for potions)
+- Or handle potions separately in loot drops (recommended)
+
+---
+
+## 3. EXP System
+
+### Overview
+Implement an experience point (XP) system where players start at level 1 with 0 XP, gain XP from killing foes, and have a leveling table that scales XP requirements. Display an XP bar at the bottom of the screen showing current XP vs required XP for next level, filling the entire screen width for a gamey feel.
+
+### Implementation Details
+
+#### Components
+
+**New Component: `components/experience.lua`**
+```lua
+local function createExperienceComponent(opts)
+    opts = opts or {}
+    return {
+        level = opts.level or 1,
+        currentXP = opts.currentXP or 0,
+        xpForNextLevel = opts.xpForNextLevel or 100, -- Will be computed from leveling table
+    }
+end
+```
+
+#### Data
+
+**New Data File: `data/leveling.lua`**
+```lua
+local Leveling = {}
+
+-- XP required to reach level N (cumulative from level 1)
+-- Formula: XP(n) = baseXP * (multiplier ^ (n - 1))
+-- Example: baseXP = 100, multiplier = 1.5
+Leveling.getXPForLevel = function(targetLevel)
+    local baseXP = 100
+    local multiplier = 1.5
+    if targetLevel <= 1 then
+        return 0
+    end
+    local totalXP = 0
+    for i = 2, targetLevel do
+        totalXP = totalXP + math.floor(baseXP * (multiplier ^ (i - 2)))
+    end
+    return totalXP
+end
+
+-- XP required to go from level N to level N+1
+Leveling.getXPRequiredForNextLevel = function(currentLevel)
+    local baseXP = 100
+    local multiplier = 1.5
+    if currentLevel < 1 then
+        return baseXP
+    end
+    return math.floor(baseXP * (multiplier ^ (currentLevel - 1)))
+end
+
+-- XP gained from killing a foe (scales with level or fixed)
+Leveling.getFoeXP = function(foeLevel, playerLevel)
+    -- Base XP per kill
+    local baseXP = 25
+    -- Optional: Scale based on level difference
+    -- For now, fixed XP per kill
+    return baseXP
+end
+
+return Leveling
+```
+
+#### Systems
+
+**New System: `systems/experience.lua`**
+- Listen to combat events: `world.pendingCombatEvents`
+- For each `death` event where `sourceId` is player:
+  - Get player entity: `world:getPlayer()`
+  - Get slain foe: `world:getEntity(event.targetId)`
+  - Calculate XP gain: `Leveling.getFoeXP(foeLevel or 1, player.experience.level)`
+  - Add XP: `player.experience.currentXP = player.experience.currentXP + xpGain`
+  - Check for level up (see below)
+
+**Level Up Logic (in `systems/experience.lua`):**
+```lua
+local function checkLevelUp(world, player)
+    local exp = player.experience
+    local xpRequired = Leveling.getXPRequiredForNextLevel(exp.level)
+    local totalXPForCurrentLevel = Leveling.getXPForLevel(exp.level)
+    local totalXPForNextLevel = Leveling.getXPForLevel(exp.level + 1)
+
+    -- Check if player has enough XP for next level
+    if exp.currentXP >= totalXPForNextLevel then
+        -- Level up!
+        exp.level = exp.level + 1
+
+        -- Optional: Grant stat bonuses on level up
+        -- Example: +5 max health per level
+        if player.health then
+            player.health.max = player.health.max + 5
+            player.health.current = player.health.max -- Full heal on level up
+        end
+
+        -- Update XP tracking
+        exp.xpForNextLevel = Leveling.getXPRequiredForNextLevel(exp.level)
+
+        -- Optional: Create level up event/notification
+        -- Could add to pendingCombatEvents or separate event queue
+    else
+        -- Update XP required for next level display
+        exp.xpForNextLevel = totalXPForNextLevel - exp.currentXP
+    end
+end
+```
+
+**New System: `systems/ui_experience.lua`**
+- Draw full-width XP bar at bottom of screen
+- Position: `barY = screenHeight - barHeight - 8` (8px from bottom)
+- Width: `barWidth = screenWidth - 32` (16px margin on each side)
+- Height: `barHeight = 20` (thick enough to be visible)
+- Visual design:
+  - Background: Dark color `{0.1, 0.1, 0.1, 0.9}`
+  - Fill: Bright color `{0.2, 0.6, 1.0, 1}` (blue) or `{0.4, 0.8, 0.4, 1}` (green)
+  - Outline: Light color `{0.9, 0.85, 0.65, 1}`
+  - Text overlay: Current XP / Required XP, Level number
+- Implementation:
+  ```lua
+  local screenWidth = love.graphics.getWidth()
+  local screenHeight = love.graphics.getHeight()
+  local barHeight = 20
+  local barY = screenHeight - barHeight - 8
+  local barWidth = screenWidth - 32
+  local barX = 16
+
+  local player = world:getPlayer()
+  if not player or not player.experience then
+      return
+  end
+
+  local exp = player.experience
+  local totalXPForCurrentLevel = Leveling.getXPForLevel(exp.level)
+  local totalXPForNextLevel = Leveling.getXPForLevel(exp.level + 1)
+  local xpProgress = exp.currentXP - totalXPForCurrentLevel
+  local xpRequired = totalXPForNextLevel - totalXPForCurrentLevel
+  local ratio = xpRequired > 0 and (xpProgress / xpRequired) or 1
+
+  -- Draw background
+  love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
+  love.graphics.rectangle("fill", barX, barY, barWidth, barHeight, 4, 4)
+
+  -- Draw fill
+  love.graphics.setColor(0.2, 0.6, 1.0, 1)
+  love.graphics.rectangle("fill", barX, barY, barWidth * ratio, barHeight, 4, 4)
+
+  -- Draw outline
+  love.graphics.setColor(0.9, 0.85, 0.65, 1)
+  love.graphics.setLineWidth(2)
+  love.graphics.rectangle("line", barX, barY, barWidth, barHeight, 4, 4)
+
+  -- Draw text
+  love.graphics.setColor(1, 1, 1, 1)
+  local text = string.format("Level %d | %d / %d XP", exp.level, math.floor(xpProgress), math.floor(xpRequired))
+  love.graphics.printf(text, barX, barY + barHeight/2 - 6, barWidth, "center")
+  ```
+
+#### Entity Changes
+
+**Modify: `entities/player.lua`**
+- Add `experience` component to player creation:
+  ```lua
+  local createExperience = require("components.experience")
+  -- ...
+  experience = createExperience(opts.experience or {
+      level = 1,
+      currentXP = 0,
+  }),
+  ```
+- Initialize XP for next level based on leveling table
+
+#### System Registration
+
+**Modify: `scenes/world.lua`**
+- Add `experienceSystem.update` to update systems (after `combatSystem.update` and `lootDropSystem.update`)
+- Add `uiExperienceSystem.draw` to draw systems (after `uiPlayerStatus.draw`, before `uiTargetSystem.draw` or at end)
+
+#### Level Up Rewards
+
+**Optional Enhancement:**
+- On level up, grant stat bonuses:
+  - +5 max health
+  - +1 damage
+  - +1 defense
+- Store base stats in `components/base_stats.lua` and apply level bonuses via `systems/apply_stats.lua`
+
+---
+
+## Implementation Order Recommendation
+
+1. **EXP System** - Foundation for progression, independent of other systems
+2. **Potion System** - Adds survivability without complex combat interactions
+3. **Foe Attack System** - Completes combat loop, requires careful balance testing
+
+---
+
+## Testing Checklist
+
+### Foe Attack System
+- [ ] Foes attack player when in range
+- [ ] Attack range is shorter than player attack range (80 vs 120)
+- [ ] Damage numbers appear correctly
+- [ ] Cooldown prevents spam attacks
+- [ ] Player can kite foes effectively
+
+### Potion System
+- [ ] Player starts with 3 potions
+- [ ] Potions restore 25 HP correctly
+- [ ] Potion count decreases on use
+- [ ] Potions appear in UI near health bar
+- [ ] Monsters can drop potions as loot
+- [ ] Potion pickup adds to potion count
+
+### EXP System
+- [ ] Player starts at level 1 with 0 XP
+- [ ] Killing foes grants XP
+- [ ] XP bar displays correctly (full width)
+- [ ] Level up occurs at correct XP thresholds
+- [ ] XP requirements scale properly
+- [ ] Level number displays correctly
