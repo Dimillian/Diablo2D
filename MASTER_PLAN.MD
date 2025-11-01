@@ -1,23 +1,9 @@
 # Upcoming Feature Master Plan
 
-## Movement: WASD With Mouse Steering
-- **Input capture (`Diablo.love/systems/player_input.lua`)**
-  - Keep the existing WASD mapping but augment `playerInputSystem.update(scene, dt)` to also read the mouse cursor in world coordinates. Use the world camera (`scene.camera`) to translate `love.mouse.getPosition()` into world space so the direction vector is computed relative to the player's `position` component.
-  - Instead of mutating components directly, use `scene:getPlayer()` and store intent state on the `movement` component (which already participates in ECS queries). Persist:
-    - `movement.intentForward` (boolean) when `w`/`up` is held.
-    - `movement.intentStrafe` as a normalized `{ x, y }` vector for `a/d` strafing and `s` backpedal input.
-  - When forward input is pressed, compute a `movement.targetHeading` vector pointing from the player position toward the mouse location. Smoothly interpolate the current `movement.heading` toward this target each frame using a lerp factor saved on the component so downstream systems only need to read component data.
-
-- **Movement resolution (`Diablo.love/systems/movement.lua`)**
-  - Extend the movement component to include `heading` (normalized `x/y`), `targetHeading`, `intentForward`, `intentStrafe`, and `headingLerp`. During `movementSystem.update(scene, dt)`, derive the velocity by blending the forward heading with any lateral intent, then normalize before scaling by `movement.speed`.
-  - Because entities are stored in ECS component sets, only mutate fields on the existing `movement` table—do not replace the table—to avoid breaking references. Clear transient intent values (`intentForward`, `intentStrafe`) after computing velocity so other systems do not accidentally reuse stale input.
-  - Ensure foes created through `entities/foe.lua` also seed the new fields so they continue to satisfy the `movement` component contract.
-
-- **Component defaults (`Diablo.love/components/movement.lua`)**
-  - Add defaults for `heading = { x = 0, y = -1 }`, `targetHeading = { x = 0, y = -1 }`, `intentForward = false`, `intentStrafe = { x = 0, y = 0 }`, and `headingLerp = 0.2`. Update entity factories (`entities/player.lua`, `entities/foe.lua`) to call `MovementComponent.new(opts)` so ECS registration (`scene:addEntity`) automatically tracks the component in `componentSets`.
-
-- **Camera/world conversions (`Diablo.love/system_helpers/coordinates.lua`)**
-  - Introduce a helper (`Coordinates.toWorldFromScreen(camera, x, y)`) that player input and future mouse-driven systems can call. Store it under `scene.systemHelpers.coordinates` during scene setup to avoid circular requires and keep ECS systems data-oriented.
+## Movement: WASD With Mouse Steering ✅
+- Mouse-facing movement now drives the player's heading and strafe intents via component state, with smoothing handled directly on the movement component for downstream systems. (`Diablo.love/systems/player_input.lua`, `Diablo.love/systems/movement.lua`, `Diablo.love/components/movement.lua`)
+- Non-player entities were updated to follow the new intent-driven contract so wander and chase behaviors continue to function without manual velocity writes. (`Diablo.love/systems/wander.lua`, `Diablo.love/systems/chase.lua`)
+- Added a reusable coordinate helper registered on the scene for translating screen positions into world space, enabling mouse steering and future cursor-driven features. (`Diablo.love/system_helpers/coordinates.lua`, `Diablo.love/scenes/world.lua`)
 
 ## New Game: Guaranteed Starter Item
 - **Starting inventory hookup (`Diablo.love/scenes/world.lua`)**
