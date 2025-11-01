@@ -6,7 +6,7 @@ local renderMouseLookSystem = {}
 ---@param angle number Rotation angle in radians
 ---@param size number Arrow size
 local function drawArrow(x, y, angle, size)
-    love.graphics.push()
+    love.graphics.push("all")
     love.graphics.translate(x, y)
     love.graphics.rotate(angle)
 
@@ -33,7 +33,7 @@ function renderMouseLookSystem.draw(scene)
 
     local camera = scene.camera or { x = 0, y = 0 }
 
-    love.graphics.push()
+    love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
     local pos = player.position

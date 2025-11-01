@@ -13,7 +13,7 @@ local renderLootSystem = {}
 function renderLootSystem.draw(world)
     local camera = world.camera or { x = 0, y = 0 }
 
-    love.graphics.push()
+    love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
     local lootEntities = world:queryEntities({ "lootable", "position", "size" })

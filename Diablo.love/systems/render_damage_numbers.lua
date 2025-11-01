@@ -1,5 +1,8 @@
 local renderDamageNumbersSystem = {}
 
+-- Cache font to avoid recreating it every frame
+local cachedFont = nil
+
 function renderDamageNumbersSystem.draw(world, dt)
     dt = dt or 0
 
@@ -11,15 +14,14 @@ function renderDamageNumbersSystem.draw(world, dt)
 
     local camera = world.camera or { x = 0, y = 0 }
 
-    love.graphics.push()
+    love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
-    -- Create font if not exists (cache it)
-    local font = love.graphics.getFont()
-    if not font or font:getHeight() ~= 16 then
-        font = love.graphics.newFont(16)
+    -- Use cached font or create once
+    if not cachedFont then
+        cachedFont = love.graphics.newFont(16)
     end
-    love.graphics.setFont(font)
+    love.graphics.setFont(cachedFont)
 
     for _, entity in ipairs(entities) do
         local floatingDamage = entity.floatingDamage
