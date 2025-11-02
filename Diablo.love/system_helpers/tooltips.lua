@@ -1,3 +1,5 @@
+local Resources = require("modules.resources")
+
 local Tooltips = {}
 
 Tooltips.rarityColors = {
@@ -7,6 +9,8 @@ Tooltips.rarityColors = {
     epic = { 0.7, 0.4, 0.9, 1 },
     legendary = { 1, 0.65, 0.2, 1 },
 }
+
+local SPRITE_SIZE = 32
 
 local function snap(value)
     return math.floor(value + 0.5)
@@ -77,16 +81,18 @@ end
 
 local function measureTooltip(font, item, padding)
     local lines = Tooltips.buildItemStatLines(item)
-    local width = font:getWidth(item.name or "Unknown Item")
-    width = math.max(width, font:getWidth(item.rarityLabel or ""))
+    local textWidth = font:getWidth(item.name or "Unknown Item")
+    textWidth = math.max(textWidth, font:getWidth(item.rarityLabel or ""))
 
     for _, line in ipairs(lines) do
-        width = math.max(width, font:getWidth(line))
+        textWidth = math.max(textWidth, font:getWidth(line))
     end
 
-    width = width + padding * 2
+    -- Width = sprite + sprite padding + text + text padding
+    local spritePadding = padding -- Space between sprite and text
+    local width = SPRITE_SIZE + spritePadding + textWidth + padding * 2
     local lineHeight = font:getHeight()
-    local height = lineHeight * (#lines + 2) + padding * 3
+    local height = math.max(SPRITE_SIZE + padding * 2, lineHeight * (#lines + 2) + padding * 3)
 
     return snap(width), snap(height), lines, lineHeight
 end
@@ -130,22 +136,44 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", tooltipX, tooltipY, width, height, 6, 6)
 
-    local rarityColor = Tooltips.getRarityColor(item.rarity)
+    -- Draw sprite on the left side (vertically centered)
+    local spritePadding = padding -- Space between sprite and text
+    local spriteX = snap(tooltipX + padding)
+    local spriteY = snap(tooltipY + height / 2 - SPRITE_SIZE / 2)
 
-    local titleX = snap(tooltipX + padding)
+    if item.spritePath then
+        local sprite = Resources.loadImageSafe(item.spritePath)
+        if sprite then
+            love.graphics.setColor(1, 1, 1, 1)
+            local spriteScaleX = SPRITE_SIZE / sprite:getWidth()
+            local spriteScaleY = SPRITE_SIZE / sprite:getHeight()
+            love.graphics.draw(
+                sprite,
+                spriteX,
+                spriteY,
+                0,
+                spriteScaleX,
+                spriteScaleY
+            )
+        end
+    end
+
+    -- Draw text on the right side of the sprite
+    local rarityColor = Tooltips.getRarityColor(item.rarity)
+    local textX = snap(tooltipX + padding + SPRITE_SIZE + spritePadding)
     local titleY = snap(tooltipY + padding)
 
     love.graphics.setColor(rarityColor)
-    love.graphics.print(item.name or "Unknown Item", titleX, titleY)
+    love.graphics.print(item.name or "Unknown Item", textX, titleY)
 
     love.graphics.setColor(0.75, 0.75, 0.85, 1)
-    love.graphics.print(item.rarityLabel or "", titleX, snap(titleY + lineHeight))
+    love.graphics.print(item.rarityLabel or "", textX, snap(titleY + lineHeight))
 
     love.graphics.setColor(1, 1, 1, 1)
     for index, line in ipairs(lines) do
         love.graphics.print(
             line,
-            titleX,
+            textX,
             snap(titleY + lineHeight * (index + 1))
         )
     end
