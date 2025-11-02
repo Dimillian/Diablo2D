@@ -4,130 +4,98 @@ This document outlines concrete implementation details for upcoming features. Ea
 
 ---
 
-## 1. Foe Attack System
+## 1. Foe Attack System ✅ **COMPLETED**
 
 ### Overview
 Add offensive capabilities to foes so they can attack the player when in melee range. Foes should visually strike the player, show damage numbers, apply a brief knockback effect, and have a cooldown between attacks. Player attack range must be longer than foe attack range to maintain gameplay balance.
+
+### Implementation Status: **COMPLETE**
+
+All core functionality has been implemented:
+- ✅ Foe attack system with cooldown and range checking
+- ✅ Knockback component and application
+- ✅ Visual strike indicator (red tint on damage)
+- ✅ Damage numbers via existing combat event system
+- ✅ Foe type-specific attack ranges (45-50px vs player's 170px)
 
 ### Implementation Details
 
 #### Components
 
-**No new components needed** - Existing `combat` component already supports attack mechanics via `queuedAttack`, `cooldown`, `range`, `baseDamageMin`, `baseDamageMax`.
+**✅ `components/knockback.lua` - IMPLEMENTED**
+- Fields: `x`, `y`, `timer`, `maxTimer`, `strength`
+- Created via `createKnockback()` factory function
+- Applied to both attacker and target when combat occurs (in `systems/combat.lua`)
 
 #### Systems
 
-**New System: `systems/foe_attack.lua`**
-- Query entities with `foe`, `chase`, `combat`, `position`, `health` components
-- **IMPORTANT**: Decrement cooldown each frame (like `player_attack.lua` does): `combat.cooldown = math.max((combat.cooldown or 0) - dt, 0)`
-- For each foe that has a `chase` component (already chasing player):
-  - Get player entity via `world:getPlayer()`
-  - Skip if player is dead or missing health component
-  - Calculate distance between foe center and player center using `getEntityCenter()` helper (similar to `combat.lua`)
-  - Check if foe is within attack range: `distance <= (foe.combat.range or 80)` (80 = shorter than player's 120 range)
-  - Check if cooldown is ready: `foe.combat.cooldown <= 0`
-  - If conditions met:
-    - Set `foe.combat.queuedAttack = { targetId = player.id, range = foe.combat.range or 80 }`
-    - Set cooldown: `foe.combat.cooldown = 1 / (foe.combat.attackSpeed or 0.8)` (slower than player)
-    - Set swing timer: `foe.combat.swingTimer = foe.combat.swingDuration or 0.3`
-    - Optionally add visual feedback component (see below)
+**✅ `systems/foe_attack.lua` - IMPLEMENTED**
+- Queries entities with `foe`, `chase`, `combat`, `position` components
+- Decrements cooldown each frame: `combat.cooldown = math.max((combat.cooldown or 0) - dt, 0)`
+- For each foe chasing player:
+  - Calculates distance using `getEntityCenter()` helper
+  - Checks if within attack range: `distance <= (foe.combat.range or 80)`
+  - Checks cooldown readiness: `foe.combat.cooldown <= 0`
+  - Sets `queuedAttack` with target and range
+  - Sets cooldown: `combat.cooldown = 1 / (combat.attackSpeed or 0.8)`
+  - Sets swing timer: `combat.swingTimer = combat.swingDuration or 0.3`
 
-**Modify: `systems/chase.lua`** (Optional Enhancement)
-- Current chase system uses `separationBuffer` to stop foes short of target
-- Enhancement: When foe is within attack range, reduce movement speed or stop completely
-- Alternative: Let `foe_attack` system handle stopping foes when attacking (simpler)
-- If enhancing chase: Check `distance <= (entity.combat and entity.combat.range or 80)` and reduce `maxDistance` accordingly
+**✅ `systems/movement.lua` - MODIFIED**
+- Applies knockback as direct position offset when `knockback` component exists
+- Uses `strength` field (pixels per second) to control knockback intensity
+- Automatically removes knockback component when timer expires
 
-**Modify: `components/combat.lua`**
-- Ensure foes created via `Foe.new()` have appropriate `combat` defaults:
-  - `range = 80` (shorter than player's 120)
-  - `attackSpeed = 0.8` (slower than player's base 1.0)
-  - `baseDamageMin = 3`, `baseDamageMax = 6` (adjust per foe type if needed)
+**✅ `systems/combat.lua` - MODIFIED**
+- Adds knockback to both attacker and target when hit occurs
+- Knockback direction: attacker pushed away from target, target pushed away from attacker
+- Uses 80 pixels/second strength with 0.2 second duration
+- Existing damage processing, events, and `recentlyDamaged` component remain unchanged
 
-**Modify: `entities/foe.lua`**
-- Update `Foe.new()` to pass combat defaults:
-  ```lua
-  combat = createCombat(opts.combat or {
-      range = 80,
-      attackSpeed = 0.8,
-      baseDamageMin = 3,
-      baseDamageMax = 6,
-  })
-  ```
-
-**Existing System: `systems/combat.lua`**
-- Already handles `queuedAttack` processing
-- Already computes damage via `computeDamage()`
-- Already creates damage events and applies to target health
-- Already triggers `recentlyDamaged` component
-- Already spawns floating damage numbers via events
-
-**New Component: `components/knockback.lua` (Optional Visual Feedback)**
-- Optional enhancement for visual impact
-- Fields: `x`, `y`, `timer`, `maxTimer`, `strength`
-- If added, create in `systems/foe_attack.lua` when foe attacks:
-  ```lua
-  local knockback = createKnockback({
-      x = directionToPlayer.x * 20,
-      y = directionToPlayer.y * 20,
-      timer = 0.15,
-      maxTimer = 0.15,
-      strength = 20,
-  })
-  world:addComponent(player.id, "knockback", knockback)
-  ```
-- Apply in `systems/movement.lua` by modifying velocity when `knockback` component exists
+**✅ `systems/render.lua` - MODIFIED**
+- Visual strike indicator: tints entity red when `recentlyDamaged` component exists
+- Provides immediate visual feedback when player or foes take damage
 
 #### Entity Changes
 
-**Modify: `entities/foe.lua`**
-- Ensure all foes have `combat` component with appropriate ranges
-- Default foe attack range: 80 pixels (vs player's 120 pixels)
+**✅ `entities/foe.lua` - MODIFIED**
+- `Foe.new()` now creates `combat` component with values from config:
+  - `range = config.range` (from foe type)
+  - `attackSpeed = config.attackSpeed`
+  - `baseDamageMin = config.damageMin`
+  - `baseDamageMax = config.damageMax`
 
-**Modify: `data/foe_types.lua`**
-- Current structure: `foeTypes.types` table with `slow`, `medium`, `aggressive` types
-- Each type already has: `damageMin`, `damageMax`, `attackSpeed` fields
-- Add `range` field to each type configuration:
-  ```lua
-  slow = {
-      -- ... existing fields ...
-      range = 90,  -- Slower but longer reach
-  },
-  medium = {
-      -- ... existing fields ...
-      range = 80,  -- Standard range
-  },
-  aggressive = {
-      -- ... existing fields ...
-      range = 70,  -- Fast but shorter reach
-  },
-  ```
-**Modify: `systems/spawn.lua`**
-- Update `spawnGroup()` function to include `range` from foe type config:
-  ```lua
-  combat = {
-      range = config.range or 80,  -- Add this line
-      attackSpeed = config.attackSpeed,
-      baseDamageMin = config.damageMin,
-      baseDamageMax = config.damageMax,
-  },
-  ```
+**✅ `data/foe_types.lua` - MODIFIED**
+- All foe types now include `range` field:
+  - `slow`: `range = 45` (slowest but longest reach)
+  - `medium`: `range = 50` (standard range)
+  - `aggressive`: `range = 50` (fast but shorter reach)
+- Note: All ranges are significantly shorter than player's 170px range
+
+**✅ `systems/spawn.lua` - NO CHANGES NEEDED**
+- Already passes config to `Foe.new()`, which extracts range and other combat values
 
 #### System Registration
 
-**Modify: `scenes/world.lua`**
-- Add `foeAttackSystem.update` to update systems (before `combatSystem.update`)
-- Order: `detectionSystem.update`, `chaseSystem.update`, `foeAttackSystem.update`, `combatSystem.update`
+**✅ `scenes/world.lua` - MODIFIED**
+- `foeAttackSystem.update` registered in update systems
+- Correct order: `detectionSystem.update`, `chaseSystem.update`, `foeAttackSystem.update`, `combatSystem.update`
 
 #### Visual Feedback
 
-**Existing: `systems/render_damage_numbers.lua`**
+**✅ `systems/render_damage_numbers.lua`**
 - Already handles damage number display via combat events
 - No changes needed
 
-**Optional: Visual Strike Indicator**
-- Add brief color flash to player when damaged (via `recentlyDamaged` component)
-- Modify `systems/render.lua` to tint player renderable when `recentlyDamaged` component exists
+**✅ `systems/render.lua` - Visual Strike Indicator**
+- Red tint flash applied when `recentlyDamaged` component exists
+- Provides clear visual feedback for incoming damage
+
+### Implementation Notes
+
+- **Attack Ranges**: Player (170px) is significantly longer than all foe types (45-50px), maintaining gameplay balance
+- **Knockback**: Applied to both parties during combat for more dynamic feel
+- **Cooldown**: Foes use their type-specific `attackSpeed` values, ensuring variety in combat pacing
+- **Visual Feedback**: Red tint on damage + floating damage numbers provide clear combat feedback
 
 ---
 
@@ -515,20 +483,22 @@ end
 
 ## Implementation Order Recommendation
 
-1. **EXP System** - Foundation for progression, independent of other systems
-2. **Potion System** - Adds survivability without complex combat interactions
-3. **Foe Attack System** - Completes combat loop, requires careful balance testing
+1. ✅ **Foe Attack System** - **COMPLETED** - Combat loop is now complete with enemy attacks, knockback, and visual feedback
+2. **EXP System** - Foundation for progression, independent of other systems
+3. **Potion System** - Adds survivability without complex combat interactions
 
 ---
 
 ## Testing Checklist
 
-### Foe Attack System
-- [ ] Foes attack player when in range
-- [ ] Attack range is shorter than player attack range (80 vs 120)
-- [ ] Damage numbers appear correctly
-- [ ] Cooldown prevents spam attacks
-- [ ] Player can kite foes effectively
+### Foe Attack System ✅ **COMPLETE**
+- [x] Foes attack player when in range
+- [x] Attack range is shorter than player attack range (45-50px vs 170px)
+- [x] Damage numbers appear correctly
+- [x] Cooldown prevents spam attacks
+- [x] Player can kite foes effectively
+- [x] Knockback applied to both attacker and target
+- [x] Visual strike indicator (red tint) when damaged
 
 ### Potion System
 - [ ] Player starts with 3 potions
