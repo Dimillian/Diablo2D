@@ -16,7 +16,7 @@ All core functionality has been implemented:
 - ✅ Knockback component and application
 - ✅ Visual strike indicator (red tint on damage)
 - ✅ Damage numbers via existing combat event system
-- ✅ Foe type-specific attack ranges (45-50px vs player's 170px)
+- ✅ Foe type-specific attack ranges (45-50px vs player's 100px)
 
 ### Implementation Details
 
@@ -69,7 +69,7 @@ All core functionality has been implemented:
   - `slow`: `range = 45` (slowest but longest reach)
   - `medium`: `range = 50` (standard range)
   - `aggressive`: `range = 50` (fast but shorter reach)
-- Note: All ranges are significantly shorter than player's 170px range
+- Note: All ranges are significantly shorter than player's 100px range
 
 **✅ `systems/spawn.lua` - NO CHANGES NEEDED**
 - Already passes config to `Foe.new()`, which extracts range and other combat values
@@ -92,7 +92,7 @@ All core functionality has been implemented:
 
 ### Implementation Notes
 
-- **Attack Ranges**: Player (170px) is significantly longer than all foe types (45-50px), maintaining gameplay balance
+- **Attack Ranges**: Player (100px) is significantly longer than all foe types (45-50px), maintaining gameplay balance
 - **Knockback**: Applied to both parties during combat for more dynamic feel
 - **Cooldown**: Foes use their type-specific `attackSpeed` values, ensuring variety in combat pacing
 - **Visual Feedback**: Red tint on damage + floating damage numbers provide clear combat feedback
@@ -493,7 +493,7 @@ end
 
 ### Foe Attack System ✅ **COMPLETE**
 - [x] Foes attack player when in range
-- [x] Attack range is shorter than player attack range (45-50px vs 170px)
+- [x] Attack range is shorter than player attack range (45-50px vs 100px)
 - [x] Damage numbers appear correctly
 - [x] Cooldown prevents spam attacks
 - [x] Player can kite foes effectively

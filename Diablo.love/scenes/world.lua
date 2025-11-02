@@ -107,7 +107,7 @@ function WorldScene.new(opts)
             current = opts.playerHealth or opts.playerMaxHealth or 50,
         },
         combat = {
-            range = 170, -- Extended range for player (longer than foes)
+            range = 100, -- Extended range for player (longer than foes)
         },
     })
 

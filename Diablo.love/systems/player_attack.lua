@@ -72,6 +72,15 @@ function playerAttackSystem.update(world, dt)
         return
     end
 
+    -- Always trigger swing animation and cooldown for visual feedback
+    local effectiveAttackSpeed = computeEffectiveAttackSpeed(player, combat)
+    local cooldownReset = 1 / effectiveAttackSpeed
+
+    combat.cooldown = cooldownReset
+    combat.swingTimer = combat.swingDuration or 0.35
+    combat.lastAttackTime = world.time or 0
+
+    -- Only queue damage if valid target exists and is in range
     if not target then
         return
     end
@@ -93,18 +102,12 @@ function playerAttackSystem.update(world, dt)
         return
     end
 
-    local effectiveAttackSpeed = computeEffectiveAttackSpeed(player, combat)
-    local cooldownReset = 1 / effectiveAttackSpeed
-
+    -- Queue the attack for damage computation
     combat.queuedAttack = {
         targetId = target.id,
         time = world.time or 0,
         range = range,
     }
-
-    combat.cooldown = cooldownReset
-    combat.swingTimer = combat.swingDuration or 0.35
-    combat.lastAttackTime = world.time or 0
 end
 
 return playerAttackSystem
