@@ -8,7 +8,7 @@ local sceneManager = SceneManager.new()
 
 function love.load()
     math.randomseed(os.time())
-    sceneManager:push(WorldScene.new())
+    sceneManager:push(WorldScene.new({ sceneManager = sceneManager }))
 end
 
 function love.update(dt)

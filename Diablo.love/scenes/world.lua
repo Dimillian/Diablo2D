@@ -18,6 +18,7 @@ local foeAttackSystem = require("systems.combat.foe_attack")
 local spawnSystem = require("systems.ai.spawn")
 local cullingSystem = require("systems.core.culling")
 local uiPlayerStatus = require("systems.ui.player_status")
+local uiBottomBar = require("systems.ui.bottom_bar")
 local cameraSystem = require("systems.core.camera")
 local applyStatsSystem = require("systems.core.apply_stats")
 local starterGearSystem = require("systems.core.starter_gear")
@@ -46,6 +47,7 @@ function WorldScene.new(opts)
         pendingCombatEvents = {},
         currentTargetId = nil,
         targetDisplayTimer = 0,
+        sceneManager = opts.sceneManager, -- Reference to scene manager for opening inventory
         systemHelpers = {
             coordinates = require("systems.helpers.coordinates"),
         },
@@ -91,6 +93,7 @@ function WorldScene.new(opts)
                 renderHealthSystem.draw,
                 renderDamageNumbersSystem.draw,
                 uiPlayerStatus.draw,
+                uiBottomBar.draw,
                 uiTargetSystem.draw,
                 lootTooltipSystem.draw,
             },
@@ -168,8 +171,20 @@ function WorldScene:keypressed(key)
     end
 end
 
-function WorldScene:mousepressed(_x, _y, button, _istouch, _presses)
+function WorldScene:mousepressed(x, y, button, _istouch, _presses)
     if button == 1 then
+        -- Check if bag button was clicked
+        if self.bottomBarBagRect then
+            local rect = self.bottomBarBagRect
+            if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+                -- Open inventory via scene manager
+                if self.sceneManager then
+                    self.sceneManager:toggleInventory("i")
+                end
+                return
+            end
+        end
+
         mouseInputSystem.queuePress(self)
     end
 end
