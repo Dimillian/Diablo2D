@@ -16,6 +16,7 @@ function Player.new(opts)
     local createRenderable = require("components.renderable")
     local createPlayerControlled = require("components.player_controlled")
     local createHealth = require("components.health")
+    local createMana = require("components.mana")
     local createCombat = require("components.combat")
 
     local entity = {
@@ -35,6 +36,7 @@ function Player.new(opts)
         renderable = createRenderable(opts.renderable),
         playerControlled = createPlayerControlled(opts.playerControlled),
         health = createHealth(opts.health),
+        mana = createMana(opts.mana),
         combat = createCombat(opts.combat),
     }
 

@@ -6,16 +6,18 @@ function uiBottomBar.draw(world)
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 
-    -- Bottom bar positioning - next to health bar
+    -- Bottom bar positioning - next to health and mana bars
     local healthBarWidth = math.min(screenWidth * 0.3, 240)
     local healthBarX = 32
     local healthBarHeight = 24
-    local healthBarY = screenHeight - healthBarHeight - 32
+    local buttonSize = 48 -- Bag icon height - total height should match this
+    local spacing = buttonSize - (healthBarHeight * 2) -- Calculate spacing so both bars + gap = buttonSize
+    local manaBarY = screenHeight - healthBarHeight - 32
+    local healthBarY = manaBarY - healthBarHeight - spacing
 
-    -- Bag button size and positioning
-    local buttonSize = 48
+    -- Bag button size and positioning - vertically centered relative to both bars
     local buttonX = healthBarX + healthBarWidth + 16
-    local buttonY = healthBarY + (healthBarHeight - buttonSize) / 2
+    local buttonY = healthBarY -- Bars total height equals buttonSize, so align top edges
 
     -- Store rect for click detection
     world.bottomBarBagRect = {

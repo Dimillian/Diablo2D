@@ -50,6 +50,32 @@ function applyStatsSystem.update(world, _dt)
             player.health.current = math.min(player.health.current, newMaxHealth * ratio)
         end
     end
+
+    -- Apply mana max: update max mana based on stats
+    if player.mana then
+        local baseMaxMana = 25 -- Default base mana
+        if player.baseStats and player.baseStats.mana then
+            baseMaxMana = player.baseStats.mana
+        end
+
+        -- Total stats already includes base + equipment
+        local newMaxMana = totalStats.mana or baseMaxMana
+
+        -- Update max mana
+        local oldMaxMana = player.mana.max
+        player.mana.max = newMaxMana
+
+        -- Adjust current mana when max changes
+        if newMaxMana > oldMaxMana then
+            -- If max increased, add the difference to current mana
+            local manaIncrease = newMaxMana - oldMaxMana
+            player.mana.current = math.min(player.mana.current + manaIncrease, newMaxMana)
+        elseif newMaxMana < oldMaxMana then
+            -- If max decreased, cap current mana proportionally
+            local ratio = player.mana.current / oldMaxMana
+            player.mana.current = math.min(player.mana.current, newMaxMana * ratio)
+        end
+    end
 end
 
 return applyStatsSystem

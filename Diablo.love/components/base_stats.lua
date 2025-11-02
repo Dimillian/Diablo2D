@@ -3,6 +3,7 @@ local defaultStats = {
     damageMax = 8,
     defense = 2,
     health = 50,
+    mana = 25,
     critChance = 0.05,
     moveSpeed = 0,
     dodgeChance = 0,

@@ -3,6 +3,7 @@ local statKeys = {
     "damageMax",
     "defense",
     "health",
+    "mana",
     "critChance",
     "moveSpeed",
     "dodgeChance",
