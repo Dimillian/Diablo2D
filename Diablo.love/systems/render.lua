@@ -70,21 +70,36 @@ function renderSystem.draw(world)
 
         local renderable = entity.renderable
         if renderable.kind == "rect" then
-            -- Tint player when recently damaged (visual strike indicator)
-            local color = renderable.color
-            if entity.recentlyDamaged then
-                -- Flash red tint when damaged
-                color = { 1, 0.3, 0.3, color[4] or 1 }
+            -- Skip rendering base rectangle if entity has armor equipped
+            local hasArmor = false
+            if entity.equipment then
+                local armorSlots = { "head", "chest", "gloves", "feet" }
+                for _, slotId in ipairs(armorSlots) do
+                    if entity.equipment[slotId] then
+                        hasArmor = true
+                        break
+                    end
+                end
             end
 
-            love.graphics.setColor(color)
-            love.graphics.rectangle(
-                "fill",
-                entity.position.x,
-                entity.position.y,
-                entity.size.w,
-                entity.size.h
-            )
+            -- Only render base rectangle if no armor is equipped
+            if not hasArmor then
+                -- Tint player when recently damaged (visual strike indicator)
+                local color = renderable.color
+                if entity.recentlyDamaged then
+                    -- Flash red tint when damaged
+                    color = { 1, 0.3, 0.3, color[4] or 1 }
+                end
+
+                love.graphics.setColor(color)
+                love.graphics.rectangle(
+                    "fill",
+                    entity.position.x,
+                    entity.position.y,
+                    entity.size.w,
+                    entity.size.h
+                )
+            end
         end
 
         ::continue::

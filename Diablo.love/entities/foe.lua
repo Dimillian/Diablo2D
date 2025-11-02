@@ -2,7 +2,7 @@ local Foe = {}
 Foe.__index = Foe
 
 ---Create a foe entity using config from foe_types.lua
----@param opts table - Must include 'config' key with foe type config from foe_types.lua, plus 'x', 'y', 'width', 'height'
+---@param opts table Must include 'config' key with foe type config from foe_types.lua, plus 'x', 'y', 'width', 'height'
 ---@return Foe
 function Foe.new(opts)
     local config = opts.config

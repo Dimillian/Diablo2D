@@ -4,26 +4,43 @@ local ItemGenerator = {}
 
 local idCounter = 0
 
--- Map item types to sprite folder names
+-- Map item types to sprite folder names and sprite file prefixes
 local spriteFolders = {
-    sword = { folder = "weapons/SwordOriginal", prefix = "SwordOriginal", maxCount = 56 },
-    axe = { folder = "weapons/AxeOriginal", prefix = "AxeOriginal", maxCount = 30 },
-    hammer = { folder = "weapons/MaceOriginal", prefix = "MaceOriginal", maxCount = 30 },
-    dagger = { folder = "weapons/DaggerOriginal", prefix = "DaggerOriginal", maxCount = 20 },
-    helmet = { folder = "armor/HelmetOriginal", prefix = "HelmetOriginal", maxCount = 50 },
-    chest = { folder = "armor/TorsoOriginal", prefix = "TorsoOriginal", maxCount = 55 },
-    boots = { folder = "armor/FeetOriginal", prefix = "FeetOriginal", maxCount = 38 },
-    gloves = { folder = "armor/GauntletOriginal", prefix = "GauntletOriginal", maxCount = 47 },
+    sword = { folder = "weapons/sword", prefix = "sword" },
+    axe = { folder = "weapons/axe", prefix = "axe" },
+    hammer = { folder = "weapons/mace", prefix = "mace" },
+    dagger = { folder = "weapons/dagger", prefix = "dagger" },
+    helmet = { folder = "armor/helmet", prefix = "helmet" },
+    chest = { folder = "armor/torso", prefix = "torso" },
+    boots = { folder = "armor/feet", prefix = "feet" },
+    gloves = { folder = "armor/gauntlet", prefix = "gauntlet" },
 }
 
-local function selectRandomSprite(itemTypeId)
+-- Map rarity IDs to icon number ranges (2 icons per tier)
+local rarityIconRanges = {
+    common = { min = 1, max = 2 },
+    uncommon = { min = 3, max = 4 },
+    rare = { min = 5, max = 6 },
+    epic = { min = 7, max = 8 },
+    legendary = { min = 9, max = 10 },
+}
+
+local function selectRandomSprite(itemTypeId, rarity)
     local folderInfo = spriteFolders[itemTypeId]
     if not folderInfo then
         return nil
     end
 
-    local spriteNumber = math.random(1, folderInfo.maxCount)
-    local spritePath = string.format("resources/%s/%s %d.png", folderInfo.folder, folderInfo.prefix, spriteNumber)
+    -- Get icon range based on rarity
+    local iconRange = rarityIconRanges[rarity.id]
+    if not iconRange then
+        -- Fallback to common if rarity not found
+        iconRange = rarityIconRanges.common
+    end
+
+    -- Randomly select one icon from the two available for this tier
+    local spriteNumber = math.random(iconRange.min, iconRange.max)
+    local spritePath = string.format("resources/%s/%s_%d.png", folderInfo.folder, folderInfo.prefix, spriteNumber)
     return spritePath
 end
 
@@ -319,7 +336,7 @@ function ItemGenerator.generate(opts)
 
     finalizeStats(stats)
 
-    local spritePath = selectRandomSprite(itemType.id)
+    local spritePath = selectRandomSprite(itemType.id, rarity)
 
     local item = {
         id = nextId(),

@@ -28,6 +28,8 @@ function renderEquipmentSystem.draw(world)
             head = { x = 0, y = -size.h * 1 }, -- Up
             chest = { x = 0, y = 0 }, -- Center
             feet = { x = 0, y = size.h * 1 }, -- Down
+            feetLeft = { x = -size.w * 0.6, y = size.h * 1 }, -- Left foot
+            feetRight = { x = size.w * 0.6, y = size.h * 1 }, -- Right foot
             glovesLeft = { x = -size.w * 1.5, y = 0.5 }, -- Left side
             glovesRight = { x = size.w * 1.5, y = 0.5 }, -- Right side
         }
@@ -44,9 +46,9 @@ function renderEquipmentSystem.draw(world)
 
                     -- Special handling for gloves: render both left and right
                     if slotId == "gloves" then
-                        -- Left glove (normal)
+                        -- Left glove (flipped horizontally, on left side)
                         local leftOffset = offsets.glovesLeft or { x = 0, y = 0 }
-                        local leftSpriteX = centerX - spriteSize / 2 + leftOffset.x
+                        local leftSpriteX = centerX - spriteSize / 2 + leftOffset.x + spriteSize
                         local leftSpriteY = centerY - spriteSize / 2 + leftOffset.y
                         love.graphics.setColor(1, 1, 1, 1)
                         love.graphics.draw(
@@ -54,24 +56,53 @@ function renderEquipmentSystem.draw(world)
                             leftSpriteX,
                             leftSpriteY,
                             0,
-                            spriteSize / sprite:getWidth(),
+                            -spriteSize / sprite:getWidth(), -- Negative scaleX to flip horizontally
                             spriteSize / sprite:getHeight()
                         )
 
-                        -- Right glove (flipped horizontally)
+                        -- Right glove (normal, on right side)
                         local rightOffset = offsets.glovesRight or { x = 0, y = 0 }
                         local rightSpriteX = centerX - spriteSize / 2 + rightOffset.x
                         local rightSpriteY = centerY - spriteSize / 2 + rightOffset.y
+                        love.graphics.setColor(1, 1, 1, 1)
                         love.graphics.draw(
                             sprite,
-                            rightSpriteX + spriteSize, -- Adjust origin for horizontal flip
+                            rightSpriteX,
                             rightSpriteY,
+                            0,
+                            spriteSize / sprite:getWidth(),
+                            spriteSize / sprite:getHeight()
+                        )
+                    elseif slotId == "feet" then
+                        -- Left boot (flipped horizontally, on left side)
+                        local leftOffset = offsets.feetLeft or { x = 0, y = 0 }
+                        local leftSpriteX = centerX - spriteSize / 2 + leftOffset.x + spriteSize
+                        local leftSpriteY = centerY - spriteSize / 2 + leftOffset.y
+                        love.graphics.setColor(1, 1, 1, 1)
+                        love.graphics.draw(
+                            sprite,
+                            leftSpriteX,
+                            leftSpriteY,
                             0,
                             -spriteSize / sprite:getWidth(), -- Negative scaleX to flip horizontally
                             spriteSize / sprite:getHeight()
                         )
+
+                        -- Right boot (normal, on right side)
+                        local rightOffset = offsets.feetRight or { x = 0, y = 0 }
+                        local rightSpriteX = centerX - spriteSize / 2 + rightOffset.x
+                        local rightSpriteY = centerY - spriteSize / 2 + rightOffset.y
+                        love.graphics.setColor(1, 1, 1, 1)
+                        love.graphics.draw(
+                            sprite,
+                            rightSpriteX,
+                            rightSpriteY,
+                            0,
+                            spriteSize / sprite:getWidth(),
+                            spriteSize / sprite:getHeight()
+                        )
                     else
-                        -- Normal rendering for other slots
+                        -- Normal rendering for other slots (weapon, head, chest)
                         local offset = offsets[slotId] or { x = 0, y = 0 }
                         local swingOffsetX = 0
                         local swingOffsetY = 0
