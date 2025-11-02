@@ -14,6 +14,8 @@ local spriteFolders = {
     chest = { folder = "armor/torso", prefix = "torso" },
     boots = { folder = "armor/feet", prefix = "feet" },
     gloves = { folder = "armor/gauntlet", prefix = "gauntlet" },
+    ring = { folder = "armor/ring", prefix = "ring" },
+    amulet = { folder = "armor/amulet", prefix = "amulet" },
 }
 
 -- Map rarity IDs to icon number ranges (2 icons per tier)
@@ -31,7 +33,18 @@ local function selectRandomSprite(itemTypeId, rarity)
         return nil
     end
 
-    -- Get icon range based on rarity
+    -- Rings and amulets use full sprite sets regardless of rarity
+    if itemTypeId == "ring" then
+        local spriteNumber = math.random(1, 40)
+        local spritePath = string.format("resources/%s/%s_%d.png", folderInfo.folder, folderInfo.prefix, spriteNumber)
+        return spritePath
+    elseif itemTypeId == "amulet" then
+        local spriteNumber = math.random(1, 60)
+        local spritePath = string.format("resources/%s/%s_%d.png", folderInfo.folder, folderInfo.prefix, spriteNumber)
+        return spritePath
+    end
+
+    -- For other items, use rarity-based icon ranges
     local iconRange = rarityIconRanges[rarity.id]
     if not iconRange then
         -- Fallback to common if rarity not found
@@ -193,25 +206,26 @@ local function rollRange(range)
     return min + math.random() * (max - min)
 end
 
-local function applyStats(stats, definition)
+local function applyStats(stats, definition, multiplier)
+    multiplier = multiplier or 1.0
     for key, modifiers in pairs(definition.stats) do
         if key == "damage" then
             if modifiers.flat then
-                local value = rollRange(modifiers.flat)
+                local value = rollRange(modifiers.flat) * multiplier
                 stats.damageMin = stats.damageMin + value
                 stats.damageMax = stats.damageMax + value
             end
             if modifiers.percent then
-                local value = rollRange(modifiers.percent)
+                local value = rollRange(modifiers.percent) * multiplier
                 stats.damageMin = stats.damageMin * (1 + value)
                 stats.damageMax = stats.damageMax * (1 + value)
             end
         else
             if modifiers.flat then
-                applyFlat(stats, key, rollRange(modifiers.flat))
+                applyFlat(stats, key, rollRange(modifiers.flat) * multiplier)
             end
             if modifiers.percent then
-                applyPercent(stats, key, rollRange(modifiers.percent))
+                applyPercent(stats, key, rollRange(modifiers.percent) * multiplier)
             end
         end
     end
@@ -271,12 +285,15 @@ local function rollAffixes(pool, count, slot)
 
     local affixes = {}
 
+    -- Ensure we only roll exactly 'count' number of affixes
     for _ = 1, count do
-        local affix = takeRandom(available)
-        if not affix then
+        if #available == 0 then
             break
         end
-        affixes[#affixes + 1] = affix
+        local affix = takeRandom(available)
+        if affix then
+            affixes[#affixes + 1] = affix
+        end
     end
 
     return affixes
@@ -321,17 +338,24 @@ function ItemGenerator.generate(opts)
     local rarity = opts.rarity or ItemGenerator.randomRarity()
     local itemType = opts.itemType or ItemGenerator.randomItemType()
 
-    local prefixes = rollAffixes(ItemData.prefixes, rarity.prefixCount, itemType.slot)
+    -- Common rings and amulets get 1 random prefix instead of 0
+    local prefixCount = rarity.prefixCount
+    if rarity.id == "common" and (itemType.slot == "ring" or itemType.slot == "amulet") then
+        prefixCount = 1
+    end
+
+    local prefixes = rollAffixes(ItemData.prefixes, prefixCount, itemType.slot)
     local suffixes = rollAffixes(ItemData.suffixes, rarity.suffixCount, itemType.slot)
 
     local stats = createBaseStats(itemType, rarity)
+    local multiplier = rarity.statMultiplier or 1.0
 
     for _, prefix in ipairs(prefixes) do
-        applyStats(stats, prefix)
+        applyStats(stats, prefix, multiplier)
     end
 
     for _, suffix in ipairs(suffixes) do
-        applyStats(stats, suffix)
+        applyStats(stats, suffix, multiplier)
     end
 
     finalizeStats(stats)

@@ -118,6 +118,24 @@ Items.types = {
             defense = { min = 2, max = 4 },
         },
     },
+    ring = {
+        id = "ring",
+        label = "Ring",
+        slot = "ring",
+        base = {
+            damage = { min = 0, max = 0 },
+            defense = 0,
+        },
+    },
+    amulet = {
+        id = "amulet",
+        label = "Amulet",
+        slot = "amulet",
+        base = {
+            damage = { min = 0, max = 0 },
+            defense = 0,
+        },
+    },
 }
 
 Items.prefixes = {
@@ -144,7 +162,7 @@ Items.prefixes = {
     },
     {
         name = "Guarded",
-        slots = { "head", "chest", "feet", "gloves" },
+        slots = { "head", "chest", "feet", "gloves", "ring", "amulet" },
         stats = {
             defense = { flat = { 2, 4 } },
         },
@@ -179,7 +197,7 @@ Items.prefixes = {
     },
     {
         name = "Reinforced",
-        slots = { "head", "chest", "feet", "gloves" },
+        slots = { "head", "chest", "feet", "gloves", "ring", "amulet" },
         stats = {
             defense = { percent = { 0.1, 0.2 } },
         },
@@ -199,33 +217,57 @@ Items.prefixes = {
             attackSpeed = { percent = { 0.08, 0.15 } },
         },
     },
+    {
+        name = "Enchanted",
+        slots = { "ring", "amulet" },
+        stats = {
+            critChance = { flat = { 0.02, 0.08 } },
+            attackSpeed = { percent = { 0.03, 0.07 } },
+        },
+    },
+    {
+        name = "Fortified",
+        slots = { "ring", "amulet" },
+        stats = {
+            health = { flat = { 25, 45 } },
+            defense = { flat = { 3, 6 } },
+        },
+    },
+    {
+        name = "Warding",
+        slots = { "ring", "amulet" },
+        stats = {
+            resistAll = { percent = { 0.04, 0.08 } },
+            dodgeChance = { flat = { 0.02, 0.04 } },
+        },
+    },
 }
 
 Items.suffixes = {
     {
         name = "of Vitality",
-        slots = { "head", "chest", "weapon", "gloves" },
+        slots = { "head", "chest", "weapon", "gloves", "ring", "amulet" },
         stats = {
             health = { flat = { 10, 20 } },
         },
     },
     {
         name = "of the Fox",
-        slots = { "head", "chest", "feet", "gloves" },
+        slots = { "head", "chest", "feet", "gloves", "ring", "amulet" },
         stats = {
             dodgeChance = { flat = { 0.03, 0.08 } },
         },
     },
     {
         name = "of the Bear",
-        slots = { "head", "chest", "feet", "gloves" },
+        slots = { "head", "chest", "feet", "gloves", "ring", "amulet" },
         stats = {
             defense = { percent = { 0.06, 0.12 } },
         },
     },
     {
         name = "of Greed",
-        slots = { "weapon", "head", "chest", "feet", "gloves" },
+        slots = { "weapon", "head", "chest", "feet", "gloves", "ring", "amulet" },
         stats = {
             goldFind = { percent = { 0.1, 0.25 } },
         },
@@ -246,7 +288,7 @@ Items.suffixes = {
     },
     {
         name = "of the Sentinel",
-        slots = { "head", "chest", "gloves" },
+        slots = { "head", "chest", "gloves", "ring", "amulet" },
         stats = {
             health = { flat = { 20, 35 } },
             defense = { percent = { 0.08, 0.15 } },
@@ -262,9 +304,33 @@ Items.suffixes = {
     },
     {
         name = "of Resolve",
-        slots = { "head", "chest", "feet", "gloves" },
+        slots = { "head", "chest", "feet", "gloves", "ring", "amulet" },
         stats = {
             resistAll = { percent = { 0.05, 0.12 } },
+        },
+    },
+    {
+        name = "of Power",
+        slots = { "ring", "amulet" },
+        stats = {
+            critChance = { flat = { 0.03, 0.07 } },
+            attackSpeed = { percent = { 0.03, 0.06 } },
+        },
+    },
+    {
+        name = "of Regeneration",
+        slots = { "ring", "amulet" },
+        stats = {
+            health = { flat = { 30, 50 } },
+            lifeSteal = { percent = { 0.02, 0.05 } },
+        },
+    },
+    {
+        name = "of Evasion",
+        slots = { "ring", "amulet" },
+        stats = {
+            dodgeChance = { flat = { 0.05, 0.1 } },
+            moveSpeed = { percent = { 0.05, 0.1 } },
         },
     },
 }

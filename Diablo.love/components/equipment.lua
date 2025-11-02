@@ -1,4 +1,4 @@
-local equipmentSlots = { "weapon", "head", "chest", "feet" }
+local equipmentSlots = { "weapon", "head", "chest", "feet", "gloves", "ringLeft", "ringRight", "amulet" }
 
 local function createEquipmentComponent(opts)
     opts = opts or {}

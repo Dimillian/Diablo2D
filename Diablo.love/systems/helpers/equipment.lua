@@ -6,6 +6,9 @@ local equipmentSlots = {
     { id = "chest", label = "Chest" },
     { id = "gloves", label = "Gloves" },
     { id = "feet", label = "Boots" },
+    { id = "ringLeft", label = "Ring (L)" },
+    { id = "ringRight", label = "Ring (R)" },
+    { id = "amulet", label = "Amulet" },
 }
 
 local EquipmentHelper = {}
@@ -43,6 +46,20 @@ function EquipmentHelper.equip(player, item)
     local inventoryItems = inventory and inventory.items or nil
 
     local slotId = item.slot
+
+    -- Handle ring auto-assignment: rings can go in either ringLeft or ringRight
+    if slotId == "ring" then
+        -- Prefer ringLeft if empty, otherwise ringRight
+        if not equipment.ringLeft then
+            slotId = "ringLeft"
+        elseif not equipment.ringRight then
+            slotId = "ringRight"
+        else
+            -- Both slots full, replace ringLeft (player can unequip/re-equip to swap)
+            slotId = "ringLeft"
+        end
+    end
+
     local previous = equipment[slotId]
     equipment[slotId] = item
 
