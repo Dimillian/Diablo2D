@@ -400,8 +400,22 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     love.graphics.setColor(0, 0, 0, 0.8)
     love.graphics.rectangle("fill", tooltipX, tooltipY, width, height, 6, 6)
 
-    -- Draw border with rarity color
+    -- Draw inner glow gradient effect with rarity color
     local rarityColor = Tooltips.getRarityColor(item.rarity)
+    local glowLayers = 8
+    local glowThickness = 8
+
+    for i = 1, glowLayers do
+        local offset = i * 0.8
+        local alpha = (0.6 * (glowLayers - i + 1)) / glowLayers
+        local glowColor = { rarityColor[1], rarityColor[2], rarityColor[3], alpha }
+        love.graphics.setColor(glowColor)
+        love.graphics.setLineWidth(1.5)
+        love.graphics.rectangle("line", tooltipX + offset, tooltipY + offset,
+                               width - offset * 2, height - offset * 2, 6 - offset * 0.4, 6 - offset * 0.4)
+    end
+
+    -- Draw main border with rarity color
     love.graphics.setColor(rarityColor)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", tooltipX, tooltipY, width, height, 6, 6)
