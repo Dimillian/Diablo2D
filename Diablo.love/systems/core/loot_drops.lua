@@ -1,6 +1,6 @@
 local ItemGenerator = require("items.generator")
 local LootEntity = require("entities.loot")
-local Tooltips = require("system_helpers.tooltips")
+local Tooltips = require("systems.helpers.tooltips")
 
 local lootDropSystem = {}
 

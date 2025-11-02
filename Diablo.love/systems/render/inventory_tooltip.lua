@@ -1,5 +1,5 @@
 ---Render system for inventory tooltips
-local Tooltips = require("system_helpers.tooltips")
+local Tooltips = require("systems.helpers.tooltips")
 
 local renderInventoryTooltip = {}
 

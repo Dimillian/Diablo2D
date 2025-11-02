@@ -1,13 +1,13 @@
 local ItemGenerator = require("items.generator")
-local EquipmentHelper = require("system_helpers.equipment")
+local EquipmentHelper = require("systems.helpers.equipment")
 
 -- Import render systems
-local renderInventoryBackground = require("systems.render_inventory_background")
-local renderInventoryEquipment = require("systems.render_inventory_equipment")
-local renderInventoryStats = require("systems.render_inventory_stats")
-local renderInventoryGrid = require("systems.render_inventory_grid")
-local renderInventoryHelp = require("systems.render_inventory_help")
-local renderInventoryTooltip = require("systems.render_inventory_tooltip")
+local renderInventoryBackground = require("systems.render.inventory_background")
+local renderInventoryEquipment = require("systems.render.inventory_equipment")
+local renderInventoryStats = require("systems.render.inventory_stats")
+local renderInventoryGrid = require("systems.render.inventory_grid")
+local renderInventoryHelp = require("systems.render.inventory_help")
+local renderInventoryTooltip = require("systems.render.inventory_tooltip")
 
 local InventoryScene = {}
 InventoryScene.__index = InventoryScene

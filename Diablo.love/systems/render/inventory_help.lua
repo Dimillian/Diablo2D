@@ -1,5 +1,5 @@
 ---Render system for inventory help text
-local InventoryLayout = require("system_helpers.inventory_layout")
+local InventoryLayout = require("systems.helpers.inventory_layout")
 
 local renderInventoryHelp = {}
 

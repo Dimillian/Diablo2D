@@ -1,7 +1,7 @@
 ---Render system for inventory equipment slots
 local Resources = require("modules.resources")
-local EquipmentHelper = require("system_helpers.equipment")
-local InventoryLayout = require("system_helpers.inventory_layout")
+local EquipmentHelper = require("systems.helpers.equipment")
+local InventoryLayout = require("systems.helpers.inventory_layout")
 
 local renderInventoryEquipment = {}
 

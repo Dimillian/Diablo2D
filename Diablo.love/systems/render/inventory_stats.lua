@@ -1,6 +1,6 @@
 ---Render system for inventory stats section
-local EquipmentHelper = require("system_helpers.equipment")
-local InventoryLayout = require("system_helpers.inventory_layout")
+local EquipmentHelper = require("systems.helpers.equipment")
+local InventoryLayout = require("systems.helpers.inventory_layout")
 
 local renderInventoryStats = {}
 

@@ -1,8 +1,8 @@
 ---Render system for inventory grid
 local Resources = require("modules.resources")
-local EquipmentHelper = require("system_helpers.equipment")
-local InventoryLayout = require("system_helpers.inventory_layout")
-local Tooltips = require("system_helpers.tooltips")
+local EquipmentHelper = require("systems.helpers.equipment")
+local InventoryLayout = require("systems.helpers.inventory_layout")
+local Tooltips = require("systems.helpers.tooltips")
 
 local rarityColors = Tooltips.rarityColors
 

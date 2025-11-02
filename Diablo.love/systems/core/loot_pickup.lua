@@ -1,5 +1,5 @@
 local vector = require("modules.vector")
-local EquipmentHelper = require("system_helpers.equipment")
+local EquipmentHelper = require("systems.helpers.equipment")
 
 local lootPickupSystem = {}
 

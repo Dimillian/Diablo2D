@@ -1,5 +1,5 @@
 local ItemGenerator = require("items.generator")
-local EquipmentHelper = require("system_helpers.equipment")
+local EquipmentHelper = require("systems.helpers.equipment")
 
 local starterGearSystem = {}
 

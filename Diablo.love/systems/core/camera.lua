@@ -1,4 +1,4 @@
-local coordinates = require("system_helpers.coordinates")
+local coordinates = require("systems.helpers.coordinates")
 
 local cameraSystem = {}
 

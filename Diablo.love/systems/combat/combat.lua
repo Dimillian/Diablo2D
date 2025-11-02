@@ -1,5 +1,5 @@
 local vector = require("modules.vector")
-local Targeting = require("system_helpers.targeting")
+local Targeting = require("systems.helpers.targeting")
 local createRecentlyDamaged = require("components.recently_damaged")
 local createDead = require("components.dead")
 local createKnockback = require("components.knockback")

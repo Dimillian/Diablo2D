@@ -1,5 +1,5 @@
 ---Render system for inventory background (dim overlay and panel)
-local InventoryLayout = require("system_helpers.inventory_layout")
+local InventoryLayout = require("systems.helpers.inventory_layout")
 
 local renderInventoryBackground = {}
 
