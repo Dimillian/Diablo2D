@@ -1,3 +1,5 @@
+local vector = require("modules.vector")
+
 local playerInputSystem = {}
 
 function playerInputSystem.update(world, _dt)
@@ -22,6 +24,21 @@ function playerInputSystem.update(world, _dt)
 
         movement.vx = dx
         movement.vy = dy
+
+        -- Update look direction based on keyboard movement
+        -- (mouse look will override this if mouse is moving)
+        if dx ~= 0 or dy ~= 0 then
+            local ndx, ndy = vector.normalize(dx, dy)
+            if ndx ~= 0 or ndy ~= 0 then
+                -- Ensure lookDirection exists
+                if not movement.lookDirection then
+                    movement.lookDirection = { x = 0, y = -1 }
+                end
+                -- Update look direction based on movement
+                movement.lookDirection.x = ndx
+                movement.lookDirection.y = ndy
+            end
+        end
     end
 end
 
