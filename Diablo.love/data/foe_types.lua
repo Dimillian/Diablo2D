@@ -12,6 +12,7 @@ foeTypes.types = {
         damageMin = 4,
         damageMax = 6,
         attackSpeed = 0.8,
+        range = 45
     },
     medium = {
         name = "Medium Foe",
@@ -23,6 +24,7 @@ foeTypes.types = {
         damageMin = 6,
         damageMax = 9,
         attackSpeed = 1.1,
+        range = 50, -- Standard range (reduced for closer combat)
     },
     aggressive = {
         name = "Aggressive Foe",
@@ -34,6 +36,7 @@ foeTypes.types = {
         damageMin = 7,
         damageMax = 12,
         attackSpeed = 1.3,
+        range = 50,
     },
 }
 

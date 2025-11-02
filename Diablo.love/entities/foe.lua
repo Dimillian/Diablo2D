@@ -1,11 +1,11 @@
 local Foe = {}
 Foe.__index = Foe
 
----Create a foe entity with position and size defaults.
----@param opts table|nil
+---Create a foe entity using config from foe_types.lua
+---@param opts table - Must include 'config' key with foe type config from foe_types.lua, plus 'x', 'y', 'width', 'height'
 ---@return Foe
 function Foe.new(opts)
-    opts = opts or {}
+    local config = opts.config
 
     local createPosition = require("components.position")
     local createSize = require("components.size")
@@ -19,34 +19,39 @@ function Foe.new(opts)
 
     local entity = {
         id = opts.id or ("foe_" .. math.random(10000, 99999)),
-        name = opts.name or "Foe",
+        name = config.name,
         position = createPosition({
-            x = opts.x or 0,
-            y = opts.y or 0,
+            x = opts.x,
+            y = opts.y,
         }),
         size = createSize({
-            w = opts.width or 20,
-            h = opts.height or 20,
+            w = opts.width,
+            h = opts.height,
         }),
         movement = createMovement({
-            speed = opts.speed or 80,
+            speed = config.speed,
         }),
-        renderable = createRenderable(opts.renderable or {
+        renderable = createRenderable({
             kind = "rect",
-            color = { 1, 0, 0, 1 },
+            color = config.color,
         }),
         wander = createWander({
-            interval = opts.wanderInterval or 0.01,
+            interval = config.wanderInterval,
         }),
         detection = createDetection({
-            range = opts.detectionRange or 150,
+            range = config.detectionRange,
         }),
         foe = createFoeTag(),
-        health = createHealth(opts.health or {
-            max = 30,
-            current = 30,
+        health = createHealth({
+            max = config.health,
+            current = config.health,
         }),
-        combat = createCombat(opts.combat),
+        combat = createCombat({
+            range = config.range,
+            attackSpeed = config.attackSpeed,
+            baseDamageMin = config.damageMin,
+            baseDamageMax = config.damageMax,
+        }),
     }
 
     return setmetatable(entity, Foe)

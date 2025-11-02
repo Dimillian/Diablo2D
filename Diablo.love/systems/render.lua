@@ -70,7 +70,14 @@ function renderSystem.draw(world)
 
         local renderable = entity.renderable
         if renderable.kind == "rect" then
-            love.graphics.setColor(renderable.color)
+            -- Tint player when recently damaged (visual strike indicator)
+            local color = renderable.color
+            if entity.recentlyDamaged then
+                -- Flash red tint when damaged
+                color = { 1, 0.3, 0.3, color[4] or 1 }
+            end
+
+            love.graphics.setColor(color)
             love.graphics.rectangle(
                 "fill",
                 entity.position.x,

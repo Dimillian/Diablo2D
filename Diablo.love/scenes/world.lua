@@ -13,6 +13,7 @@ local renderDamageNumbersSystem = require("systems.render_damage_numbers")
 local wanderSystem = require("systems.wander")
 local detectionSystem = require("systems.detection")
 local chaseSystem = require("systems.chase")
+local foeAttackSystem = require("systems.foe_attack")
 local spawnSystem = require("systems.spawn")
 local cullingSystem = require("systems.culling")
 local uiPlayerStatus = require("systems.ui_player_status")
@@ -61,6 +62,7 @@ function WorldScene.new(opts)
                 detectionSystem.update,
                 wanderSystem.update,
                 chaseSystem.update,
+                foeAttackSystem.update,
                 combatSystem.update,
                 lootDropSystem.update,
                 movementSystem.update,
@@ -103,6 +105,9 @@ function WorldScene.new(opts)
         health = {
             max = opts.playerMaxHealth or 50,
             current = opts.playerHealth or opts.playerMaxHealth or 50,
+        },
+        combat = {
+            range = 170, -- Extended range for player (longer than foes)
         },
     })
 

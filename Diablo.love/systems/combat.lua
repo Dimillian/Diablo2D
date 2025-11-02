@@ -2,6 +2,7 @@ local vector = require("modules.vector")
 local Targeting = require("system_helpers.targeting")
 local createRecentlyDamaged = require("components.recently_damaged")
 local createDead = require("components.dead")
+local createKnockback = require("components.knockback")
 
 local combatSystem = {}
 
@@ -152,6 +153,32 @@ function combatSystem.update(world, dt)
         target.health.current = math.max(0, (target.health.current or 0) - damage)
 
         markRecentlyDamaged(world, target)
+
+        -- Add gentle knockback to both attacker and target when hit
+        -- Direction: push attacker away from target, push target away from attacker
+        local dx = attackerX - targetX
+        local dy = attackerY - targetY
+        local ndx, ndy = vector.normalize(dx, dy)
+
+        -- Knockback for attacker (pushes attacker away from target)
+        local attackerKnockback = createKnockback({
+            x = ndx,
+            y = ndy,
+            timer = 0.2,
+            maxTimer = 0.2,
+            strength = 80, -- More noticeable knockback (pixels per second)
+        })
+        world:addComponent(entity.id, "knockback", attackerKnockback)
+
+        -- Knockback for target (pushes target away from attacker)
+        local targetKnockback = createKnockback({
+            x = -ndx,
+            y = -ndy,
+            timer = 0.2,
+            maxTimer = 0.2,
+            strength = 80, -- More noticeable knockback (pixels per second)
+        })
+        world:addComponent(target.id, "knockback", targetKnockback)
 
         pushCombatEvent(world, {
             type = "damage",

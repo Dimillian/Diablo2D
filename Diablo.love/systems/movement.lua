@@ -26,6 +26,24 @@ function movementSystem.update(world, dt)
         entity.position.x = entity.position.x + ndx * distance
         entity.position.y = entity.position.y + ndy * distance
 
+        -- Apply knockback if present (direct position offset)
+        if entity.knockback then
+            local knockback = entity.knockback
+            knockback.timer = (knockback.timer or 0) - dt
+
+            if knockback.timer > 0 then
+                -- Apply knockback as direct position offset
+                -- strength controls pixels per second of knockback
+                local strength = knockback.strength or 20
+                local knockbackDistance = strength * dt
+                entity.position.x = entity.position.x + knockback.x * knockbackDistance
+                entity.position.y = entity.position.y + knockback.y * knockbackDistance
+            else
+                -- Remove knockback component when timer expires
+                world:removeComponent(entity.id, "knockback")
+            end
+        end
+
         -- Reset per-frame velocity after applying.
         movement.vx = 0
         movement.vy = 0
