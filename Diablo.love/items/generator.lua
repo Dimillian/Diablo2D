@@ -275,10 +275,41 @@ local function appliesToSlot(entry, slot)
     return false
 end
 
-local function rollAffixes(pool, count, slot)
+-- Rarity tier order for comparison
+local rarityTiers = {
+    common = 1,
+    uncommon = 2,
+    rare = 3,
+    epic = 4,
+    legendary = 5,
+}
+
+local function meetsRarityRequirement(affix, rarityId)
+    -- Check minRarity requirement
+    if affix.minRarity then
+        local affixTier = rarityTiers[affix.minRarity]
+        local itemTier = rarityTiers[rarityId]
+        if affixTier and itemTier and itemTier < affixTier then
+            return false -- Item rarity is too low
+        end
+    end
+
+    -- Check maxRarity requirement
+    if affix.maxRarity then
+        local affixTier = rarityTiers[affix.maxRarity]
+        local itemTier = rarityTiers[rarityId]
+        if affixTier and itemTier and itemTier > affixTier then
+            return false -- Item rarity is too high
+        end
+    end
+
+    return true
+end
+
+local function rollAffixes(pool, count, slot, rarityId)
     local available = {}
     for _, entry in ipairs(pool) do
-        if appliesToSlot(entry, slot) then
+        if appliesToSlot(entry, slot) and meetsRarityRequirement(entry, rarityId) then
             available[#available + 1] = entry
         end
     end
@@ -344,8 +375,8 @@ function ItemGenerator.generate(opts)
         prefixCount = 1
     end
 
-    local prefixes = rollAffixes(ItemData.prefixes, prefixCount, itemType.slot)
-    local suffixes = rollAffixes(ItemData.suffixes, rarity.suffixCount, itemType.slot)
+    local prefixes = rollAffixes(ItemData.prefixes, prefixCount, itemType.slot, rarity.id)
+    local suffixes = rollAffixes(ItemData.suffixes, rarity.suffixCount, itemType.slot, rarity.id)
 
     local stats = createBaseStats(itemType, rarity)
     local multiplier = rarity.statMultiplier or 1.0
