@@ -35,7 +35,18 @@ function uiBottomBar.draw(world)
     love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
     love.graphics.rectangle("fill", buttonX, buttonY, buttonSize, buttonSize, 4, 4)
 
-    -- Button border
+    -- Calculate badge position before drawing (needed for background)
+    local letterBoxSize = 14
+    local borderWidth = 2
+    local letterBoxX = buttonX + buttonSize - letterBoxSize
+    local letterBoxY = buttonY
+
+    -- Badge background - drawn before button border so border appears on top
+    -- Matches button background color
+    love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
+    love.graphics.rectangle("fill", letterBoxX, letterBoxY, letterBoxSize, letterBoxSize, 0, 0)
+
+    -- Button border (drawn after badge background so it appears on top)
     love.graphics.setColor(0.9, 0.85, 0.65, 1)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", buttonX, buttonY, buttonSize, buttonSize, 4, 4)
@@ -51,21 +62,16 @@ function uiBottomBar.draw(world)
         love.graphics.draw(bagImage, iconX, iconY, 0, iconSize / bagImage:getWidth(), iconSize / bagImage:getHeight())
     end
 
-    -- Draw "I" letter overlay in a small box
-    local letterBoxSize = 16
-    local letterBoxX = buttonX + buttonSize - letterBoxSize - 4
-    local letterBoxY = buttonY + 4
-
-    -- Letter box background
-    love.graphics.setColor(0.2, 0.2, 0.25, 0.95)
-    love.graphics.rectangle("fill", letterBoxX, letterBoxY, letterBoxSize, letterBoxSize, 2, 2)
-
-    -- Letter box border
+    -- Draw only left and bottom borders (top and right borders are shared with button)
+    -- These merge with the button's border to create a seamless corner badge
     love.graphics.setColor(0.9, 0.85, 0.65, 1)
-    love.graphics.setLineWidth(1)
-    love.graphics.rectangle("line", letterBoxX, letterBoxY, letterBoxSize, letterBoxSize, 2, 2)
+    love.graphics.setLineWidth(2)
+    -- Left border (vertical line) - aligns with button edge
+    love.graphics.line(letterBoxX, letterBoxY, letterBoxX, letterBoxY + letterBoxSize)
+    -- Bottom border (horizontal line) - aligns with button edge
+    love.graphics.line(letterBoxX, letterBoxY + letterBoxSize, letterBoxX + letterBoxSize, letterBoxY + letterBoxSize)
 
-    -- Draw "I" letter
+    -- Draw "I" letter - center it in the badge area
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
     local font = love.graphics.getFont()
     local textWidth = font:getWidth("I")
