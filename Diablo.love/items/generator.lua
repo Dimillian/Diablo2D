@@ -13,7 +13,7 @@ local spriteFolders = {
     helmet = { folder = "armor/HelmetOriginal", prefix = "HelmetOriginal", maxCount = 50 },
     chest = { folder = "armor/TorsoOriginal", prefix = "TorsoOriginal", maxCount = 55 },
     boots = { folder = "armor/FeetOriginal", prefix = "FeetOriginal", maxCount = 38 },
-    gloves = { folder = "weapons/GauntletOriginal", prefix = "GauntletOriginal", maxCount = 47 },
+    gloves = { folder = "armor/GauntletOriginal", prefix = "GauntletOriginal", maxCount = 47 },
 }
 
 local function selectRandomSprite(itemTypeId)
