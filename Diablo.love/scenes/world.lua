@@ -1,4 +1,5 @@
 local Player = require("entities.player")
+local mouseInputSystem = require("systems.mouse_input")
 local playerInputSystem = require("systems.player_input")
 local mouseLookSystem = require("systems.mouse_look")
 local mouseMovementSystem = require("systems.mouse_movement")
@@ -48,15 +49,29 @@ function WorldScene.new(opts)
         systemHelpers = {
             coordinates = require("system_helpers.coordinates"),
         },
+        input = {
+            mouse = {
+                primary = {
+                    held = false,
+                    pressed = false,
+                    released = false,
+                    clickId = 0,
+                    consumedClickId = nil,
+                    _pressedFrame = false,
+                    _releasedFrame = false,
+                },
+            },
+        },
         systems = {
             update = {
+                mouseInputSystem.update,
                 starterGearSystem.update,
                 applyStatsSystem.update,
                 playerInputSystem.update,
                 mouseLookSystem.update,
                 mouseMovementSystem.update,
-                playerAttackSystem.update,
                 lootPickupSystem.update,
+                playerAttackSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
                 detectionSystem.update,
@@ -150,6 +165,18 @@ end
 function WorldScene:keypressed(key)
     if key == "t" then
         self.debugMode = not self.debugMode
+    end
+end
+
+function WorldScene:mousepressed(_x, _y, button, _istouch, _presses)
+    if button == 1 then
+        mouseInputSystem.queuePress(self)
+    end
+end
+
+function WorldScene:mousereleased(_x, _y, button, _istouch, _presses)
+    if button == 1 then
+        mouseInputSystem.queueRelease(self)
     end
 end
 

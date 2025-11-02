@@ -53,15 +53,24 @@ function playerAttackSystem.update(world, dt)
         combat.swingTimer = math.max(combat.swingTimer - dt, 0)
     end
 
-    local leftMouseDown = love.mouse.isDown(1)
-
-    local target = Targeting.getCurrentTarget(world)
-    if leftMouseDown then
-        target = Targeting.resolveMouseTarget(world, { range = combat.range }) or target
+    local input =
+        world.input and world.input.mouse and world.input.mouse.primary
+    if not input then
+        return
     end
 
-    if not leftMouseDown then
+    local wantsAttack = input.held or input.pressed
+    if not wantsAttack then
         return
+    end
+
+    if input.consumedClickId == input.clickId then
+        return
+    end
+
+    local target = Targeting.getCurrentTarget(world)
+    if wantsAttack then
+        target = Targeting.resolveMouseTarget(world, { range = combat.range }) or target
     end
 
     if combat.cooldown > 0 then

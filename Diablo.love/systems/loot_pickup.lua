@@ -64,15 +64,19 @@ function lootPickupSystem.update(world, dt)
         end
     end
 
-    if not love.mouse.isDown(1) then
-        world._lootPickupMouseHeld = false
+    local input =
+        world.input and world.input.mouse and world.input.mouse.primary
+    if not input then
         return
     end
 
-    if world._lootPickupMouseHeld then
+    if not input.pressed then
         return
     end
-    world._lootPickupMouseHeld = true
+
+    if input.consumedClickId == input.clickId then
+        return
+    end
 
     local camera = world.camera or { x = 0, y = 0 }
     local screenX, screenY = love.mouse.getPosition()
@@ -100,14 +104,13 @@ function lootPickupSystem.update(world, dt)
             local distanceToPlayer = vector.distance(playerX, playerY, lootCenterX, lootCenterY)
             if distanceToPlayer <= pickupRadius then
                 transferItemToPlayer(world, player, loot)
+                input.consumedClickId = input.clickId
                 return
             end
         end
 
         ::continue::
     end
-
-    world._lootPickupMouseHeld = false
 end
 
 return lootPickupSystem

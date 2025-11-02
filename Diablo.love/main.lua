@@ -44,3 +44,10 @@ function love.mousepressed(x, y, button, istouch, presses)
         scene:mousepressed(x, y, button, istouch, presses)
     end
 end
+
+function love.mousereleased(x, y, button, istouch, presses)
+    local scene = sceneManager:current()
+    if scene and scene.mousereleased then
+        scene:mousereleased(x, y, button, istouch, presses)
+    end
+end
