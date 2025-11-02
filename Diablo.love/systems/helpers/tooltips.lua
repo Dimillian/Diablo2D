@@ -132,7 +132,9 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     love.graphics.setColor(0, 0, 0, 0.8)
     love.graphics.rectangle("fill", tooltipX, tooltipY, width, height, 6, 6)
 
-    love.graphics.setColor(0.9, 0.85, 0.65, 1)
+    -- Draw border with rarity color
+    local rarityColor = Tooltips.getRarityColor(item.rarity)
+    love.graphics.setColor(rarityColor)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", tooltipX, tooltipY, width, height, 6, 6)
 
@@ -159,7 +161,6 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     end
 
     -- Draw text on the right side of the sprite
-    local rarityColor = Tooltips.getRarityColor(item.rarity)
     local textX = snap(tooltipX + padding + SPRITE_SIZE + spritePadding)
     local titleY = snap(tooltipY + padding)
 

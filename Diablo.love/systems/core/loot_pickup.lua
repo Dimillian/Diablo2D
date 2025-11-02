@@ -25,7 +25,7 @@ local function transferItemToPlayer(world, player, lootEntity)
         return
     end
 
-    local inventory, equipment = EquipmentHelper.ensure(player)
+    local _, equipment = EquipmentHelper.ensure(player)
     local item = lootable.item
 
     if item.slot and equipment[item.slot] == nil then

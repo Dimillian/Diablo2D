@@ -84,7 +84,7 @@ function EquipmentHelper.unequip(player, slotId)
         return
     end
 
-    local inventory, equipment = EquipmentHelper.ensure(player)
+    local _, equipment = EquipmentHelper.ensure(player)
     local item = equipment[slotId]
     if item then
         EquipmentHelper.addToInventory(player, item)
