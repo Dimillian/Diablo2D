@@ -2,6 +2,7 @@
 local Resources = require("modules.resources")
 local EquipmentHelper = require("systems.helpers.equipment")
 local InventoryLayout = require("systems.helpers.inventory_layout")
+local Tooltips = require("systems.helpers.tooltips")
 
 local renderInventoryEquipment = {}
 
@@ -19,14 +20,25 @@ end
 ---@param slotHeight number Slot height
 ---@param equippedItem table|nil Equipped item or nil
 local function drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeight, equippedItem)
-    -- Draw slot background and border
+    -- Draw slot background
     love.graphics.setColor(0.16, 0.16, 0.18, 0.95)
     love.graphics.rectangle("fill", slotX, slotY, slotWidth, slotHeight, 6, 6)
-    love.graphics.setColor(0.45, 0.4, 0.3, 1)
+
+    -- Draw border with rarity color if item is equipped, otherwise default border
+    if equippedItem then
+        local rarityColor = Tooltips.getRarityColor(equippedItem.rarity)
+        love.graphics.setColor(rarityColor)
+        love.graphics.setLineWidth(3)
+    else
+        love.graphics.setColor(0.45, 0.4, 0.3, 1)
+        love.graphics.setLineWidth(1)
+    end
     love.graphics.rectangle("line", slotX, slotY, slotWidth, slotHeight, 6, 6)
 
     -- Draw slot label
     local labelY = snap(slotY + 6)
+    local font = love.graphics.getFont()
+    local labelHeight = font:getHeight()
     love.graphics.setColor(0.85, 0.82, 0.7, 1)
     love.graphics.print(slot.label, snap(slotX + 8), labelY)
 
@@ -36,7 +48,16 @@ local function drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeigh
         if sprite then
             local spriteSize = 40
             local spriteX = snap(slotX + (slotWidth - spriteSize) / 2)
-            local spriteY = snap(labelY + 20)
+            -- Center sprite vertically in the slot, accounting for label space
+            -- Calculate where label area ends (label + padding)
+            local labelBottom = labelY + labelHeight + 6
+            -- Calculate available space below label for sprite
+            local spriteAreaTop = labelBottom
+            local bottomMargin = 8 -- Extra margin at bottom of slot
+            local spriteAreaBottom = slotY + slotHeight - bottomMargin
+            local spriteAreaHeight = spriteAreaBottom - spriteAreaTop
+            -- Center sprite in available space
+            local spriteY = snap(spriteAreaTop + (spriteAreaHeight - spriteSize) / 2)
             love.graphics.setColor(1, 1, 1, 1)
             love.graphics.draw(
                 sprite,

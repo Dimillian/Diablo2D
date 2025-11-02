@@ -4,8 +4,6 @@ local EquipmentHelper = require("systems.helpers.equipment")
 local InventoryLayout = require("systems.helpers.inventory_layout")
 local Tooltips = require("systems.helpers.tooltips")
 
-local rarityColors = Tooltips.rarityColors
-
 local renderInventoryGrid = {}
 
 -- Utility function to snap values to nearest pixel
@@ -21,7 +19,7 @@ end
 ---@param slotSize number Slot size (width and height)
 ---@param slotIndex number Slot index in inventory
 local function drawInventorySlotFilled(scene, item, slotX, slotY, slotSize, slotIndex)
-    local rarityColor = rarityColors[item.rarity] or rarityColors.common
+    local rarityColor = Tooltips.getRarityColor(item.rarity)
 
     -- Draw background
     love.graphics.setColor(0, 0, 0, 0.7)
