@@ -31,8 +31,7 @@ local function transferItemToPlayer(world, player, lootEntity)
     if item.slot and equipment[item.slot] == nil then
         EquipmentHelper.equip(player, item)
     else
-        inventory.items = inventory.items or {}
-        table.insert(inventory.items, item)
+        EquipmentHelper.addToInventory(player, item)
     end
 
     lootable.item = nil

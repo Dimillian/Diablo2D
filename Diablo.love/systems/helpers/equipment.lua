@@ -75,7 +75,7 @@ function EquipmentHelper.equip(player, item)
 
     -- Add previously equipped item back to inventory
     if previous and inventoryItems then
-        table.insert(inventoryItems, previous)
+        EquipmentHelper.addToInventory(player, previous)
     end
 end
 
@@ -86,8 +86,8 @@ function EquipmentHelper.unequip(player, slotId)
 
     local inventory, equipment = EquipmentHelper.ensure(player)
     local item = equipment[slotId]
-    if item and inventory and inventory.items then
-        table.insert(inventory.items, item)
+    if item then
+        EquipmentHelper.addToInventory(player, item)
         equipment[slotId] = nil
     end
 end
@@ -103,6 +103,31 @@ function EquipmentHelper.removeFromInventory(player, index)
     end
 
     table.remove(inventory.items, index)
+end
+
+---Add item to inventory at the beginning, trimming excess items if over limit
+---@param player table Player entity
+---@param item table Item to add
+---@param maxSlots number|nil Maximum inventory slots (default: 48)
+function EquipmentHelper.addToInventory(player, item, maxSlots)
+    if not player or not item then
+        return
+    end
+
+    local inventory = EquipmentHelper.ensure(player)
+    if not inventory or not inventory.items then
+        return
+    end
+
+    maxSlots = maxSlots or 48 -- Default: 8 cols * 6 rows
+
+    -- Insert at beginning (position 1)
+    table.insert(inventory.items, 1, item)
+
+    -- Trim excess items from the end if over limit
+    while #inventory.items > maxSlots do
+        table.remove(inventory.items)
+    end
 end
 
 function EquipmentHelper.computeTotalStats(player)

@@ -75,12 +75,8 @@ function InventoryScene:keypressed(key)
     if key == "g" then
         local item = ItemGenerator.generate()
         local player = self.world:getPlayer()
-        if not player then
-            return
-        end
-        local inventory = EquipmentHelper.ensure(player)
-        if inventory and inventory.items then
-            table.insert(inventory.items, item)
+        if player then
+            EquipmentHelper.addToInventory(player, item)
         end
     end
 end
