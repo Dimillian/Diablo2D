@@ -37,7 +37,6 @@ function uiBottomBar.draw(world)
 
     -- Calculate badge position before drawing (needed for background)
     local letterBoxSize = 14
-    local borderWidth = 2
     local letterBoxX = buttonX + buttonSize - letterBoxSize
     local letterBoxY = buttonY
 
@@ -76,7 +75,9 @@ function uiBottomBar.draw(world)
     local font = love.graphics.getFont()
     local textWidth = font:getWidth("I")
     local textHeight = font:getHeight()
-    love.graphics.print("I", letterBoxX + (letterBoxSize - textWidth) / 2, letterBoxY + (letterBoxSize - textHeight) / 2)
+    local textX = letterBoxX + (letterBoxSize - textWidth) / 2
+    local textY = letterBoxY + (letterBoxSize - textHeight) / 2
+    love.graphics.print("I", textX, textY)
 
     love.graphics.pop()
 end
