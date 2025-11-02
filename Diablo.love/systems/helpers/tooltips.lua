@@ -128,7 +128,10 @@ function Tooltips.buildItemStatLines(item, equippedItems, isEquippedItem)
     if isEquippedItem then
         -- Damage range
         if stats.damageMin and stats.damageMax and (stats.damageMin > 0 or stats.damageMax > 0) then
-            lines[#lines + 1] = { text = string.format("Damage: %d - %d", stats.damageMin, stats.damageMax), color = defaultColor }
+            lines[#lines + 1] = {
+                text = string.format("Damage: %d - %d", stats.damageMin, stats.damageMax),
+                color = defaultColor
+            }
         end
 
         -- Defense
@@ -227,7 +230,7 @@ function Tooltips.buildItemStatLines(item, equippedItems, isEquippedItem)
     end
 
     -- Percent-based stats
-    local function addPercentStat(statName, label, getValue)
+    local function addPercentStat(label, getValue)
         if getValue(stats) and getValue(stats) > 0 then
             local equippedValue = getBestEquippedValue(getValue, equippedItems)
             local diff = equippedValue and compareStat(getValue(stats), equippedValue) or nil
@@ -248,13 +251,13 @@ function Tooltips.buildItemStatLines(item, equippedItems, isEquippedItem)
         end
     end
 
-    addPercentStat("critChance", "Crit Chance", function(s) return s.critChance end)
-    addPercentStat("moveSpeed", "Move Speed", function(s) return s.moveSpeed end)
-    addPercentStat("dodgeChance", "Dodge Chance", function(s) return s.dodgeChance end)
-    addPercentStat("goldFind", "Gold Find", function(s) return s.goldFind end)
-    addPercentStat("lifeSteal", "Life Steal", function(s) return s.lifeSteal end)
-    addPercentStat("attackSpeed", "Attack Speed", function(s) return s.attackSpeed end)
-    addPercentStat("resistAll", "All Resist", function(s) return s.resistAll end)
+    addPercentStat("Crit Chance", function(s) return s.critChance end)
+    addPercentStat("Move Speed", function(s) return s.moveSpeed end)
+    addPercentStat("Dodge Chance", function(s) return s.dodgeChance end)
+    addPercentStat("Gold Find", function(s) return s.goldFind end)
+    addPercentStat("Life Steal", function(s) return s.lifeSteal end)
+    addPercentStat("Attack Speed", function(s) return s.attackSpeed end)
+    addPercentStat("All Resist", function(s) return s.resistAll end)
 
     -- Collect stats from equipped items that are NOT on hovered item (losses)
     -- Show the best loss for each stat type (highest value)
@@ -403,7 +406,6 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     -- Draw inner glow gradient effect with rarity color
     local rarityColor = Tooltips.getRarityColor(item.rarity)
     local glowLayers = 8
-    local glowThickness = 8
 
     for i = 1, glowLayers do
         local offset = i * 0.8

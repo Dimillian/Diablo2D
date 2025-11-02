@@ -51,8 +51,7 @@ end
 ---@param centerY number Entity center Y
 ---@param offsets table Offsets table
 ---@param flipScale number Flip scale multiplier (unused, gloves don't flip)
-local function renderGloves(sprite, spriteSize, centerX, centerY, offsets, flipScale)
-    flipScale = flipScale or 1.0 -- Parameter kept for API consistency but not used
+local function renderGloves(sprite, spriteSize, centerX, centerY, offsets, _flipScale)
     local leftOffset = offsets.glovesLeft or { x = 0, y = 0 }
     local rightOffset = offsets.glovesRight or { x = 0, y = 0 }
 
@@ -89,8 +88,7 @@ end
 ---@param centerY number Entity center Y
 ---@param offsets table Offsets table
 ---@param flipScale number Flip scale multiplier (unused, boots don't flip)
-local function renderFeet(sprite, spriteSize, centerX, centerY, offsets, flipScale)
-    flipScale = flipScale or 1.0 -- Parameter kept for API consistency but not used
+local function renderFeet(sprite, spriteSize, centerX, centerY, offsets, _flipScale)
     local leftOffset = offsets.feetLeft or { x = 0, y = 0 }
     local rightOffset = offsets.feetRight or { x = 0, y = 0 }
 
@@ -215,33 +213,6 @@ local function calculateRotationOrigin(offset, sprite)
     return originX, originY
 end
 
----Calculate position compensation to keep weapon base fixed during rotation
----@param rotation number Rotation angle in radians
----@param rotationOriginX number Rotation origin X
----@param rotationOriginY number Rotation origin Y
----@param sprite userdata Love2D Image object
----@param spriteSize number Scaled sprite size
----@return number Offset X
----@return number Offset Y
-local function calculatePositionCompensation(rotation, rotationOriginX, rotationOriginY, sprite, spriteSize)
-    if rotation == 0 then
-        return 0, 0
-    end
-
-    -- Calculate how much the rotation origin offset affects the visual position
-    -- When rotating around a non-center point, we need to adjust the draw position
-    local cosR = math.cos(rotation)
-    local sinR = math.sin(rotation)
-    local originOffsetX = rotationOriginX - sprite:getWidth() / 2
-    local originOffsetY = rotationOriginY - sprite:getHeight() / 2
-
-    -- Compensate for the rotation origin offset
-    local baseOffsetX = originOffsetX * (1 - cosR) + originOffsetY * sinR
-    local baseOffsetY = originOffsetY * (1 - cosR) - originOffsetX * sinR
-
-    -- Scale to sprite size
-    return baseOffsetX * (spriteSize / sprite:getWidth()), baseOffsetY * (spriteSize / sprite:getHeight())
-end
 
 ---Render weapon with swing animation
 ---@param entity table Entity with equipment and combat components
