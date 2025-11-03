@@ -12,7 +12,6 @@ local uiBottomBar = {}
 ---@param opts.badgeText string|nil Badge text to draw in top right corner (default: nil)
 ---@param opts.badgeSize number Badge size (default: 14)
 ---@param opts.iconPadding number Padding around icon (default: 3 for small boxes, 8 for large)
----@param opts.cornerText string|nil Text to draw in the bottom left corner (default: nil)
 ---@param opts.cornerSize number Size of the bottom-left corner box (default: 16)
 local function drawIconBox(x, y, size, iconName, opts)
     opts = opts or {}
@@ -22,7 +21,6 @@ local function drawIconBox(x, y, size, iconName, opts)
     local iconPadding = opts.iconPadding or (size >= 40 and 8 or 3)
     local disabled = opts.disabled
     local cooldownRatio = opts.cooldownRatio or 0
-    local cornerText = opts.cornerText
     local cornerSize = opts.cornerSize or 16
     local highlightColor = opts.highlightColor
 
@@ -82,49 +80,6 @@ local function drawIconBox(x, y, size, iconName, opts)
         local textX = letterBoxX + (badgeSize - textWidth) / 2
         local textY = letterBoxY + (badgeSize - textHeight) / 2
         love.graphics.print(badgeText, textX, textY)
-    end
-
-    if cornerText then
-        local cornerBoxX = x
-        local cornerBoxY = y + size - cornerSize
-        local overlayRadius = math.min(cornerRadius, cornerSize * 0.5)
-        local borderInset = 1
-
-        love.graphics.push("all")
-
-        love.graphics.stencil(function()
-            love.graphics.rectangle(
-                "fill",
-                x + borderInset,
-                y + borderInset,
-                size - borderInset * 2,
-                size - borderInset * 2,
-                math.max(0, cornerRadius - borderInset),
-                math.max(0, cornerRadius - borderInset)
-            )
-        end, "replace", 1)
-
-        love.graphics.setStencilTest("greater", 0)
-
-        love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
-        love.graphics.rectangle("fill", cornerBoxX, cornerBoxY, cornerSize, cornerSize, overlayRadius, overlayRadius)
-
-        love.graphics.setColor(0.9, 0.85, 0.65, 1)
-        love.graphics.setLineWidth(2)
-        local rightEdgeX = cornerBoxX + cornerSize
-        love.graphics.line(cornerBoxX + overlayRadius, cornerBoxY, rightEdgeX, cornerBoxY)
-        love.graphics.line(rightEdgeX, cornerBoxY + overlayRadius, rightEdgeX, cornerBoxY + cornerSize)
-
-        love.graphics.setStencilTest()
-        love.graphics.pop()
-
-        love.graphics.setColor(0.95, 0.9, 0.7, 1)
-        local font = love.graphics.getFont()
-        local textWidth = font:getWidth(cornerText)
-        local textHeight = font:getHeight()
-        local textX = cornerBoxX + (cornerSize - textWidth) / 2
-        local textY = cornerBoxY + (cornerSize - textHeight) / 2
-        love.graphics.print(cornerText, textX, textY)
     end
 
     if disabled then
@@ -210,7 +165,6 @@ function uiBottomBar.draw(world)
         iconPadding = 8,
         disabled = healthDisabled,
         cooldownRatio = cooldownRatio,
-        cornerText = tostring(healthCount),
     })
 
     drawIconBox(manaPotionX, buttonY, buttonSize, "mana_potion", {
@@ -220,7 +174,6 @@ function uiBottomBar.draw(world)
         iconPadding = 8,
         disabled = manaDisabled,
         cooldownRatio = cooldownRatio,
-        cornerText = tostring(manaCount),
     })
 
     world.bottomBarHealthPotionRect = {
