@@ -136,6 +136,28 @@ Items.types = {
             defense = 0,
         },
     },
+    health_potion = {
+        id = "health_potion",
+        label = "Health Potion",
+        slot = "consumable",  -- Special slot that doesn't use equipment slots
+        consumable = true,
+        restoreHealth = 25,
+        base = {
+            damage = { min = 0, max = 0 },
+            defense = 0,
+        },
+    },
+    mana_potion = {
+        id = "mana_potion",
+        label = "Mana Potion",
+        slot = "consumable",  -- Special slot that doesn't use equipment slots
+        consumable = true,
+        restoreMana = 15,
+        base = {
+            damage = { min = 0, max = 0 },
+            defense = 0,
+        },
+    },
 }
 
 Items.prefixes = {

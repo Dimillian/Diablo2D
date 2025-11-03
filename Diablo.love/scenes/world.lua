@@ -28,6 +28,7 @@ local lootDropSystem = require("systems.core.loot_drops")
 local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
 local ECS = require("modules.ecs")
+local potionConsumptionSystem = require("systems.potion_consumption")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -70,6 +71,7 @@ function WorldScene.new(opts)
                 starterGearSystem.update,
                 applyStatsSystem.update,
                 playerInputSystem.update,
+                potionConsumptionSystem.update,
                 mouseLookSystem.update,
                 mouseMovementSystem.update,
                 lootPickupSystem.update,
@@ -168,11 +170,22 @@ end
 function WorldScene:keypressed(key)
     if key == "t" then
         self.debugMode = not self.debugMode
+        return
+    end
+
+    -- Potion consumption (key "1" for health, "2" for mana)
+    if key == "1" or key == "2" then
+        potionConsumptionSystem.handleKeypress(self, key)
     end
 end
 
 function WorldScene:mousepressed(x, y, button, _istouch, _presses)
     if button == 1 then
+        -- Check if potion icons were clicked
+        if potionConsumptionSystem.handleClick(self, x, y) then
+            return
+        end
+
         -- Check if bag button was clicked
         if self.bottomBarBagRect then
             local rect = self.bottomBarBagRect

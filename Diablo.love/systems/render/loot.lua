@@ -45,7 +45,9 @@ function renderLootSystem.draw(world)
 
         local item = lootable.item
         local spritePath = item and item.spritePath
+        local iconName = item and item.iconName
 
+        -- Try sprite path first (for regular items)
         if spritePath then
             local sprite = Resources.loadImageSafe(spritePath)
             if sprite then
@@ -59,6 +61,21 @@ function renderLootSystem.draw(world)
 
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.draw(sprite, drawX, drawY, 0, scale, scale)
+            end
+        -- Try UI icon (for potions and other consumables)
+        elseif iconName then
+            local icon = Resources.loadUIIcon(iconName)
+            if icon then
+                local iconWidth = icon:getWidth()
+                local iconHeight = icon:getHeight()
+
+                local innerPadding = 8
+                local scale = math.min((w - innerPadding) / iconWidth, (h - innerPadding) / iconHeight)
+                local drawX = x + (w - iconWidth * scale) / 2
+                local drawY = y + (h - iconHeight * scale) / 2
+
+                love.graphics.setColor(1, 1, 1, 1)
+                love.graphics.draw(icon, drawX, drawY, 0, scale, scale)
             end
         end
 

@@ -8,6 +8,7 @@ local renderInventoryStats = require("systems.render.inventory_stats")
 local renderInventoryGrid = require("systems.render.inventory_grid")
 local renderInventoryHelp = require("systems.render.inventory_help")
 local renderInventoryTooltip = require("systems.render.inventory_tooltip")
+local renderInventoryPotions = require("systems.render.inventory_potions")
 
 local InventoryScene = {}
 InventoryScene.__index = InventoryScene
@@ -30,6 +31,7 @@ function InventoryScene.new(opts)
                 renderInventoryEquipment.draw,
                 renderInventoryStats.draw,
                 renderInventoryGrid.draw,
+                renderInventoryPotions.draw,
                 renderInventoryHelp.draw,
                 renderInventoryTooltip.draw,
             },
