@@ -39,6 +39,189 @@
 - Equipment helper (`system_helpers/equipment.lua`) prevents item duplication when equipping—checks if item already equipped before moving from inventory.
 - Inventory scene and future loot drops consume the generator and read stats directly off the generated item payload.
 
+## Coding Style Guide
+
+### Naming Conventions
+- **Modules/Classes**: PascalCase (e.g., `WorldScene`, `ItemGenerator`, `ECS`, `Player`)
+- **Functions/Variables**: camelCase (e.g., `getPlayer`, `cooldownRatio`, `handleDeath`, `ensureEventQueue`)
+- **Component factories**: `createXComponent` pattern (e.g., `createMovementComponent`, `createHealth`)
+- **System modules**: snake_case filenames, camelCase table names (e.g., `systems/player_input.lua` exports `playerInputSystem`)
+- **Constants**: UPPER_SNAKE_CASE when truly constant, otherwise camelCase
+- **Private/helper functions**: camelCase, prefixed with descriptive action verbs (e.g., `getEntityCenter`, `pushCombatEvent`, `markRecentlyDamaged`)
+
+### Module Structure Patterns
+
+**Module/Class Pattern** (for reusable modules like `ECS`, `WorldScene`):
+```lua
+local ModuleName = {}
+ModuleName.__index = ModuleName
+
+function ModuleName.new(opts)
+    opts = opts or {}
+    local instance = {}
+    -- ... initialization ...
+    return setmetatable(instance, ModuleName)
+end
+
+function ModuleName:method()
+    -- ...
+end
+
+return ModuleName
+```
+
+**Component Factory Pattern** (for components in `components/`):
+```lua
+local function createComponentName(opts)
+    opts = opts or {}
+    return {
+        field = opts.field or defaultValue,
+        -- ...
+    }
+end
+
+return createComponentName
+```
+
+**System Pattern** (for systems in `systems/`):
+```lua
+local systemName = {}
+
+function systemName.update(world, dt)
+    -- ...
+end
+
+function systemName.draw(world)
+    -- ...
+end
+
+return systemName
+```
+
+**Helper/Utility Module Pattern** (for utilities like `vector`, `targeting`):
+```lua
+local HelperName = {}
+
+function HelperName.functionName(param)
+    -- ...
+end
+
+return HelperName
+```
+
+### Code Organization
+- **Imports first**: All `require()` statements at the top of the file
+- **Local helpers before exports**: Define private helper functions before main module exports
+- **Early returns**: Use guard clauses (`if not X then return end`) for early exits
+- **Function ordering**: Public API functions first, then private helpers
+- **One responsibility**: Functions should do one thing well; extract complex logic into named helpers
+
+### Documentation Style
+- Use LuaDoc-style comments with `---` prefix for function documentation
+- Document all public functions with:
+  - Brief description on first line
+  - `@param` tags for parameters (include type and description)
+  - `@return` tags for return values (include type and description)
+- Example:
+```lua
+---Compute damage for an attack, factoring in stats and crit chance.
+---@param attacker table Entity with combat and stats components
+---@return number damage The computed damage amount
+---@return boolean isCrit Whether this was a critical hit
+local function computeDamage(attacker)
+    -- ...
+end
+```
+
+### Common Patterns
+
+**Optional Parameters**:
+```lua
+function someFunction(opts)
+    opts = opts or {}
+    local value = opts.value or defaultValue
+    -- ...
+end
+```
+
+**Guard Clauses**:
+```lua
+function someFunction(entity)
+    if not entity then
+        return nil
+    end
+    -- Main logic here
+end
+```
+
+**Nil-Safe Access**:
+```lua
+local player = world:getPlayer()
+local potions = player and player.potions
+if not potions then
+    return
+end
+```
+
+**Clamping Values**:
+```lua
+value = math.max(minValue, math.min(maxValue, value))
+-- or
+value = math.max(0, value)  -- for non-negative values
+```
+
+**Table Iteration**:
+- Use `ipairs` for ordered arrays
+- Use `pairs` for key-value maps
+- Prefer `ipairs` when order matters
+
+**Loop Control**:
+- Use `goto continue` for skipping loop iterations when needed
+- Label with `::continue::` at end of loop body
+
+**Event Queue Pattern**:
+```lua
+local function ensureEventQueue(world)
+    world.pendingCombatEvents = world.pendingCombatEvents or {}
+    return world.pendingCombatEvents
+end
+
+local function pushEvent(world, payload)
+    local events = ensureEventQueue(world)
+    events[#events + 1] = payload
+end
+```
+
+### Formatting
+- **Indentation**: 4 spaces (no tabs)
+- **Line length**: Prefer wrapping long lines for readability
+- **Spacing**: Single blank line between logical sections, double blank line before function definitions
+- **Brackets**: Use table literals with explicit field names: `{ x = 0, y = 0 }` not `{0, 0}` when field names clarify intent
+- **Parentheses**: Use when they improve clarity, omit for simple function calls
+- **Comments**: Use `--` for inline comments, `---` for documentation comments
+
+### Error Handling
+- Prefer nil returns over throwing errors for expected failure cases
+- Use `assert()` for programming errors (missing required parameters in constructors)
+- Guard against nil/undefined before accessing nested properties
+- Use `luacheck: ignore` comments for intentional unused parameters (e.g., `-- luacheck: ignore 212/self`)
+
+### System-Specific Conventions
+- **Systems**: Export `update(world, dt)` and/or `draw(world)` functions
+- **Components**: Pure data tables created by factory functions
+- **Entities**: Tables with `id` field and component tables as fields
+- **Scenes**: Use metatables for method dispatch (`Scene:method()` syntax)
+- **Helpers**: Static utility functions, no state
+
+### Best Practices
+- Keep functions small and focused (single responsibility principle)
+- Prefer local functions over globals
+- Use descriptive names that explain intent
+- Avoid magic numbers—use named constants or parameters
+- Extract repeated logic into helper functions
+- Prefer explicit nil checks over truthy/falsy checks when clarity matters
+- Use table construction patterns consistently (e.g., `table.insert(list, value)` vs `list[#list + 1] = value`—codebase uses both; prefer `#list + 1` pattern for consistency with existing code)
+
 ## Gameplay Pillars To Enable
 - Procedural forest world generation as the first playable space.
 - Monster packs with basic combat behaviors and XP/level progression.
