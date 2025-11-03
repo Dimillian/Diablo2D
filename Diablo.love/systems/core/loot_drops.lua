@@ -13,6 +13,24 @@ local function buildLootRenderable(item)
     }
 end
 
+local function hasPotionCapacity(potions, potionTypeId)
+    if not potions then
+        return true
+    end
+
+    local countKey = potionTypeId == "health_potion" and "healthPotionCount" or "manaPotionCount"
+    local maxKey = potionTypeId == "health_potion" and "maxHealthPotionCount" or "maxManaPotionCount"
+
+    local current = potions[countKey] or 0
+    local max = potions[maxKey]
+
+    if not max then
+        return true
+    end
+
+    return current < max
+end
+
 local function spawnLoot(world, event)
     if not event.position then
         return
@@ -53,7 +71,22 @@ local function spawnLoot(world, event)
         return
     end
 
-    local potionTypeId = math.random() < 0.5 and "health_potion" or "mana_potion"
+    local player = world.getPlayer and world:getPlayer()
+    local potions = player and player.potions
+
+    local availablePotionTypes = {}
+    if hasPotionCapacity(potions, "health_potion") then
+        table.insert(availablePotionTypes, "health_potion")
+    end
+    if hasPotionCapacity(potions, "mana_potion") then
+        table.insert(availablePotionTypes, "mana_potion")
+    end
+
+    if #availablePotionTypes == 0 then
+        return
+    end
+
+    local potionTypeId = availablePotionTypes[math.random(#availablePotionTypes)]
     local potionColor = potionTypeId == "health_potion" and { 0.8, 0.2, 0.2, 1 } or { 0.2, 0.4, 0.9, 1 }
     local potionItem = {
         id = "potion_" .. math.random(100000, 999999),
