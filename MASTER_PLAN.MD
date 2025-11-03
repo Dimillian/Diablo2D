@@ -102,7 +102,7 @@ All core functionality has been implemented:
 ## 2. Potion System
 
 ### Overview
-Implement a health potion system where players start with 3 potions, can consume them to restore 25 HP, and see visual representation near the health bar. Monsters can drop potions as loot (in addition to regular items).
+Implement a health and mana potion system where players start with 3 health potions and 2 mana potions, can consume them to restore 25 HP or 15 mana respectively, and see visual representation near the health/mana bars in the bottom bar. Monsters can drop potions as loot (in addition to regular items).
 
 ### Implementation Details
 
@@ -115,8 +115,10 @@ local function createPotionsComponent(opts)
     return {
         healthPotionCount = opts.healthPotionCount or 3,
         maxHealthPotionCount = opts.maxHealthPotionCount or 10, -- max carry limit
+        manaPotionCount = opts.manaPotionCount or 2,
+        maxManaPotionCount = opts.maxManaPotionCount or 10, -- max carry limit
         lastUseTime = opts.lastUseTime or nil,  -- Track last use time for cooldown
-        cooldownRemaining = opts.cooldownRemaining or 0,  -- Current cooldown timer
+        cooldownRemaining = opts.cooldownRemaining or 0,  -- Current cooldown timer (shared for both potion types)
     }
 end
 ```
@@ -125,7 +127,7 @@ end
 - Inventory can hold potions as items, but `potions` component tracks consumable potions separately (quicker access, doesn't clutter inventory)
 
 **Modify: `data/items.lua`**
-- Add potion item type to `Items.types` table:
+- Add potion item types to `Items.types` table:
 ```lua
 health_potion = {
     id = "health_potion",
@@ -133,6 +135,17 @@ health_potion = {
     slot = "consumable",  -- Special slot that doesn't use equipment slots
     consumable = true,
     restoreHealth = 25,
+    base = {
+        damage = { min = 0, max = 0 },
+        defense = 0,
+    },
+},
+mana_potion = {
+    id = "mana_potion",
+    label = "Mana Potion",
+    slot = "consumable",  -- Special slot that doesn't use equipment slots
+    consumable = true,
+    restoreMana = 15,
     base = {
         damage = { min = 0, max = 0 },
         defense = 0,
@@ -162,26 +175,36 @@ health_potion = {
           return
       end
 
-      -- Potion consumption (key "1" or "q")
-      if key == "1" or key == "q" then
+      -- Potion consumption (key "1" for health, "2" for mana)
+      if key == "1" or key == "2" then
           potionConsumptionSystem.handleKeypress(self, key)
       end
   end
   ```
 - In `handleKeypress()` function:
   - Get player entity: `world:getPlayer()`
-  - Verify player has potions: `player.potions.healthPotionCount > 0`
-  - Verify player needs healing: `player.health.current < player.health.max`
-  - Check cooldown: `player.potions.cooldownRemaining <= 0`
-  - When conditions met:
-    - Restore health: `player.health.current = math.min(player.health.max, player.health.current + 25)`
-    - Decrement count: `player.potions.healthPotionCount = player.potions.healthPotionCount - 1`
-    - Set cooldown: `player.potions.cooldownRemaining = 0.5` (0.5 seconds)
-    - Optional: Create visual feedback (particle effect, sound, etc.)
+  - Handle health potion (key "1"):
+    - Verify player has potions: `player.potions.healthPotionCount > 0`
+    - Verify player needs healing: `player.health.current < player.health.max`
+    - Check cooldown: `player.potions.cooldownRemaining <= 0`
+    - When conditions met:
+      - Restore health: `player.health.current = math.min(player.health.max, player.health.current + 25)`
+      - Decrement count: `player.potions.healthPotionCount = player.potions.healthPotionCount - 1`
+      - Set cooldown: `player.potions.cooldownRemaining = 0.5` (0.5 seconds)
+      - Optional: Create visual feedback (particle effect, sound, etc.)
+  - Handle mana potion (key "2"):
+    - Verify player has potions: `player.potions.manaPotionCount > 0`
+    - Verify player needs mana: `player.mana.current < player.mana.max`
+    - Check cooldown: `player.potions.cooldownRemaining <= 0`
+    - When conditions met:
+      - Restore mana: `player.mana.current = math.min(player.mana.max, player.mana.current + 15)`
+      - Decrement count: `player.potions.manaPotionCount = player.potions.manaPotionCount - 1`
+      - Set cooldown: `player.potions.cooldownRemaining = 0.5` (0.5 seconds)
+      - Optional: Create visual feedback (particle effect, sound, etc.)
 
 **Modify: `systems/loot_pickup.lua`**
 - In `transferItemToPlayer()` function, before adding to inventory/equipment:
-  - Check if item type is `health_potion`
+  - Check if item type is `health_potion` or `mana_potion`
   - If yes, add to potion count and skip inventory transfer:
     ```lua
     if item.type == "health_potion" then
@@ -194,6 +217,16 @@ health_potion = {
         lootable.item = nil
         world:removeEntity(lootEntity.id)
         return  -- Skip inventory/equipment transfer
+    elseif item.type == "mana_potion" then
+        if player.potions then
+            player.potions.manaPotionCount = math.min(
+                player.potions.maxManaPotionCount,
+                player.potions.manaPotionCount + 1
+            )
+        end
+        lootable.item = nil
+        world:removeEntity(lootEntity.id)
+        return  -- Skip inventory/equipment transfer
     end
     ```
 
@@ -201,10 +234,13 @@ health_potion = {
 - Add potion drop chance to death events
 - In `spawnLoot()` function, after regular item roll:
   - Roll chance: `math.random() < 0.15` (15% chance to drop potion)
-  - If successful, create potion item:
+  - If successful, randomly choose health or mana potion (50/50 chance):
     ```lua
+    local potionType = math.random() < 0.5 and "health_potion" or "mana_potion"
+    local potionColor = potionType == "health_potion" and { 0.8, 0.2, 0.2, 1 } or { 0.2, 0.4, 0.9, 1 }
+
     local potionItem = {
-        type = "health_potion",
+        type = potionType,
         rarity = "common",
         source = "monster",
         -- ... other item metadata
@@ -216,7 +252,7 @@ health_potion = {
         height = 26,
         renderable = {
             kind = "loot",
-            color = { 0.8, 0.2, 0.2, 1 }, -- Red color for potion
+            color = potionColor, -- Red for health, blue for mana
         },
         lootable = {
             item = potionItem,
@@ -229,24 +265,53 @@ health_potion = {
     world:addEntity(potionLoot)
     ```
 
-**New System: `systems/ui_potions.lua`**
-- Draw potion UI near health bar (bottom left)
-- Position: Right of health bar or above it
-- Visual representation:
-  - Icon/bottle shape: Small filled rectangle or circle
-  - Count text: `player.potions.healthPotionCount`
-  - Color: Red tint `{0.8, 0.2, 0.2, 1}` for health potions
-- Layout example:
+**Modify: `systems/ui/bottom_bar.lua`**
+- ✅ **UI Icons Already Implemented**: Potion icons are already rendered in the bottom bar
+  - Health potion icon positioned next to health bar (20px x 20px square)
+  - Mana potion icon positioned next to mana bar (20px x 20px square)
+  - Uses reusable `drawIconBox()` helper function
+  - Icons use `Resources.loadUIIcon("health_potion")` and `Resources.loadUIIcon("mana_potion")`
+- **TODO**: Connect potion icons to consumption system
+  - Health potion icon should trigger consumption when clicked (key "1" or mouse click)
+  - Mana potion icon should trigger consumption when clicked (key "2" or mouse click)
+  - Icons should display visual feedback when clicked (cooldown, insufficient resources, etc.)
+  - Store click detection rects: `world.bottomBarHealthPotionRect` and `world.bottomBarManaPotionRect`
+  - Handle clicks in `WorldScene:mousepressed()` method
+
+**Modify: `scenes/inventory.lua`**
+- Add potion display section below inventory items grid
+- Add visual divider between inventory grid and potion section
+- Display potion counts for health and mana potions
+- Layout:
+  - Draw divider line/separator between inventory grid and potion section
+  - Create potion row showing both potion types side by side
+  - Each potion display: icon + count text
+  - Use same potion icons (`health_potion` and `mana_potion`) from `Resources.loadUIIcon()`
+  - Show current count: `player.potions.healthPotionCount` / `player.potions.manaPotionCount`
+  - Show max capacity: `player.potions.maxHealthPotionCount` / `player.potions.maxManaPotionCount`
+  - Visual style: Match inventory UI styling (same backgrounds, borders, text colors)
+- Implementation example:
   ```lua
-  local potionX = barX + barWidth + 16
-  local potionY = barY
-  local potionSize = 24
-  -- Draw potion icon/bottle
-  love.graphics.setColor(0.8, 0.2, 0.2, 1)
-  love.graphics.rectangle("fill", potionX, potionY, potionSize, potionSize, 2, 2)
-  -- Draw count
-  love.graphics.setColor(1, 1, 1, 1)
-  love.graphics.print(player.potions.healthPotionCount, potionX + potionSize/2, potionY + potionSize/2)
+  -- Draw divider
+  local dividerY = inventoryGridBottomY + 16
+  love.graphics.setColor(0.9, 0.85, 0.65, 1)
+  love.graphics.setLineWidth(1)
+  love.graphics.line(inventoryX, dividerY, inventoryX + inventoryWidth, dividerY)
+
+  -- Draw potion section
+  local potionSectionY = dividerY + 16
+  local potionIconSize = 32
+  local potionSpacing = 16
+
+  -- Health potion display
+  local healthPotionX = inventoryX + potionSpacing
+  -- Draw health potion icon using drawIconBox helper or similar
+  -- Draw count text: "Health: X / Y"
+
+  -- Mana potion display
+  local manaPotionX = healthPotionX + potionIconSize + potionSpacing
+  -- Draw mana potion icon using drawIconBox helper or similar
+  -- Draw count text: "Mana: X / Y"
   ```
 
 #### Entity Changes
@@ -258,6 +323,7 @@ health_potion = {
   -- ...
   potions = createPotions(opts.potions or {
       healthPotionCount = 3,
+      manaPotionCount = 2,
   }),
   ```
 
@@ -266,7 +332,7 @@ health_potion = {
 **Modify: `scenes/world.lua`**
 - Add `potionConsumptionSystem.update` to update systems (after `playerInputSystem.update`) - handles cooldown decrement
 - Add `potionConsumptionSystem.handleKeypress` call in `WorldScene:keypressed()` method (see system details above)
-- Add `uiPotionsSystem.draw` to draw systems (after `uiPlayerStatus.draw`)
+- Potion icons are rendered in `uiBottomBar.draw` system (already registered)
 
 #### Item Generator
 
@@ -833,12 +899,21 @@ return Projectile
 - [x] Visual strike indicator (red tint) when damaged
 
 ### Potion System
-- [ ] Player starts with 3 potions
-- [ ] Potions restore 25 HP correctly
+- [ ] Player starts with 3 health potions and 2 mana potions
+- [ ] Health potions restore 25 HP correctly
+- [ ] Mana potions restore 15 mana correctly
 - [ ] Potion count decreases on use
-- [ ] Potions appear in UI near health bar
-- [ ] Monsters can drop potions as loot
-- [ ] Potion pickup adds to potion count
+- [ ] Health potion icon appears in UI next to health bar (key "1")
+- [ ] Mana potion icon appears in UI next to mana bar (key "2")
+- [ ] Potion icons are clickable (mouse click triggers consumption)
+- [ ] Potion icons show visual feedback (cooldown, insufficient resources)
+- [ ] Monsters can drop potions as loot (health or mana randomly)
+- [ ] Potion pickup adds to correct potion count
+- [ ] Cooldown prevents rapid potion consumption
+- [ ] Cannot use potions when already at max health/mana
+- [ ] Potions displayed in inventory scene below inventory grid
+- [ ] Inventory shows divider between items and potions
+- [ ] Inventory shows potion counts (current / max) for both types
 
 ### EXP System
 - [ ] Player starts at level 1 with 0 XP

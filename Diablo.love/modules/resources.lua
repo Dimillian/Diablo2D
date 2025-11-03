@@ -122,6 +122,19 @@ function resources.getAtlasSprite(atlasPath, spriteName)
     return nil, nil
 end
 
+---Load a UI icon safely (cached, with error handling)
+---Loads icons from resources/icons/ directory
+---@param iconName string Icon name (e.g., "bag", "health_potion", "mana_potion")
+---@return love.Image|nil
+function resources.loadUIIcon(iconName)
+    if not iconName then
+        return nil
+    end
+
+    local path = "resources/icons/" .. iconName .. ".png"
+    return resources.loadImageSafe(path)
+end
+
 ---Clear all cached resources (useful for testing/reloading)
 function resources.clearCache()
     cache.images = {}
