@@ -95,6 +95,8 @@ local function drawIconBox(x, y, size, iconName, opts)
         love.graphics.setLineWidth(2)
         love.graphics.line(cornerBoxX, cornerBoxY, cornerBoxX + cornerSize, cornerBoxY)
         love.graphics.line(cornerBoxX + cornerSize, cornerBoxY, cornerBoxX + cornerSize, cornerBoxY + cornerSize)
+        love.graphics.line(cornerBoxX, cornerBoxY, cornerBoxX, cornerBoxY + cornerSize)
+        love.graphics.line(cornerBoxX, cornerBoxY + cornerSize, cornerBoxX + cornerSize, cornerBoxY + cornerSize)
 
         love.graphics.setColor(0.95, 0.9, 0.7, 1)
         local font = love.graphics.getFont()
