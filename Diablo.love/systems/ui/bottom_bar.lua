@@ -88,19 +88,35 @@ local function drawIconBox(x, y, size, iconName, opts)
         local cornerBoxX = x
         local cornerBoxY = y + size - cornerSize
         local overlayRadius = math.min(cornerRadius, cornerSize * 0.5)
+        local borderInset = 1
+
+        love.graphics.push("all")
+
+        love.graphics.stencil(function()
+            love.graphics.rectangle(
+                "fill",
+                x + borderInset,
+                y + borderInset,
+                size - borderInset * 2,
+                size - borderInset * 2,
+                math.max(0, cornerRadius - borderInset),
+                math.max(0, cornerRadius - borderInset)
+            )
+        end, "replace", 1)
+
+        love.graphics.setStencilTest("greater", 0)
 
         love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
         love.graphics.rectangle("fill", cornerBoxX, cornerBoxY, cornerSize, cornerSize, overlayRadius, overlayRadius)
 
         love.graphics.setColor(0.9, 0.85, 0.65, 1)
         love.graphics.setLineWidth(2)
-        love.graphics.rectangle("line", cornerBoxX, cornerBoxY, cornerSize, cornerSize, overlayRadius, overlayRadius)
+        local rightEdgeX = cornerBoxX + cornerSize
+        love.graphics.line(cornerBoxX + overlayRadius, cornerBoxY, rightEdgeX, cornerBoxY)
+        love.graphics.line(rightEdgeX, cornerBoxY + overlayRadius, rightEdgeX, cornerBoxY + cornerSize)
 
-        local arcCenterX = x + cornerRadius
-        local arcCenterY = y + size - cornerRadius
-        love.graphics.line(x, cornerBoxY, x, arcCenterY)
-        love.graphics.arc("line", arcCenterX, arcCenterY, cornerRadius, math.pi, math.pi * 1.5)
-        love.graphics.line(arcCenterX, y + size, x + cornerSize, y + size)
+        love.graphics.setStencilTest()
+        love.graphics.pop()
 
         love.graphics.setColor(0.95, 0.9, 0.7, 1)
         local font = love.graphics.getFont()
