@@ -28,6 +28,27 @@ local function transferItemToPlayer(world, player, lootEntity)
     local _, equipment = EquipmentHelper.ensure(player)
     local item = lootable.item
 
+    if item.type == "health_potion" or item.type == "mana_potion" then
+        local potions = player.potions
+        if potions then
+            if item.type == "health_potion" then
+                potions.healthPotionCount = math.min(
+                    potions.maxHealthPotionCount or potions.healthPotionCount,
+                    (potions.healthPotionCount or 0) + 1
+                )
+            else
+                potions.manaPotionCount = math.min(
+                    potions.maxManaPotionCount or potions.manaPotionCount,
+                    (potions.manaPotionCount or 0) + 1
+                )
+            end
+        end
+
+        lootable.item = nil
+        world:removeEntity(lootEntity.id)
+        return
+    end
+
     if item.slot and equipment[item.slot] == nil then
         EquipmentHelper.equip(player, item)
     else

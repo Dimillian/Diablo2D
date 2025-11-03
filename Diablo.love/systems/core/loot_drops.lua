@@ -47,6 +47,52 @@ local function spawnLoot(world, event)
     })
 
     world:addEntity(loot)
+
+    local potionDropChance = 0.15
+    if math.random() >= potionDropChance then
+        return
+    end
+
+    local potionTypeId = math.random() < 0.5 and "health_potion" or "mana_potion"
+    local potionColor = potionTypeId == "health_potion" and { 0.8, 0.2, 0.2, 1 } or { 0.2, 0.4, 0.9, 1 }
+    local potionItem = {
+        id = "potion_" .. math.random(100000, 999999),
+        name = potionTypeId == "health_potion" and "Health Potion" or "Mana Potion",
+        type = potionTypeId,
+        slot = "consumable",
+        rarity = "common",
+        rarityLabel = "Common",
+        stats = {},
+        consumable = true,
+        restoreHealth = potionTypeId == "health_potion" and 25 or nil,
+        restoreMana = potionTypeId == "mana_potion" and 15 or nil,
+        spritePath = string.format("resources/icons/%s.png", potionTypeId),
+        source = "monster",
+    }
+
+    local width = 26
+    local height = 26
+    local offsetX = (math.random() < 0.5) and -32 or 32
+
+    local potionLoot = LootEntity.new({
+        x = event.position.x - width / 2 + offsetX,
+        y = event.position.y - height / 2,
+        width = width,
+        height = height,
+        renderable = {
+            kind = "loot",
+            color = potionColor,
+        },
+        lootable = {
+            item = potionItem,
+            pickupRadius = 128,
+            source = event.lootSource or event.targetId,
+            despawnTimer = 45,
+            maxDespawnTimer = 45,
+        },
+    })
+
+    world:addEntity(potionLoot)
 end
 
 function lootDropSystem.update(world, _dt)

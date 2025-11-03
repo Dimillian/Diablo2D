@@ -27,6 +27,7 @@ local lootPickupSystem = require("systems.core.loot_pickup")
 local lootDropSystem = require("systems.core.loot_drops")
 local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
+local potionConsumptionSystem = require("systems.core.potion_consumption")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -70,6 +71,7 @@ function WorldScene.new(opts)
                 starterGearSystem.update,
                 applyStatsSystem.update,
                 playerInputSystem.update,
+                potionConsumptionSystem.update,
                 mouseLookSystem.update,
                 mouseMovementSystem.update,
                 lootPickupSystem.update,
@@ -168,11 +170,34 @@ end
 function WorldScene:keypressed(key)
     if key == "t" then
         self.debugMode = not self.debugMode
+        return
+    end
+
+    if key == "1" or key == "2" then
+        potionConsumptionSystem.handleKeypress(self, key)
     end
 end
 
 function WorldScene:mousepressed(x, y, button, _istouch, _presses)
     if button == 1 then
+        local function pointInRect(rect)
+            return rect
+                and x >= rect.x
+                and x <= rect.x + rect.w
+                and y >= rect.y
+                and y <= rect.y + rect.h
+        end
+
+        if pointInRect(self.bottomBarHealthPotionRect) then
+            potionConsumptionSystem.handleClick(self, "health")
+            return
+        end
+
+        if pointInRect(self.bottomBarManaPotionRect) then
+            potionConsumptionSystem.handleClick(self, "mana")
+            return
+        end
+
         -- Check if bag button was clicked
         if self.bottomBarBagRect then
             local rect = self.bottomBarBagRect
