@@ -231,12 +231,27 @@ return Leveling
 
 #### Systems
 
-**New System: `systems/experience.lua`**
+**Modify: `systems/combat/combat.lua`**
+- In `handleDeath()` function, before calling `world:removeEntity(targetId)`:
+  - Capture foe level: `foeLevel = target.level or 1` (default to 1 for now, future-proof for leveled foes)
+  - Add `foeLevel` to death event payload:
+    ```lua
+    pushCombatEvent(world, {
+        type = "death",
+        targetId = targetId,
+        sourceId = attacker and attacker.id or nil,
+        position = position and { x = position.x, y = position.y } or nil,
+        foeLevel = foeLevel, -- NEW: Capture foe level before entity removal
+        time = world.time or 0,
+    })
+    ```
+
+**New System: `systems/core/experience.lua`**
 - Listen to combat events: `world.pendingCombatEvents`
 - For each `death` event where `sourceId` is player:
   - Get player entity: `world:getPlayer()`
-  - Get slain foe: `world:getEntity(event.targetId)`
-  - Calculate XP gain: `Leveling.getFoeXP(foeLevel or 1, player.experience.level)`
+  - Extract foe level from event: `foeLevel = event.foeLevel or 1` (use event data, not `world:getEntity()` since entity is removed)
+  - Calculate XP gain: `Leveling.getFoeXP(foeLevel, player.experience.level)`
   - Add XP: `player.experience.currentXP = player.experience.currentXP + xpGain`
   - Check for level up (see below)
 
@@ -252,11 +267,14 @@ local function checkLevelUp(world, player)
         -- Level up!
         exp.level = exp.level + 1
 
-        -- Optional: Grant stat bonuses on level up
-        -- Example: +5 max health per level
-        if player.health then
-            player.health.max = player.health.max + 5
-            player.health.current = player.health.max -- Full heal on level up
+        -- Grant stat bonuses on level up
+        -- Update baseStats so apply_stats system can propagate changes correctly
+        if player.baseStats then
+            player.baseStats.damageMin = (player.baseStats.damageMin or 5) + 1
+            player.baseStats.damageMax = (player.baseStats.damageMax or 8) + 1
+            player.baseStats.defense = (player.baseStats.defense or 2) + 1
+            player.baseStats.health = (player.baseStats.health or 50) + 5
+            -- apply_stats system will automatically update player.health.max and player.health.current on next frame
         end
 
         -- Recalculate for potential multiple level ups
@@ -277,7 +295,7 @@ local function checkLevelUp(world, player)
 end
 ```
 
-**New System: `systems/ui_experience.lua`**
+**New System: `systems/ui/experience.lua`**
 - Draw full-width XP bar at bottom of screen
 - Position: `barY = screenHeight - barHeight - 8` (8px from bottom)
 - Width: `barWidth = screenWidth - 32` (16px margin on each side)
