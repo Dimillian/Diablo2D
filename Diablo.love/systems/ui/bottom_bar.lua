@@ -12,7 +12,6 @@ local uiBottomBar = {}
 ---@param opts.badgeText string|nil Badge text to draw in top right corner (default: nil)
 ---@param opts.badgeSize number Badge size (default: 14)
 ---@param opts.iconPadding number Padding around icon (default: 3 for small boxes, 8 for large)
----@param opts.cornerSize number Size of the bottom-left corner box (default: 16)
 local function drawIconBox(x, y, size, iconName, opts)
     opts = opts or {}
     local shadow = opts.shadow or false
@@ -21,7 +20,6 @@ local function drawIconBox(x, y, size, iconName, opts)
     local iconPadding = opts.iconPadding or (size >= 40 and 8 or 3)
     local disabled = opts.disabled
     local cooldownRatio = opts.cooldownRatio or 0
-    local cornerSize = opts.cornerSize or 16
     local highlightColor = opts.highlightColor
 
     -- Draw shadow if requested

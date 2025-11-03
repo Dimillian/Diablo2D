@@ -70,8 +70,6 @@ local function spawnLoot(world, event)
         source = "monster",
     }
 
-    local width = 26
-    local height = 26
     local offsetX = (math.random() < 0.5) and -32 or 32
 
     local potionLoot = LootEntity.new({

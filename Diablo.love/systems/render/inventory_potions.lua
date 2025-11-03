@@ -61,7 +61,9 @@ function renderInventoryPotions.draw(scene)
 
     local gridBottomY = scene.inventoryGridBottomY
     if not gridBottomY then
-        gridBottomY = gridLayout.gridStartY + gridLayout.gridRows * (gridLayout.gridSlotSize + gridLayout.gridSpacing) - gridLayout.gridSpacing
+        gridBottomY = gridLayout.gridStartY +
+            gridLayout.gridRows * (gridLayout.gridSlotSize + gridLayout.gridSpacing) -
+            gridLayout.gridSpacing
     end
 
     local maxBottom = panelLayout.panelY + panelLayout.panelHeight - 80
