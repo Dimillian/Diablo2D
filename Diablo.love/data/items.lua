@@ -136,6 +136,30 @@ Items.types = {
             defense = 0,
         },
     },
+    health_potion = {
+        id = "health_potion",
+        label = "Health Potion",
+        slot = "consumable",
+        consumable = true,
+        restoreHealth = 25,
+        base = {
+            damage = { min = 0, max = 0 },
+            defense = 0,
+        },
+        excludeFromRandom = true,
+    },
+    mana_potion = {
+        id = "mana_potion",
+        label = "Mana Potion",
+        slot = "consumable",
+        consumable = true,
+        restoreMana = 15,
+        base = {
+            damage = { min = 0, max = 0 },
+            defense = 0,
+        },
+        excludeFromRandom = true,
+    },
 }
 
 Items.prefixes = {
