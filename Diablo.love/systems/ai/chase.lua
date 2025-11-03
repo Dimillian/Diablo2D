@@ -3,6 +3,8 @@ local vector = require("modules.vector")
 local chaseSystem = {}
 
 local DEFAULT_SEPARATION_BUFFER = 20
+local DEFAULT_FOE_SEPARATION_RADIUS = 40
+local DEFAULT_FOE_SEPARATION_STRENGTH = 0.6
 
 local function getCenterAndRadius(entity)
     local pos = entity.position
@@ -16,6 +18,57 @@ local function getCenterAndRadius(entity)
     local radius = math.max(width, height) * 0.5
 
     return centerX, centerY, radius
+end
+
+-- Calculate separation force from nearby foes to prevent stacking
+local function calculateFoeSeparation(entity, world, myCenterX, myCenterY)
+    local separationRadius = DEFAULT_FOE_SEPARATION_RADIUS
+    local separationStrength = DEFAULT_FOE_SEPARATION_STRENGTH
+
+    local separationX = 0
+    local separationY = 0
+    local separationCount = 0
+
+    -- Query all other entities with chase component (other foes)
+    local otherEntities = world:queryEntities({ "chase", "position", "size" })
+
+    for _, other in ipairs(otherEntities) do
+        -- Skip self and inactive entities
+        if other.id == entity.id or other.inactive then
+            goto continue
+        end
+
+        local otherCenterX, otherCenterY = getCenterAndRadius(other)
+
+        -- Calculate distance to other foe
+        local dx = myCenterX - otherCenterX
+        local dy = myCenterY - otherCenterY
+        local distance = vector.length(dx, dy)
+
+        -- If within separation radius, add repulsion force
+        if distance > 0 and distance < separationRadius then
+            -- Normalize direction away from other foe
+            local ndx, ndy = vector.normalize(dx, dy)
+
+            -- Strength increases as distance decreases (inverse relationship)
+            local strength = (separationRadius - distance) / separationRadius
+            separationX = separationX + ndx * strength
+            separationY = separationY + ndy * strength
+            separationCount = separationCount + 1
+        end
+
+        ::continue::
+    end
+
+    -- Normalize and scale separation force
+    if separationCount > 0 then
+        local sepDx, sepDy, sepLength = vector.normalize(separationX, separationY)
+        if sepLength > 0 then
+            return sepDx * separationStrength, sepDy * separationStrength
+        end
+    end
+
+    return 0, 0
 end
 
 function chaseSystem.update(world, _dt)
@@ -59,9 +112,18 @@ function chaseSystem.update(world, _dt)
             goto continue
         end
 
+        -- Calculate separation force from nearby foes
+        local sepDx, sepDy = calculateFoeSeparation(entity, world, myCenterX, myCenterY)
+
+        -- Combine chase direction with separation force
+        -- Separation is weighted less so chase still takes priority
+        local combinedDx = ndx + sepDx
+        local combinedDy = ndy + sepDy
+        local combinedNdx, combinedNdy = vector.normalize(combinedDx, combinedDy)
+
         -- Instruct movement to advance only up to the separation threshold
-        entity.movement.vx = ndx
-        entity.movement.vy = ndy
+        entity.movement.vx = combinedNdx
+        entity.movement.vy = combinedNdy
         entity.movement.maxDistance = distance - stopDistance
 
         ::continue::
