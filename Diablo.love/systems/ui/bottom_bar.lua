@@ -87,16 +87,20 @@ local function drawIconBox(x, y, size, iconName, opts)
     if cornerText then
         local cornerBoxX = x
         local cornerBoxY = y + size - cornerSize
+        local overlayRadius = math.min(cornerRadius, cornerSize * 0.5)
 
         love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
-        love.graphics.rectangle("fill", cornerBoxX, cornerBoxY, cornerSize, cornerSize, 0, 0)
+        love.graphics.rectangle("fill", cornerBoxX, cornerBoxY, cornerSize, cornerSize, overlayRadius, overlayRadius)
 
         love.graphics.setColor(0.9, 0.85, 0.65, 1)
         love.graphics.setLineWidth(2)
-        love.graphics.line(cornerBoxX, cornerBoxY, cornerBoxX + cornerSize, cornerBoxY)
-        love.graphics.line(cornerBoxX + cornerSize, cornerBoxY, cornerBoxX + cornerSize, cornerBoxY + cornerSize)
-        love.graphics.line(cornerBoxX, cornerBoxY, cornerBoxX, cornerBoxY + cornerSize)
-        love.graphics.line(cornerBoxX, cornerBoxY + cornerSize, cornerBoxX + cornerSize, cornerBoxY + cornerSize)
+        love.graphics.rectangle("line", cornerBoxX, cornerBoxY, cornerSize, cornerSize, overlayRadius, overlayRadius)
+
+        local arcCenterX = x + cornerRadius
+        local arcCenterY = y + size - cornerRadius
+        love.graphics.line(x, cornerBoxY, x, arcCenterY)
+        love.graphics.arc("line", arcCenterX, arcCenterY, cornerRadius, math.pi, math.pi * 1.5)
+        love.graphics.line(arcCenterX, y + size, x + cornerSize, y + size)
 
         love.graphics.setColor(0.95, 0.9, 0.7, 1)
         local font = love.graphics.getFont()
