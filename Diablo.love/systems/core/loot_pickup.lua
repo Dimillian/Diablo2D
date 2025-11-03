@@ -99,7 +99,7 @@ function lootPickupSystem.update(world, dt)
             worldX >= lootX and worldX <= lootX + size.w and worldY >= lootY and worldY <= lootY + size.h
 
         if withinCursor then
-            local pickupRadius = (loot.lootable and loot.lootable.pickupRadius) or 48
+            local pickupRadius = (loot.lootable and loot.lootable.pickupRadius)
             local distanceToPlayer = vector.distance(playerX, playerY, lootCenterX, lootCenterY)
             if distanceToPlayer <= pickupRadius then
                 transferItemToPlayer(world, player, loot)

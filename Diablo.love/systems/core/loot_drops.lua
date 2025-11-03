@@ -39,7 +39,7 @@ local function spawnLoot(world, event)
         renderable = buildLootRenderable(item),
         lootable = {
             item = item,
-            pickupRadius = 64,
+            pickupRadius = 128,
             source = event.lootSource or event.targetId,
             despawnTimer = 45,
             maxDespawnTimer = 45,

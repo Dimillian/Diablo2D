@@ -220,7 +220,7 @@ health_potion = {
         },
         lootable = {
             item = potionItem,
-            pickupRadius = 64,
+            pickupRadius = 128,
             source = event.targetId,
             despawnTimer = 45,
             maxDespawnTimer = 45,
