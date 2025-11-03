@@ -62,16 +62,20 @@ local function nextId()
     return "item_" .. idCounter
 end
 
-local function toArray(map)
+local function toArray(map, filterFn)
     local list = {}
     for _, value in pairs(map) do
-        list[#list + 1] = value
+        if not filterFn or filterFn(value) then
+            list[#list + 1] = value
+        end
     end
     return list
 end
 
 local rarityPool = toArray(ItemData.rarities)
-local typePool = toArray(ItemData.types)
+local typePool = toArray(ItemData.types, function(entry)
+    return not entry.excludeFromRandom
+end)
 
 local function chooseWeighted(entries)
     local total = 0

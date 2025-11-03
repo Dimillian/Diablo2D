@@ -22,11 +22,39 @@ end
 local function transferItemToPlayer(world, player, lootEntity)
     local lootable = lootEntity.lootable
     if not lootable or not lootable.item then
-        return
+        return false
     end
 
     local _, equipment = EquipmentHelper.ensure(player)
     local item = lootable.item
+
+    if item.type == "health_potion" or item.type == "mana_potion" then
+        local potions = player.potions
+        if not potions then
+            return false
+        end
+
+        local countKey = item.type == "health_potion" and "healthPotionCount" or "manaPotionCount"
+        local maxKey = item.type == "health_potion" and "maxHealthPotionCount" or "maxManaPotionCount"
+
+        local currentCount = potions[countKey] or 0
+        local maxCount = potions[maxKey]
+
+        if maxCount and currentCount >= maxCount then
+            return false
+        end
+
+        local newCount = currentCount + 1
+        if maxCount then
+            newCount = math.min(maxCount, newCount)
+        end
+
+        potions[countKey] = newCount
+
+        lootable.item = nil
+        world:removeEntity(lootEntity.id)
+        return true
+    end
 
     if item.slot and equipment[item.slot] == nil then
         EquipmentHelper.equip(player, item)
@@ -36,6 +64,7 @@ local function transferItemToPlayer(world, player, lootEntity)
 
     lootable.item = nil
     world:removeEntity(lootEntity.id)
+    return true
 end
 
 function lootPickupSystem.update(world, dt)
@@ -102,9 +131,11 @@ function lootPickupSystem.update(world, dt)
             local pickupRadius = (loot.lootable and loot.lootable.pickupRadius)
             local distanceToPlayer = vector.distance(playerX, playerY, lootCenterX, lootCenterY)
             if distanceToPlayer <= pickupRadius then
-                transferItemToPlayer(world, player, loot)
-                input.consumedClickId = input.clickId
-                return
+                local pickedUp = transferItemToPlayer(world, player, loot)
+                if pickedUp then
+                    input.consumedClickId = input.clickId
+                    return
+                end
             end
         end
 

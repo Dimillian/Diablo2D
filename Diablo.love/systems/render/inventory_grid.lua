@@ -116,6 +116,8 @@ function renderInventoryGrid.draw(scene)
     )
 
     -- Draw inventory grid (empty slots + filled slots)
+    local lastSlotBottom = gridLayout.gridStartY + gridLayout.gridSlotSize
+
     for slotIndex = 1, gridLayout.gridMaxSlots do
         local col = ((slotIndex - 1) % gridLayout.gridCols)
         local row = math.floor((slotIndex - 1) / gridLayout.gridCols)
@@ -139,7 +141,13 @@ function renderInventoryGrid.draw(scene)
         else
             drawInventorySlotEmpty(scene, slotX, slotY, gridLayout.gridSlotSize, slotIndex)
         end
+
+        if slotY + gridLayout.gridSlotSize > lastSlotBottom then
+            lastSlotBottom = slotY + gridLayout.gridSlotSize
+        end
     end
+
+    scene.inventoryGridBottomY = lastSlotBottom
 end
 
 return renderInventoryGrid

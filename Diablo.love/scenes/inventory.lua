@@ -6,6 +6,7 @@ local renderInventoryBackground = require("systems.render.inventory_background")
 local renderInventoryEquipment = require("systems.render.inventory_equipment")
 local renderInventoryStats = require("systems.render.inventory_stats")
 local renderInventoryGrid = require("systems.render.inventory_grid")
+local renderInventoryPotions = require("systems.render.inventory_potions")
 local renderInventoryHelp = require("systems.render.inventory_help")
 local renderInventoryTooltip = require("systems.render.inventory_tooltip")
 
@@ -30,6 +31,7 @@ function InventoryScene.new(opts)
                 renderInventoryEquipment.draw,
                 renderInventoryStats.draw,
                 renderInventoryGrid.draw,
+                renderInventoryPotions.draw,
                 renderInventoryHelp.draw,
                 renderInventoryTooltip.draw,
             },
@@ -43,6 +45,7 @@ end
 function InventoryScene:enter()
     self.itemRects = {}
     self.equipmentRects = {}
+    self.inventoryGridBottomY = nil
 end
 
 -- luacheck: ignore 212/self
@@ -60,6 +63,7 @@ function InventoryScene:draw()
     -- Reset rects for click detection
     self.itemRects = {}
     self.equipmentRects = {}
+    self.inventoryGridBottomY = nil
 
     -- Iterate through all render systems
     for _, system in ipairs(self.systems.draw) do
