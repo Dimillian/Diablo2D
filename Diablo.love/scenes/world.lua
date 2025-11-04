@@ -4,10 +4,12 @@ local playerInputSystem = require("systems.input.player_input")
 local mouseLookSystem = require("systems.input.mouse_look")
 local mouseMovementSystem = require("systems.input.mouse_movement")
 local playerAttackSystem = require("systems.combat.player_attack")
+local skillCastSystem = require("systems.skills.cast")
 local movementSystem = require("systems.core.movement")
 local renderSystem = require("systems.render.render_world")
 local renderLootSystem = require("systems.render.loot")
 local renderEquipmentSystem = require("systems.render.equipment")
+local renderProjectileSystem = require("systems.render.projectile")
 local renderMouseLookSystem = require("systems.render.mouse_look")
 local renderHealthSystem = require("systems.render.health")
 local renderDamageNumbersSystem = require("systems.render.damage_numbers")
@@ -19,10 +21,13 @@ local spawnSystem = require("systems.ai.spawn")
 local cullingSystem = require("systems.core.culling")
 local uiPlayerStatus = require("systems.ui.player_status")
 local uiBottomBar = require("systems.ui.bottom_bar")
+local uiSkillsBar = require("systems.ui.skills_bar")
 local cameraSystem = require("systems.core.camera")
 local applyStatsSystem = require("systems.core.apply_stats")
 local starterGearSystem = require("systems.core.starter_gear")
 local combatSystem = require("systems.combat.combat")
+local projectileMovementSystem = require("systems.projectile.movement")
+local projectileCollisionSystem = require("systems.projectile.collision")
 local lootPickupSystem = require("systems.core.loot_pickup")
 local lootDropSystem = require("systems.core.loot_drops")
 local uiTargetSystem = require("systems.ui.target")
@@ -76,6 +81,8 @@ function WorldScene.new(opts)
                 mouseMovementSystem.update,
                 lootPickupSystem.update,
                 playerAttackSystem.update,
+                skillCastSystem.update,
+                projectileMovementSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
                 detectionSystem.update,
@@ -83,6 +90,7 @@ function WorldScene.new(opts)
                 chaseSystem.update,
                 foeAttackSystem.update,
                 combatSystem.update,
+                projectileCollisionSystem.update,
                 lootDropSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
@@ -91,11 +99,13 @@ function WorldScene.new(opts)
                 renderSystem.draw,
                 renderLootSystem.draw,
                 renderEquipmentSystem.draw,
+                renderProjectileSystem.draw,
                 renderMouseLookSystem.draw,
                 renderHealthSystem.draw,
                 renderDamageNumbersSystem.draw,
                 uiPlayerStatus.draw,
                 uiBottomBar.draw,
+                uiSkillsBar.draw,
                 uiTargetSystem.draw,
                 lootTooltipSystem.draw,
             },
@@ -173,7 +183,12 @@ function WorldScene:keypressed(key)
         return
     end
 
-    if key == "1" or key == "2" then
+    local handledSkill = false
+    if key == "1" or key == "2" or key == "3" or key == "4" then
+        handledSkill = skillCastSystem.handleKeypress(self, key)
+    end
+
+    if (key == "1" or key == "2") and not handledSkill then
         potionConsumptionSystem.handleKeypress(self, key)
     end
 end
@@ -195,6 +210,13 @@ function WorldScene:mousepressed(x, y, button, _istouch, _presses)
 
         if pointInRect(self.bottomBarManaPotionRect) then
             potionConsumptionSystem.handleClick(self, "mana")
+            return
+        end
+
+        if pointInRect(self.bottomBarBookRect) then
+            if self.sceneManager then
+                self.sceneManager:toggleSkills("s")
+            end
             return
         end
 

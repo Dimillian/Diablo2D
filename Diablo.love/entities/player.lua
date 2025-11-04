@@ -19,6 +19,7 @@ function Player.new(opts)
     local createMana = require("components.mana")
     local createCombat = require("components.combat")
     local createPotions = require("components.potions")
+    local createSkills = require("components.skills")
 
     local entity = {
         id = opts.id or "player",
@@ -43,6 +44,7 @@ function Player.new(opts)
             healthPotionCount = 3,
             manaPotionCount = 2,
         }),
+        skills = createSkills(opts.skills),
     }
 
     return setmetatable(entity, Player)

@@ -27,8 +27,19 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    if key == "i" or key == "escape" then
+    if key == "escape" then
         sceneManager:toggleInventory(key)
+        sceneManager:toggleSkills(key)
+        return
+    end
+
+    if key == "i" then
+        sceneManager:toggleInventory(key)
+        return
+    end
+
+    if key == "s" then
+        sceneManager:toggleSkills(key)
         return
     end
 
