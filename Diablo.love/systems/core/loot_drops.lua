@@ -4,6 +4,7 @@ local LootEntity = require("entities.loot")
 local Tooltips = require("systems.helpers.tooltips")
 
 local lootDropSystem = {}
+local TWO_PI = math.pi * 2
 
 local function buildLootRenderable(item)
     local color = Tooltips.getRarityColor(item and item.rarity) or Tooltips.rarityColors.common
@@ -11,6 +12,39 @@ local function buildLootRenderable(item)
     return {
         kind = "loot",
         color = { color[1], color[2], color[3], alpha },
+    }
+end
+
+local function rollScatterData(opts)
+    opts = opts or {}
+
+    local angle = math.random() * TWO_PI
+    local minSpeed = opts.minSpeed or 90
+    local maxSpeed = opts.maxSpeed or 160
+    if maxSpeed < minSpeed then
+        maxSpeed = minSpeed
+    end
+
+    local speed = minSpeed + (maxSpeed - minSpeed) * math.random()
+
+    local offsetMin = opts.offsetDistanceMin or 6
+    local offsetMax = opts.offsetDistanceMax or 18
+    if offsetMax < offsetMin then
+        offsetMax = offsetMin
+    end
+    local offsetDistance = offsetMin + (offsetMax - offsetMin) * math.random()
+
+    local directionX = math.cos(angle)
+    local directionY = math.sin(angle)
+
+    return {
+        vx = directionX * speed,
+        vy = directionY * speed,
+        offsetX = directionX * offsetDistance,
+        offsetY = directionY * offsetDistance,
+        friction = opts.friction or 7,
+        maxDuration = opts.maxDuration or 0.55,
+        stopThreshold = opts.stopThreshold or 18,
     }
 end
 
@@ -85,11 +119,18 @@ local function spawnPotionLoot(world, event, basePosition)
     local potionColor = potionTypeId == "health_potion" and { 0.8, 0.2, 0.2, 1 } or { 0.2, 0.4, 0.9, 1 }
     local width = 26
     local height = 26
-    local offsetX = (math.random() < 0.5) and -32 or 32
+    local baseX = basePosition.x - width / 2
+    local baseY = basePosition.y - height / 2
+    local scatter = rollScatterData({
+        minSpeed = 70,
+        maxSpeed = 150,
+        offsetDistanceMin = 10,
+        offsetDistanceMax = 26,
+    })
 
     local potionLoot = LootEntity.new({
-        x = basePosition.x - width / 2 + offsetX,
-        y = basePosition.y - height / 2,
+        x = baseX + scatter.offsetX,
+        y = baseY + scatter.offsetY,
         width = width,
         height = height,
         renderable = {
@@ -102,6 +143,13 @@ local function spawnPotionLoot(world, event, basePosition)
             source = event.lootSource or event.targetId,
             despawnTimer = 45,
             maxDespawnTimer = 45,
+        },
+        lootScatter = {
+            vx = scatter.vx,
+            vy = scatter.vy,
+            friction = scatter.friction,
+            maxDuration = scatter.maxDuration,
+            stopThreshold = scatter.stopThreshold,
         },
     })
 
@@ -125,10 +173,13 @@ local function spawnLoot(world, event)
 
     local width = 26
     local height = 26
+    local baseX = event.position.x - width / 2
+    local baseY = event.position.y - height / 2
+    local scatter = rollScatterData()
 
     local loot = LootEntity.new({
-        x = event.position.x - width / 2,
-        y = event.position.y - height / 2,
+        x = baseX + scatter.offsetX,
+        y = baseY + scatter.offsetY,
         width = width,
         height = height,
         renderable = buildLootRenderable(item),
@@ -138,6 +189,13 @@ local function spawnLoot(world, event)
             source = event.lootSource or event.targetId,
             despawnTimer = 45,
             maxDespawnTimer = 45,
+        },
+        lootScatter = {
+            vx = scatter.vx,
+            vy = scatter.vy,
+            friction = scatter.friction,
+            maxDuration = scatter.maxDuration,
+            stopThreshold = scatter.stopThreshold,
         },
     })
 

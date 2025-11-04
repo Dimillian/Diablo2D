@@ -8,6 +8,7 @@ function Loot.new(opts)
     local createRenderable = require("components.renderable")
     local createLootable = require("components.lootable")
     local createSize = require("components.size")
+    local createLootScatter = require("components.loot_scatter")
 
     local entity = {
         id = opts.id or ("loot_" .. math.random(10000, 99999)),
@@ -28,6 +29,10 @@ function Loot.new(opts)
 
     if opts.hoverable then
         entity.hoverable = opts.hoverable
+    end
+
+    if opts.lootScatter then
+        entity.lootScatter = createLootScatter(opts.lootScatter)
     end
 
     return setmetatable(entity, Loot)
