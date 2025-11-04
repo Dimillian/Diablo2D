@@ -150,7 +150,7 @@ function uiBottomBar.draw(world)
         rectField = "bottomBarBookRect",
         opts = {
             shadow = true,
-            badgeText = "S",
+            badgeText = "K",
             iconPadding = 8,
         },
     })

@@ -16,7 +16,7 @@ function Projectile.new(opts)
     local size = opts.size or 12
 
     local entity = {
-        id = opts.id or "projectile_" .. math.random(10000, 99999),
+        id = opts.id or ("projectile_" .. math.random(10000, 99999)),
         position = createPosition({
             x = opts.x or 0,
             y = opts.y or 0,
@@ -27,6 +27,8 @@ function Projectile.new(opts)
         }),
         movement = createMovement({
             speed = opts.speed or 300,
+            vx = opts.vx or 0,
+            vy = opts.vy or 0,
         }),
         renderable = createRenderable({
             kind = "circle",

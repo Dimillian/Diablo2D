@@ -38,7 +38,7 @@ function love.keypressed(key)
         return
     end
 
-    if key == "s" then
+    if key == "k" then
         sceneManager:toggleSkills(key)
         return
     end

@@ -19,6 +19,17 @@ function starterGearSystem.update(world, _dt)
     -- Ensure player has inventory and equipment components
     EquipmentHelper.ensure(player)
 
+    -- Ensure player has skills component
+    if not player.skills then
+        local createSkills = require("components.skills")
+        player.skills = createSkills()
+    end
+
+    -- Auto-equip fireball in first skill slot
+    if not player.skills.equipped[1] then
+        player.skills.equipped[1] = "fireball"
+    end
+
     -- Generate starter gear: weapon + 4 armor pieces (helmet, chest, gloves, boots)
     local starterWeapon = ItemGenerator.roll({
         rarity = "common",

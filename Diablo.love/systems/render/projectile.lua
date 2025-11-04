@@ -9,7 +9,10 @@ function renderProjectileSystem.draw(world)
         return
     end
 
+    local camera = world.camera or { x = 0, y = 0 }
+
     love.graphics.push("all")
+    love.graphics.translate(-camera.x, -camera.y)
 
     for _, projectile in ipairs(projectiles) do
         if projectile.inactive then

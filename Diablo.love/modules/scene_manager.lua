@@ -83,7 +83,7 @@ function SceneManager:toggleSkills(key)
         return
     end
 
-    if key ~= "s" then
+    if key ~= "k" then
         return
     end
 

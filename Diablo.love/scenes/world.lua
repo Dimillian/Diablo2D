@@ -3,6 +3,7 @@ local mouseInputSystem = require("systems.input.mouse_input")
 local playerInputSystem = require("systems.input.player_input")
 local mouseLookSystem = require("systems.input.mouse_look")
 local mouseMovementSystem = require("systems.input.mouse_movement")
+local mouseTargetingSystem = require("systems.input.mouse_targeting")
 local playerAttackSystem = require("systems.combat.player_attack")
 local skillCastSystem = require("systems.skills.cast")
 local movementSystem = require("systems.core.movement")
@@ -79,6 +80,7 @@ function WorldScene.new(opts)
                 potionConsumptionSystem.update,
                 mouseLookSystem.update,
                 mouseMovementSystem.update,
+                mouseTargetingSystem.update,
                 lootPickupSystem.update,
                 playerAttackSystem.update,
                 skillCastSystem.update,

@@ -1,6 +1,7 @@
 local Spells = require("data.spells")
 local ProjectileEntity = require("entities.projectile")
 local coordinates = require("systems.helpers.coordinates")
+local vector = require("modules.vector")
 
 local skillCastSystem = {}
 
@@ -27,7 +28,7 @@ local function getTarget(world)
     return target
 end
 
-local function computeTargetPosition(world, projectileTarget)
+local function computeTargetPosition(world, projectileTarget, caster)
     if projectileTarget then
         local tx, ty = getEntityCenter(projectileTarget)
         if tx and ty then
@@ -35,6 +36,20 @@ local function computeTargetPosition(world, projectileTarget)
         end
     end
 
+    -- Use player's look direction as fallback if no target entity
+    if caster and caster.movement and caster.movement.lookDirection then
+        local lookDir = caster.movement.lookDirection
+        local casterX, casterY = getEntityCenter(caster)
+        if casterX and casterY and lookDir.x and lookDir.y then
+            -- Cast projectile forward in look direction at a reasonable range (500 pixels)
+            local castRange = 500
+            local targetX = casterX + (lookDir.x * castRange)
+            local targetY = casterY + (lookDir.y * castRange)
+            return targetX, targetY, nil
+        end
+    end
+
+    -- Final fallback: use mouse position
     local mx, my = love.mouse.getPosition()
     local camera = world.camera or { x = 0, y = 0 }
     local targetX, targetY = coordinates.toWorldFromScreen(camera, mx, my)
@@ -43,13 +58,28 @@ end
 
 local function createProjectile(world, caster, spell, targetX, targetY, targetId)
     local casterX, casterY = getEntityCenter(caster)
-    if not casterX then
+    if not casterX or not casterY then
         return false
     end
 
+    -- Ensure target position is valid
+    if not targetX or not targetY then
+        return false
+    end
+
+    -- Calculate projectile spawn position (centered on caster)
+    local projectileSize = spell.projectileSize or 12
+    local projectileX = casterX - (projectileSize / 2)
+    local projectileY = casterY - (projectileSize / 2)
+
+    -- Calculate initial direction vector from caster to target
+    local dx = targetX - casterX
+    local dy = targetY - casterY
+    local ndx, ndy = vector.normalize(dx, dy)
+
     local projectile = ProjectileEntity.new({
-        x = casterX - (spell.projectileSize or 12) / 2,
-        y = casterY - (spell.projectileSize or 12) / 2,
+        x = projectileX,
+        y = projectileY,
         targetX = targetX,
         targetY = targetY,
         targetId = targetId,
@@ -57,9 +87,12 @@ local function createProjectile(world, caster, spell, targetX, targetY, targetId
         damage = spell.damage,
         ownerId = caster.id,
         speed = spell.projectileSpeed,
-        size = spell.projectileSize,
+        size = projectileSize,
         color = spell.projectileColor,
         lifetime = spell.lifetime,
+        -- Set initial velocity direction immediately
+        vx = ndx,
+        vy = ndy,
     })
 
     world:addEntity(projectile)
@@ -88,7 +121,7 @@ local function castSpell(world, slotIndex)
     end
 
     local target = getTarget(world)
-    local targetX, targetY, targetId = computeTargetPosition(world, target)
+    local targetX, targetY, targetId = computeTargetPosition(world, target, player)
     if not targetX or not targetY then
         return false
     end
