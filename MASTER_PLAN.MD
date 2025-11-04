@@ -164,226 +164,87 @@ Players now carry dedicated health and mana potions, consume them from the botto
 
 ---
 
-## 3. EXP System
+## 3. EXP System ✅ **COMPLETED**
 
 ### Overview
 Implement an experience point (XP) system where players start at level 1 with 0 XP, gain XP from killing foes, and have a leveling table that scales XP requirements. Display an XP bar at the bottom of the screen showing current XP vs required XP for next level, filling the entire screen width for a gamey feel.
+
+### Implementation Status: **COMPLETE**
+
+All core functionality has been implemented:
+- ✅ Experience component with level, currentXP, and xpForNextLevel fields
+- ✅ Leveling module with XP calculation formulas (baseXP = 100, multiplier = 1.5)
+- ✅ XP awarded on foe death (25 XP per kill)
+- ✅ Level up system with stat bonuses (+5 health, +1 damage min/max, +1 defense)
+- ✅ Full-width XP bar UI with visual feedback
+- ✅ Multiple level ups handled correctly
 
 ### Implementation Details
 
 #### Components
 
-**New Component: `components/experience.lua`**
-```lua
-local function createExperienceComponent(opts)
-    opts = opts or {}
-    return {
-        level = opts.level or 1,
-        currentXP = opts.currentXP or 0,
-        xpForNextLevel = opts.xpForNextLevel or 100, -- Will be computed from leveling table
-    }
-end
-```
+**✅ `components/experience.lua` - IMPLEMENTED**
+- Fields: `level`, `currentXP`, `xpForNextLevel`
+- Created via `createExperienceComponent()` factory function
+- Initializes XP for next level using leveling table
 
 #### Data
 
-**New Data File: `data/leveling.lua`**
-```lua
-local Leveling = {}
-
--- XP required to reach level N (cumulative from level 1)
--- Formula: XP(n) = baseXP * (multiplier ^ (n - 1))
--- Example: baseXP = 100, multiplier = 1.5
-Leveling.getXPForLevel = function(targetLevel)
-    local baseXP = 100
-    local multiplier = 1.5
-    if targetLevel <= 1 then
-        return 0
-    end
-    local totalXP = 0
-    for i = 2, targetLevel do
-        totalXP = totalXP + math.floor(baseXP * (multiplier ^ (i - 2)))
-    end
-    return totalXP
-end
-
--- XP required to go from level N to level N+1
-Leveling.getXPRequiredForNextLevel = function(currentLevel)
-    local baseXP = 100
-    local multiplier = 1.5
-    if currentLevel < 1 then
-        return baseXP
-    end
-    return math.floor(baseXP * (multiplier ^ (currentLevel - 1)))
-end
-
--- XP gained from killing a foe (scales with level or fixed)
-Leveling.getFoeXP = function(foeLevel, playerLevel)
-    -- Base XP per kill
-    local baseXP = 25
-    -- Optional: Scale based on level difference
-    -- For now, fixed XP per kill
-    return baseXP
-end
-
-return Leveling
-```
+**✅ `modules/leveling.lua` - IMPLEMENTED**
+- Provides `getXPForLevel()` for cumulative XP calculation
+- Provides `getXPRequiredForNextLevel()` for level-to-level XP requirement
+- Provides `getFoeXP()` for XP awards (currently 25 XP per kill)
+- Uses exponential formula: baseXP = 100, multiplier = 1.5
 
 #### Systems
 
-**Modify: `systems/combat/combat.lua`**
-- In `handleDeath()` function, before calling `world:removeEntity(targetId)`:
-  - Capture foe level: `foeLevel = target.level or 1` (default to 1 for now, future-proof for leveled foes)
-  - Add `foeLevel` to death event payload:
-    ```lua
-    pushCombatEvent(world, {
-        type = "death",
-        targetId = targetId,
-        sourceId = attacker and attacker.id or nil,
-        position = position and { x = position.x, y = position.y } or nil,
-        foeLevel = foeLevel, -- NEW: Capture foe level before entity removal
-        time = world.time or 0,
-    })
-    ```
+**✅ `systems/combat/combat.lua` - MODIFIED**
+- `handleDeath()` function captures `foeLevel` from target before entity removal
+- Death event payload includes `foeLevel` field for XP calculation
 
-**New System: `systems/core/experience.lua`**
-- Listen to combat events: `world.pendingCombatEvents`
-- For each `death` event where `sourceId` is player:
-  - Get player entity: `world:getPlayer()`
-  - Extract foe level from event: `foeLevel = event.foeLevel or 1` (use event data, not `world:getEntity()` since entity is removed)
-  - Calculate XP gain: `Leveling.getFoeXP(foeLevel, player.experience.level)`
-  - Add XP: `player.experience.currentXP = player.experience.currentXP + xpGain`
-  - Check for level up (see below)
+**✅ `systems/core/experience.lua` - IMPLEMENTED**
+- Processes combat events and awards XP for player kills
+- Handles level up logic with while loop to support multiple level ups in one frame
+- Grants stat bonuses on level up: +5 health, +1 damage min/max, +1 defense
+- Updates `xpForNextLevel` for UI display
 
-**Level Up Logic (in `systems/experience.lua`):**
-```lua
-local function checkLevelUp(world, player)
-    local exp = player.experience
-    local totalXPForCurrentLevel = Leveling.getXPForLevel(exp.level)
-    local totalXPForNextLevel = Leveling.getXPForLevel(exp.level + 1)
-
-    -- Check if player has enough XP for next level
-    if exp.currentXP >= totalXPForNextLevel then
-        -- Level up!
-        exp.level = exp.level + 1
-
-        -- Grant stat bonuses on level up
-        -- Update baseStats so apply_stats system can propagate changes correctly
-        if player.baseStats then
-            player.baseStats.damageMin = (player.baseStats.damageMin or 5) + 1
-            player.baseStats.damageMax = (player.baseStats.damageMax or 8) + 1
-            player.baseStats.defense = (player.baseStats.defense or 2) + 1
-            player.baseStats.health = (player.baseStats.health or 50) + 5
-            -- apply_stats system will automatically update player.health.max and player.health.current on next frame
-        end
-
-        -- Recalculate for potential multiple level ups
-        local newTotalXPForNextLevel = Leveling.getXPForLevel(exp.level + 1)
-        if exp.currentXP >= newTotalXPForNextLevel then
-            -- Recursively check for additional level ups
-            checkLevelUp(world, player)
-            return
-        end
-
-        -- Optional: Create level up event/notification
-        -- Could add to pendingCombatEvents or separate event queue
-    end
-
-    -- Update XP required for next level display (always update for UI)
-    local xpRequired = Leveling.getXPRequiredForNextLevel(exp.level)
-    exp.xpForNextLevel = xpRequired
-end
-```
-
-**New System: `systems/ui/experience.lua`**
-- Draw full-width XP bar at bottom of screen
-- Position: `barY = screenHeight - barHeight - 8` (8px from bottom)
-- Width: `barWidth = screenWidth - 32` (16px margin on each side)
-- Height: `barHeight = 20` (thick enough to be visible)
-- Visual design:
-  - Background: Dark color `{0.1, 0.1, 0.1, 0.9}`
-  - Fill: Bright color `{0.2, 0.6, 1.0, 1}` (blue) or `{0.4, 0.8, 0.4, 1}` (green)
-  - Outline: Light color `{0.9, 0.85, 0.65, 1}`
-  - Text overlay: Current XP / Required XP, Level number
-- Implementation:
-  ```lua
-  local screenWidth = love.graphics.getWidth()
-  local screenHeight = love.graphics.getHeight()
-  local barHeight = 20
-  local barY = screenHeight - barHeight - 8
-  local barWidth = screenWidth - 32
-  local barX = 16
-
-  local player = world:getPlayer()
-  if not player or not player.experience then
-      return
-  end
-
-  local exp = player.experience
-  local totalXPForCurrentLevel = Leveling.getXPForLevel(exp.level)
-  local totalXPForNextLevel = Leveling.getXPForLevel(exp.level + 1)
-  local xpProgress = exp.currentXP - totalXPForCurrentLevel
-  local xpRequired = totalXPForNextLevel - totalXPForCurrentLevel
-  local ratio = xpRequired > 0 and (xpProgress / xpRequired) or 1
-
-  -- Draw background
-  love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
-  love.graphics.rectangle("fill", barX, barY, barWidth, barHeight, 4, 4)
-
-  -- Draw fill
-  love.graphics.setColor(0.2, 0.6, 1.0, 1)
-  love.graphics.rectangle("fill", barX, barY, barWidth * ratio, barHeight, 4, 4)
-
-  -- Draw outline
-  love.graphics.setColor(0.9, 0.85, 0.65, 1)
-  love.graphics.setLineWidth(2)
-  love.graphics.rectangle("line", barX, barY, barWidth, barHeight, 4, 4)
-
-  -- Draw text
-  love.graphics.setColor(1, 1, 1, 1)
-  local text = string.format("Level %d | %d / %d XP", exp.level, math.floor(xpProgress), math.floor(xpRequired))
-  love.graphics.printf(text, barX, barY + barHeight/2 - 6, barWidth, "center")
-  ```
+**✅ `systems/ui/experience_bar.lua` - IMPLEMENTED**
+- Draws full-width XP bar at bottom of screen (via UIConfig positioning)
+- Displays level number, current XP progress, and required XP for next level
+- Visual design: dark background, blue fill, light outline, centered text
+- Positioned dynamically based on screen dimensions
 
 #### Entity Changes
 
-**Modify: `entities/player.lua`**
-- Add `experience` component to player creation:
-  ```lua
-  local createExperience = require("components.experience")
-  -- ...
-  experience = createExperience(opts.experience or {
-      level = 1,
-      currentXP = 0,
-  }),
-  ```
-- Initialize XP for next level based on leveling table
+**✅ `entities/player.lua` - MODIFIED**
+- `experience` component added to player creation with default level 1, 0 XP
+- XP for next level initialized using leveling table
 
 #### System Registration
 
-**Modify: `scenes/world.lua`**
-- Add `experienceSystem.update` to update systems (after `combatSystem.update` and `lootDropSystem.update`)
-- Add `uiExperienceSystem.draw` to draw systems (after `uiPlayerStatus.draw`, before `uiTargetSystem.draw` or at end)
+**✅ `scenes/world.lua` - MODIFIED**
+- `experienceSystem.update` registered in update systems (after `lootDropSystem.update`)
+- `uiExperienceBar.draw` registered via `uiMain.draw` system (after `uiPlayerStatus.draw`)
 
 #### Level Up Rewards
 
-**Optional Enhancement:**
-- On level up, grant stat bonuses:
-  - +5 max health (already implemented in level up logic above)
-  - +1 damage min/max (add to `baseStats` component)
-  - +1 defense (add to `baseStats` component)
+**✅ Level Up Rewards - IMPLEMENTED**
+- On level up, stat bonuses are granted:
+  - +5 max health (updates `baseStats.health`)
+  - +1 damage min/max (updates `baseStats.damageMin`/`damageMax`)
+  - +1 defense (updates `baseStats.defense`)
 - **Integration with `systems/apply_stats.lua`**:
-  - Current system reads `player.baseStats` and combines with equipment stats
-  - Level bonuses should be stored in `baseStats` component, so they automatically combine with equipment
-  - Modify level up logic to update `player.baseStats`:
-    ```lua
-    if player.baseStats then
-        player.baseStats.damageMin = (player.baseStats.damageMin or 5) + 1
-        player.baseStats.damageMax = (player.baseStats.damageMax or 8) + 1
-        player.baseStats.defense = (player.baseStats.defense or 2) + 1
-    end
-    ```
-  - `apply_stats` system will automatically recalculate total stats on next frame
+  - Level bonuses stored in `baseStats` component
+  - `apply_stats` system automatically recalculates total stats on next frame
+  - Health max/current updated automatically when baseStats change
+
+### Implementation Notes
+
+- **XP Calculation**: Uses exponential formula with baseXP = 100, multiplier = 1.5
+- **XP per Kill**: Fixed 25 XP per foe kill (future-proofed for level-scaling)
+- **Level Up Bonuses**: Applied to `baseStats` so they combine with equipment stats
+- **Multiple Level Ups**: Handled correctly with while loop to process all level ups in one frame
+- **XP Bar**: Full-width display at bottom of screen with visual feedback
 
 ---
 
@@ -721,8 +582,8 @@ return Projectile
 ## Implementation Order Recommendation
 
 1. ✅ **Foe Attack System** - **COMPLETED** - Combat loop is now complete with enemy attacks, knockback, and visual feedback
-2. **EXP System** - Foundation for progression, independent of other systems
-3. **Potion System** - Adds survivability without complex combat interactions
+2. ✅ **EXP System** - **COMPLETED** - Foundation for progression with leveling, XP awards, and stat bonuses
+3. ✅ **Potion System** - **COMPLETED** - Adds survivability with health/mana potions and cooldown mechanics
 4. **Magic/Skills System** - Adds ranged combat options and spell variety
 
 ---
@@ -755,13 +616,15 @@ return Projectile
 - [x] Inventory shows divider between items and potions
 - [x] Inventory shows potion counts (current / max) for both types
 
-### EXP System
-- [ ] Player starts at level 1 with 0 XP
-- [ ] Killing foes grants XP
-- [ ] XP bar displays correctly (full width)
-- [ ] Level up occurs at correct XP thresholds
-- [ ] XP requirements scale properly
-- [ ] Level number displays correctly
+### EXP System ✅ **COMPLETE**
+- [x] Player starts at level 1 with 0 XP
+- [x] Killing foes grants XP
+- [x] XP bar displays correctly (full width)
+- [x] Level up occurs at correct XP thresholds
+- [x] XP requirements scale properly
+- [x] Level number displays correctly
+- [x] Stat bonuses applied on level up (+5 health, +1 damage min/max, +1 defense)
+- [x] Multiple level ups handled correctly in single frame
 
 ### Magic/Skills System
 - [ ] Skills scene opens with "s" key or book icon click
