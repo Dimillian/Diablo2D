@@ -7,7 +7,7 @@ Items.rarities = {
         weight = 75,
         prefixCount = 0,
         suffixCount = 0,
-        statMultiplier = 1.0,
+        baseStatMultiplier = 1.0,
     },
     uncommon = {
         id = "uncommon",
@@ -15,7 +15,7 @@ Items.rarities = {
         weight = 25,
         prefixCount = 1,
         suffixCount = 1,
-        statMultiplier = 1.1,
+        baseStatMultiplier = 1.1,
     },
     rare = {
         id = "rare",
@@ -23,7 +23,7 @@ Items.rarities = {
         weight = 10,
         prefixCount = 1,
         suffixCount = 1,
-        statMultiplier = 1.25,
+        baseStatMultiplier = 1.25,
     },
     epic = {
         id = "epic",
@@ -31,7 +31,7 @@ Items.rarities = {
         weight = 5,
         prefixCount = 2,
         suffixCount = 1,
-        statMultiplier = 1.5,
+        baseStatMultiplier = 1.5,
     },
     legendary = {
         id = "legendary",
@@ -39,7 +39,7 @@ Items.rarities = {
         weight = 2,
         prefixCount = 2,
         suffixCount = 2,
-        statMultiplier = 1.6,
+        baseStatMultiplier = 1.6,
     },
 }
 

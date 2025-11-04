@@ -172,7 +172,7 @@ local function createBaseStats(itemType, rarity)
         stats.moveSpeed = itemType.base.moveSpeed
     end
 
-    local multiplier = rarity.statMultiplier or 1
+    local multiplier = rarity.baseStatMultiplier or 1
     stats.damageMin = stats.damageMin * multiplier
     stats.damageMax = stats.damageMax * multiplier
     stats.defense = stats.defense * multiplier
@@ -210,26 +210,25 @@ local function rollRange(range)
     return min + math.random() * (max - min)
 end
 
-local function applyStats(stats, definition, multiplier)
-    multiplier = multiplier or 1.0
+local function applyStats(stats, definition)
     for key, modifiers in pairs(definition.stats) do
         if key == "damage" then
             if modifiers.flat then
-                local value = rollRange(modifiers.flat) * multiplier
+                local value = rollRange(modifiers.flat)
                 stats.damageMin = stats.damageMin + value
                 stats.damageMax = stats.damageMax + value
             end
             if modifiers.percent then
-                local value = rollRange(modifiers.percent) * multiplier
+                local value = rollRange(modifiers.percent)
                 stats.damageMin = stats.damageMin * (1 + value)
                 stats.damageMax = stats.damageMax * (1 + value)
             end
         else
             if modifiers.flat then
-                applyFlat(stats, key, rollRange(modifiers.flat) * multiplier)
+                applyFlat(stats, key, rollRange(modifiers.flat))
             end
             if modifiers.percent then
-                applyPercent(stats, key, rollRange(modifiers.percent) * multiplier)
+                applyPercent(stats, key, rollRange(modifiers.percent))
             end
         end
     end
@@ -455,14 +454,12 @@ function ItemGenerator.generate(opts)
     local suffixes = rollAffixes(ItemData.suffixes, rarity.suffixCount, itemType.slot, rarity.id)
 
     local stats = createBaseStats(itemType, rarity)
-    local multiplier = rarity.statMultiplier or 1.0
-
     for _, prefix in ipairs(prefixes) do
-        applyStats(stats, prefix, multiplier)
+        applyStats(stats, prefix)
     end
 
     for _, suffix in ipairs(suffixes) do
-        applyStats(stats, suffix, multiplier)
+        applyStats(stats, suffix)
     end
 
     finalizeStats(stats)
