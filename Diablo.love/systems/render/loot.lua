@@ -21,7 +21,13 @@ function renderLootSystem.draw(world)
         end
 
         local lootable = entity.lootable
-        if not lootable or not lootable.item then
+        if not lootable then
+            goto continue
+        end
+
+        local hasItem = lootable.item ~= nil
+        local hasGold = lootable.gold and lootable.gold > 0
+        if not hasItem and not hasGold then
             goto continue
         end
 
@@ -44,7 +50,7 @@ function renderLootSystem.draw(world)
         love.graphics.rectangle("line", x, y, w, h, 4, 4)
 
         local item = lootable.item
-        local spritePath = item and item.spritePath
+        local spritePath = lootable.iconPath or (item and item.spritePath)
 
         if spritePath then
             local sprite = Resources.loadImageSafe(spritePath)
@@ -60,6 +66,16 @@ function renderLootSystem.draw(world)
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.draw(sprite, drawX, drawY, 0, scale, scale)
             end
+        end
+
+        if hasGold then
+            love.graphics.setColor(0, 0, 0, 0.75)
+            love.graphics.rectangle("fill", x, y + h - 12, w, 12)
+
+            love.graphics.setColor(1, 0.9, 0.4, 1)
+            local text = tostring(lootable.gold)
+            local textWidth = love.graphics.getFont():getWidth(text)
+            love.graphics.print(text, x + (w - textWidth) / 2, y + h - 12)
         end
 
         love.graphics.pop()

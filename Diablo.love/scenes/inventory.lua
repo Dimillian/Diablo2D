@@ -6,6 +6,7 @@ local renderInventoryBackground = require("systems.render.inventory_background")
 local renderInventoryEquipment = require("systems.render.inventory_equipment")
 local renderInventoryStats = require("systems.render.inventory_stats")
 local renderInventoryGrid = require("systems.render.inventory_grid")
+local renderInventoryGold = require("systems.render.inventory_gold")
 local renderInventoryPotions = require("systems.render.inventory_potions")
 local renderInventoryHelp = require("systems.render.inventory_help")
 local renderInventoryTooltip = require("systems.render.inventory_tooltip")
@@ -31,6 +32,7 @@ function InventoryScene.new(opts)
                 renderInventoryEquipment.draw,
                 renderInventoryStats.draw,
                 renderInventoryGrid.draw,
+                renderInventoryGold.draw,
                 renderInventoryPotions.draw,
                 renderInventoryHelp.draw,
                 renderInventoryTooltip.draw,

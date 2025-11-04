@@ -4,6 +4,7 @@ local function createInventoryComponent(opts)
     return {
         items = opts.items or {},
         capacity = opts.capacity or 30,
+        gold = opts.gold or 0,
     }
 end
 

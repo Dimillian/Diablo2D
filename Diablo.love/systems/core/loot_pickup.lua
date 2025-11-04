@@ -21,11 +21,25 @@ end
 
 local function transferItemToPlayer(world, player, lootEntity)
     local lootable = lootEntity.lootable
-    if not lootable or not lootable.item then
+    if not lootable then
         return false
     end
 
-    local _, equipment = EquipmentHelper.ensure(player)
+    local inventory, equipment = EquipmentHelper.ensure(player)
+
+    if lootable.gold and lootable.gold > 0 then
+        if inventory then
+            inventory.gold = (inventory.gold or 0) + lootable.gold
+        end
+
+        world:removeEntity(lootEntity.id)
+        return true
+    end
+
+    if not lootable.item then
+        return false
+    end
+
     local item = lootable.item
 
     if item.type == "health_potion" or item.type == "mana_potion" then
