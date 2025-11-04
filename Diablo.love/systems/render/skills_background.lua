@@ -22,11 +22,11 @@ function renderSkillsBackground.draw(scene)
     scene._skillsLayout.columns = columns
 
     love.graphics.setLineWidth(2)
-    love.graphics.line(columns.dividerX, panel.panelY + 16, columns.dividerX, panel.panelY + panel.panelHeight - 16)
+    love.graphics.line(columns.dividerX, panel.panelY, columns.dividerX, panel.panelY + panel.panelHeight)
 
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Spells", columns.listX, columns.headerY)
     love.graphics.print("Equipped", columns.slotsX, columns.headerY)
+    love.graphics.print("Spells", columns.listX, columns.headerY)
 end
 
 return renderSkillsBackground

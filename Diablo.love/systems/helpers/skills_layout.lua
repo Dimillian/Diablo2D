@@ -24,8 +24,8 @@ end
 function SkillsLayout.calculateColumns(panel)
     local headerY = snap(panel.panelY + 20)
     local dividerX = snap(panel.panelX + panel.panelWidth * 0.5)
-    local listX = snap(panel.panelX + 24)
-    local slotsX = snap(dividerX + 24)
+    local slotsX = snap(panel.panelX + 24)
+    local listX = snap(dividerX + 24)
 
     return {
         headerY = headerY,
@@ -36,7 +36,7 @@ function SkillsLayout.calculateColumns(panel)
 end
 
 function SkillsLayout.calculateListArea(panel, columns)
-    local listWidth = columns.dividerX - panel.panelX - 36
+    local listWidth = panel.panelX + panel.panelWidth - columns.dividerX - 36
     local listTop = snap(columns.headerY + 40)
     local itemHeight = 48
     return {
@@ -58,13 +58,6 @@ function SkillsLayout.calculateSlotsArea(_panel, columns)
         y = slotsTop,
         slotSize = slotSize,
         slotSpacing = slotSpacing,
-    }
-end
-
-function SkillsLayout.calculateHelpPosition(panel)
-    return {
-        x = panel.panelX + 24,
-        y = panel.panelY + panel.panelHeight - 32,
     }
 end
 

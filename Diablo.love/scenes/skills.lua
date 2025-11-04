@@ -3,7 +3,6 @@ local Spells = require("data.spells")
 local renderSkillsBackground = require("systems.render.skills_background")
 local renderSkillsList = require("systems.render.skills_list")
 local renderSkillsEquipped = require("systems.render.skills_equipped")
-local renderSkillsHelp = require("systems.render.skills_help")
 local renderSkillsTooltip = require("systems.render.skills_tooltip")
 
 local SkillsScene = {}
@@ -49,7 +48,6 @@ function SkillsScene.new(opts)
                 renderSkillsBackground.draw,
                 renderSkillsList.draw,
                 renderSkillsEquipped.draw,
-                renderSkillsHelp.draw,
                 renderSkillsTooltip.draw,
             },
         },

@@ -9,17 +9,12 @@ local SLOT_SPACING = 8
 local function drawSlotBackground(x, y)
     love.graphics.setColor(0.08, 0.08, 0.08, 0.95)
     love.graphics.rectangle("fill", x, y, SLOT_SIZE, SLOT_SIZE, 4, 4)
+end
+
+local function drawSlotBorder(x, y)
     love.graphics.setColor(0.8, 0.75, 0.5, 1)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", x, y, SLOT_SIZE, SLOT_SIZE, 4, 4)
-end
-
-local function drawHotkeyLabel(x, y, label)
-    local font = love.graphics.getFont()
-    local textWidth = font:getWidth(label)
-    local textHeight = font:getHeight()
-    love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print(label, x + SLOT_SIZE - textWidth - 4, y + SLOT_SIZE - textHeight)
 end
 
 local function drawSkillIcon(x, y, spell)
@@ -68,7 +63,7 @@ function uiSkillsBarSystem.draw(world)
         local slotY = startY
 
         drawSlotBackground(slotX, slotY)
-        drawHotkeyLabel(slotX, slotY, tostring(slotIndex))
+        drawSlotBorder(slotX, slotY)
 
         local spellId = player.skills.equipped[slotIndex]
         local spell = spellId and Spells.types[spellId] or nil
