@@ -11,6 +11,7 @@ local defaultStats = {
     lifeSteal = 0,
     attackSpeed = 0,
     resistAll = 0,
+    manaRegen = 0.5,
 }
 
 local function createBaseStatsComponent(opts)

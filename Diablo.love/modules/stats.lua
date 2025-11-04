@@ -11,6 +11,7 @@ local statKeys = {
     "lifeSteal",
     "attackSpeed",
     "resistAll",
+    "manaRegen",
 }
 
 local Stats = {}

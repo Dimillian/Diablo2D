@@ -34,6 +34,7 @@ local experienceSystem = require("systems.core.experience")
 local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
 local potionConsumptionSystem = require("systems.core.potion_consumption")
+local manaRegenSystem = require("systems.core.mana_regen")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -76,6 +77,7 @@ function WorldScene.new(opts)
                 mouseInputSystem.update,
                 starterGearSystem.update,
                 applyStatsSystem.update,
+                manaRegenSystem.update,
                 playerInputSystem.update,
                 potionConsumptionSystem.update,
                 mouseLookSystem.update,
