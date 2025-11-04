@@ -22,10 +22,9 @@ function UIConfig.getHealthBarWidth(screenWidth)
 end
 
 ---Get bottom bar positions (mana bar, health bar, button Y positions)
----@param screenWidth number Screen width
 ---@param screenHeight number Screen height
 ---@return table positions Table with manaBarY, healthBarY, buttonY
-function UIConfig.getBottomBarPositions(screenWidth, screenHeight)
+function UIConfig.getBottomBarPositions(screenHeight)
     local spacing = UIConfig.getBarSpacing()
     local manaBarY = screenHeight - UIConfig.barHeight - UIConfig.bottomOffset
     local healthBarY = manaBarY - UIConfig.barHeight - spacing

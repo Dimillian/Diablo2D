@@ -111,11 +111,8 @@ function uiBottomBar.draw(world)
     -- Bottom bar positioning - next to health and mana bars
     local healthBarWidth = UIConfig.getHealthBarWidth(screenWidth)
     local healthBarX = UIConfig.barX
-    local healthBarHeight = UIConfig.barHeight
     local buttonSize = UIConfig.buttonSize
-    local positions = UIConfig.getBottomBarPositions(screenWidth, screenHeight)
-    local manaBarY = positions.manaBarY
-    local healthBarY = positions.healthBarY
+    local positions = UIConfig.getBottomBarPositions(screenHeight)
     local buttonY = positions.buttonY
 
     -- Layout icons horizontally: health/mana bars | health potion | mana potion | bag

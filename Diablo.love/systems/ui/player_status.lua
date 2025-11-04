@@ -31,7 +31,7 @@ function uiPlayerStatus.draw(world)
     local barWidth = math.floor(UIConfig.getHealthBarWidth(screenWidth) + 0.5)
     local barHeight = UIConfig.barHeight
     local barX = UIConfig.barX
-    local positions = UIConfig.getBottomBarPositions(screenWidth, screenHeight)
+    local positions = UIConfig.getBottomBarPositions(screenHeight)
     local manaBarY = positions.manaBarY
     local healthBarY = positions.healthBarY
 
