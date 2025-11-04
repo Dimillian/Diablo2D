@@ -17,8 +17,7 @@ local chaseSystem = require("systems.ai.chase")
 local foeAttackSystem = require("systems.combat.foe_attack")
 local spawnSystem = require("systems.ai.spawn")
 local cullingSystem = require("systems.core.culling")
-local uiPlayerStatus = require("systems.ui.player_status")
-local uiBottomBar = require("systems.ui.bottom_bar")
+local uiMain = require("systems.ui.main")
 local cameraSystem = require("systems.core.camera")
 local applyStatsSystem = require("systems.core.apply_stats")
 local starterGearSystem = require("systems.core.starter_gear")
@@ -26,6 +25,7 @@ local combatSystem = require("systems.combat.combat")
 local lootPickupSystem = require("systems.core.loot_pickup")
 local lootDropSystem = require("systems.core.loot_drops")
 local lootScatterSystem = require("systems.core.loot_scatter")
+local experienceSystem = require("systems.core.experience")
 local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
 local potionConsumptionSystem = require("systems.core.potion_consumption")
@@ -86,6 +86,7 @@ function WorldScene.new(opts)
                 combatSystem.update,
                 lootDropSystem.update,
                 lootScatterSystem.update,
+                experienceSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
             },
@@ -96,8 +97,7 @@ function WorldScene.new(opts)
                 renderMouseLookSystem.draw,
                 renderHealthSystem.draw,
                 renderDamageNumbersSystem.draw,
-                uiPlayerStatus.draw,
-                uiBottomBar.draw,
+                uiMain.draw,
                 uiTargetSystem.draw,
                 lootTooltipSystem.draw,
             },
