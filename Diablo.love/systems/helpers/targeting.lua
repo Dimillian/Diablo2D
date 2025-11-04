@@ -33,8 +33,8 @@ end
 
 function Targeting.resolveMouseTarget(scene, opts)
     opts = opts or {}
-    local checkPlayerRange = opts.checkPlayerRange ~= false -- Default to true for backward compatibility
-    local clearOnNoTarget = opts.clearOnNoTarget == true -- If true, clear target when no foe found
+    local checkPlayerRange = opts.checkPlayerRange ~= false
+    local clearOnNoTarget = opts.clearOnNoTarget == true
 
     local player = scene:getPlayer()
     if not player then
@@ -66,7 +66,6 @@ function Targeting.resolveMouseTarget(scene, opts)
                 local distanceToMouse = vector.distance(worldX, worldY, foeX, foeY)
 
                 if distanceToMouse and (range <= 0 or distanceToMouse <= range * 1.25) then
-                    -- Only check player range if requested (for attack targeting)
                     local distanceToPlayer = playerX and vector.distance(playerX, playerY, foeX, foeY) or math.huge
                     local inRange = not checkPlayerRange or distanceToPlayer <= range
 
@@ -87,7 +86,6 @@ function Targeting.resolveMouseTarget(scene, opts)
         return bestEntity
     end
 
-    -- If clearOnNoTarget is true, clear target immediately when no foe found
     if clearOnNoTarget then
         Targeting.clear(scene)
     else

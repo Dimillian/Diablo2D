@@ -36,20 +36,16 @@ local function computeTargetPosition(world, projectileTarget, caster)
         end
     end
 
-    -- Use player's look direction as fallback if no target entity
     if caster and caster.movement and caster.movement.lookDirection then
         local lookDir = caster.movement.lookDirection
         local casterX, casterY = getEntityCenter(caster)
         if casterX and casterY and lookDir.x and lookDir.y then
-            -- Cast projectile forward in look direction at a reasonable range (500 pixels)
             local castRange = 500
             local targetX = casterX + (lookDir.x * castRange)
             local targetY = casterY + (lookDir.y * castRange)
             return targetX, targetY, nil
         end
     end
-
-    -- Final fallback: use mouse position
     local mx, my = love.mouse.getPosition()
     local camera = world.camera or { x = 0, y = 0 }
     local targetX, targetY = coordinates.toWorldFromScreen(camera, mx, my)
@@ -62,17 +58,14 @@ local function createProjectile(world, caster, spell, targetX, targetY, targetId
         return false
     end
 
-    -- Ensure target position is valid
     if not targetX or not targetY then
         return false
     end
 
-    -- Calculate projectile spawn position (centered on caster)
     local projectileSize = spell.projectileSize or 12
     local projectileX = casterX - (projectileSize / 2)
     local projectileY = casterY - (projectileSize / 2)
 
-    -- Calculate initial direction vector from caster to target
     local dx = targetX - casterX
     local dy = targetY - casterY
     local ndx, ndy = vector.normalize(dx, dy)
@@ -90,7 +83,6 @@ local function createProjectile(world, caster, spell, targetX, targetY, targetId
         size = projectileSize,
         color = spell.projectileColor,
         lifetime = spell.lifetime,
-        -- Set initial velocity direction immediately
         vx = ndx,
         vy = ndy,
     })
