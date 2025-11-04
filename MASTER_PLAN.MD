@@ -248,334 +248,189 @@ All core functionality has been implemented:
 
 ---
 
-## 4. Magic/Skills System
+## 4. Magic/Skills System ✅ **COMPLETED**
 
 ### Overview
 Implement a magic/skills system where players can equip up to 4 skills and cast them using hotkeys (1/2/3/4). Skills consume mana and can be projectiles that travel toward enemies and deal damage. A skills scene allows players to view available spells and manage equipped skills. The bottom bar displays equipped skills and includes a book icon to open the skills scene.
+
+### Implementation Status: **COMPLETE**
+
+All core functionality has been implemented:
+- ✅ Skills component with 4 equipped slots
+- ✅ Projectile component and entity system
+- ✅ Skill casting system with hotkey support (1/2/3/4)
+- ✅ Projectile movement and collision detection
+- ✅ Skills scene with equip/unequip functionality
+- ✅ Skills bar UI showing equipped skills
+- ✅ Book icon in bottom bar to open skills scene
+- ✅ Fireball spell as initial spell
 
 ### Implementation Details
 
 #### Data
 
-**New Data File: `data/spells.lua`**
-```lua
-local Spells = {}
-
-Spells.types = {
-    fireball = {
-        id = "fireball",
-        label = "Fireball",
-        manaCost = 10,
-        damage = { min = 15, max = 25 },
-        projectileSpeed = 300, -- pixels per second
-        projectileSize = 12, -- radius or size for rendering
-        projectileColor = { 1.0, 0.4, 0.1, 1 }, -- Orange-red fireball color
-        icon = "resources/skills/fireball.png",
-    },
-    -- Future spells can be added here following the same structure
-}
-
-return Spells
-```
+**✅ `data/spells.lua` - IMPLEMENTED**
+- Fireball spell definition with all required fields
+- Added `description` field for UI display
+- Added `lifetime` field (2.5 seconds) for projectile despawn
+- `Spells.getAll()` helper function returns ordered list of spells
 
 #### Components
 
-**New Component: `components/skills.lua`**
-```lua
-local function createSkillsComponent(opts)
-    opts = opts or {}
-    return {
-        equipped = opts.equipped or {}, -- Array of 4 spell IDs (can be nil for empty slots)
-        -- equipped[1] = "fireball", equipped[2] = nil, etc.
-    }
-end
+**✅ `components/skills.lua` - IMPLEMENTED**
+- Provides `equipped` array with 4 slots (can be nil for empty slots)
+- Initializes slots from provided source array or defaults to empty
+- Component factory pattern matches codebase conventions
 
-return createSkillsComponent
-```
-
-**New Component: `components/projectile.lua`**
-```lua
-local function createProjectileComponent(opts)
-    opts = opts or {}
-    return {
-        spellId = opts.spellId, -- Which spell this projectile belongs to
-        targetId = opts.targetId, -- Entity ID this projectile is targeting (nil if targeting position)
-        targetX = opts.targetX, -- Target X position (if no targetId)
-        targetY = opts.targetY, -- Target Y position (if no targetId)
-        damage = opts.damage, -- Damage to deal on hit
-        ownerId = opts.ownerId, -- Entity ID that cast this (player)
-        lifetime = opts.lifetime or 3.0, -- Max lifetime in seconds before projectile despawns
-        maxLifetime = opts.maxLifetime or 3.0,
-    }
-end
-
-return createProjectileComponent
-```
+**✅ `components/projectile.lua` - IMPLEMENTED**
+- Contains all required fields: `spellId`, `targetId`, `targetX`, `targetY`, `damage`, `ownerId`, `lifetime`, `maxLifetime`
+- Added `speed` field for projectile movement speed
+- Lifetime defaults to 3.0 seconds if not specified
 
 #### Systems
 
-**New System: `systems/skills/cast.lua`**
-- Handle keypress for skill hotkeys (1/2/3/4)
-- In `WorldScene:keypressed()` method, add:
-  ```lua
-  if key == "1" or key == "2" or key == "3" or key == "4" then
-      skillCastSystem.handleKeypress(self, key)
-  end
-  ```
-- In `handleKeypress()` function:
-  - Get player entity: `world:getPlayer()`
-  - Get slot index from key: `local slotIndex = tonumber(key)`
-  - Check if player has skills component: `player.skills`
-  - Get equipped spell: `local spellId = player.skills.equipped[slotIndex]`
-  - If spellId is nil, return early (no skill equipped)
-  - Get spell definition: `local spell = Spells.types[spellId]`
-  - Check mana: `if player.mana.current < spell.manaCost then return end`
-  - Consume mana: `player.mana.current = player.mana.current - spell.manaCost`
-  - Cast spell: `skillCastSystem.castSpell(world, player, spell, slotIndex)`
+**✅ `systems/skills/cast.lua` - IMPLEMENTED**
+- Handles keypress for skill hotkeys (1/2/3/4)
+- Uses queue-based system: `handleKeypress()` queues slot index, `update()` processes queue
+- Mana checking happens before queuing (prevents spam when insufficient mana)
+- Targeting logic:
+  - Prioritizes current target (`world.currentTargetId`) if available
+  - Falls back to player look direction (cast range 500px)
+  - Final fallback to mouse position
+- Projectile creation:
+  - Spawns from caster center position
+  - Calculates initial velocity direction toward target
+  - Mana consumed only after successful projectile creation
+- Integrated into `WorldScene:keypressed()` method
 
-**Cast Spell Logic (in `systems/skills/cast.lua`):**
-```lua
-function skillCastSystem.castSpell(world, caster, spell, slotIndex)
-    -- Get caster position
-    local casterX, casterY = getEntityCenter(caster)
-    if not casterX then return end
+**✅ `systems/projectile/movement.lua` - IMPLEMENTED**
+- Queries entities with `projectile`, `position`, `movement`, `size` components
+- Decrements lifetime each frame and removes expired projectiles
+- Updates target position dynamically:
+  - If `targetId` exists, tracks target entity (clears if target dies)
+  - Falls back to static `targetX`, `targetY` if no target entity
+- Calculates normalized direction vector toward target each frame
+- Sets movement velocity components (`vx`, `vy`) and speed from projectile component
+- Uses `goto continue` pattern for performance
 
-    -- Determine target: use current target if available, otherwise use mouse position
-    local targetX, targetY = nil, nil
-    local targetId = nil
+**✅ `systems/projectile/collision.lua` - IMPLEMENTED**
+- Queries all projectiles and foes separately for efficiency
+- Circular collision detection using entity center and radius
+- Excludes owner from collision checks
+- Damage calculation: `rollDamage()` helper function with min/max range
+- Creates combat events for damage and death (integrates with existing combat system)
+- Applies `recentlyDamaged` component for visual feedback
+- Removes projectile on first hit (single target collision)
+- Handles death cleanup and target clearing
 
-    if world.currentTargetId then
-        local target = world:getEntity(world.currentTargetId)
-        if target and target.health and not target.dead then
-            targetX, targetY = getEntityCenter(target)
-            targetId = target.id
-        end
-    end
+**✅ `systems/render/projectile.lua` - IMPLEMENTED**
+- Queries entities with `projectile`, `position`, `size`, `renderable` components
+- Draws projectiles as filled circles using spell color
+- Uses spell definition for projectile color override
+- Respects camera translation for world space rendering
+- Supports sprite rendering if `renderable.kind == "image"` (future feature)
 
-    -- Fallback to mouse position if no target
-    if not targetX then
-        local mx, my = love.mouse.getPosition()
-        local coords = world.systemHelpers.coordinates
-        targetX, targetY = coords.toWorldFromScreen(world, mx, my)
-    end
+**✅ `systems/ui/skills_bar.lua` - IMPLEMENTED**
+- Draws 4 skill slots horizontally after book/bag icons
+- Each slot: 32x32px with rounded corners, gold border
+- Shows hotkey label (1/2/3/4) in bottom-right corner
+- Displays skill icon if equipped (loaded via Resources module)
+- Visual feedback: Gray overlay if insufficient mana
+- Empty slots show subtle inner border
+- Positioned dynamically based on bottom bar layout
 
-    -- Create projectile entity
-    local ProjectileEntity = require("entities.projectile")
-    local projectile = ProjectileEntity.new({
-        x = casterX,
-        y = casterY,
-        targetX = targetX,
-        targetY = targetY,
-        targetId = targetId,
-        spellId = spell.id,
-        damage = spell.damage,
-        ownerId = caster.id,
-        speed = spell.projectileSpeed,
-        size = spell.projectileSize,
-        color = spell.projectileColor,
-    })
+**✅ `systems/ui/bottom_bar.lua` - MODIFIED**
+- Refactored with shared `drawIconBox()` helper function
+- Supports badges, shadows, cooldown overlays, disabled states
+- Book icon added with "K" badge (positioned before bag icon)
+- Stores `bottomBarBookRect` for click detection
+- Book icon opens skills scene via scene manager
+- Icon layout: health potion | mana potion | book | bag
 
-    world:addEntity(projectile)
-end
-```
+**✅ `modules/scene_manager.lua` - MODIFIED**
+- Added `toggleSkills(key)` method
+- Uses "k" key (not "s" as originally planned) to toggle skills scene
+- Handles "escape" key to close skills scene
+- Similar pattern to `toggleInventory()` method
 
-**New System: `systems/projectile/movement.lua`**
-- Query entities with `projectile`, `position`, `movement` components
-- For each projectile:
-  - Decrement lifetime: `projectile.projectile.lifetime = projectile.projectile.lifetime - dt`
-  - If lifetime <= 0, remove projectile: `world:removeEntity(projectile.id)`
-  - Calculate direction toward target:
-    - If `targetId` exists, get target entity and calculate direction
-    - Otherwise use `targetX`, `targetY`
-  - Set movement velocity: `movement.vx = directionX * projectile.projectile.speed`, `movement.vy = directionY * projectile.projectile.speed`
-
-**New System: `systems/projectile/collision.lua`**
-- Query entities with `projectile`, `position` components
-- For each projectile:
-  - Get owner: `world:getEntity(projectile.projectile.ownerId)`
-  - Query nearby entities with `position`, `health` components (excluding owner)
-  - Check collision with foes (circular collision detection):
-    - Calculate distance between projectile center and foe center
-    - If distance < (projectile.size.w/2 + foe.size.w/2) or similar radius check
-    - If collision:
-      - Calculate damage: `local damage = projectile.projectile.damage.min + math.random() * (projectile.projectile.damage.max - projectile.projectile.damage.min)`
-      - Apply damage: `foe.health.current = math.max(0, foe.health.current - damage)`
-      - Create damage event: `pushCombatEvent(world, { type = "damage", sourceId = projectile.projectile.ownerId, targetId = foe.id, amount = damage, crit = false, position = { x = foeX, y = foeY }, time = world.time })`
-      - Check for death: `if foe.health.current <= 0 then handleDeath(world, foe, owner, { x = foeX, y = foeY }) end`
-      - Remove projectile: `world:removeEntity(projectile.id)`
-      - Break (projectile can only hit one target)
-
-**New System: `systems/render/projectile.lua`**
-- Query entities with `projectile`, `position`, `renderable` components
-- For each projectile:
-  - Get spell definition: `local spell = Spells.types[projectile.projectile.spellId]`
-  - Draw projectile using `renderable` component:
-    - For fireball: Draw filled circle with orange-red color
-    - Position: `projectile.position.x`, `projectile.position.y`
-    - Size: `spell.projectileSize` or `projectile.size.w`
-    - Color: `spell.projectileColor` or `renderable.color`
-    - Optional: Draw sprite if spell has icon and projectile supports sprites
-
-**New System: `systems/ui/skills_bar.lua`**
-- Draw equipped skills in bottom bar (next to bag/book icons)
-- Position: Right of book icon, horizontally aligned
-- For each equipped skill slot (1-4):
-  - Draw skill slot rectangle (smaller than bag icon, e.g., 32x32)
-  - If skill equipped: Draw skill icon from `spell.icon`
-  - Draw hotkey label (1/2/3/4) in corner
-  - Visual feedback: Highlight if skill is on cooldown (future) or if insufficient mana
-
-**Modify: `systems/ui/bottom_bar.lua`**
-- Refactor to share icon rendering logic:
-  - Create helper function `drawIconButton(world, x, y, size, iconPath, keyLabel, onClickRect)`
-  - Render bag icon using shared helper
-  - Render book icon using shared helper (new, positioned next to bag icon)
-  - Store rects for click detection: `world.bottomBarBookRect`
-- Book icon opens skills scene (key "s" or click)
-- Position: Right of health/mana bars, book icon before bag icon
-
-**New System: `systems/skills/scene_management.lua`**
-- Handle skills scene toggle (similar to inventory scene)
-- In `SceneManager:toggleSkills(key)`:
-  - Check if key is "s" or "escape"
-  - Toggle skills scene on/off
-  - Similar pattern to `toggleInventory()` in `scene_manager.lua`
-
-**Modify: `scenes/world.lua`**
-- Add `skillCastSystem.update` to update systems (after `playerAttackSystem.update`)
-- Add `projectileMovementSystem.update` to update systems (after `skillCastSystem.update`)
-- Add `projectileCollisionSystem.update` to update systems (after `combatSystem.update`, before `movementSystem.update`)
-- Add `skillCastSystem.handleKeypress` call in `WorldScene:keypressed()` method
-- Add `renderProjectileSystem.draw` to draw systems (after `renderEquipmentSystem.draw`, before `renderMouseLookSystem.draw`)
-- Add `uiSkillsBarSystem.draw` to draw systems (after `uiBottomBar.draw`)
-- Handle book icon click in `mousepressed()`: Check `bottomBarBookRect` and open skills scene
+**✅ `scenes/world.lua` - MODIFIED**
+- `skillCastSystem.update` registered in update systems (after `playerAttackSystem.update`)
+- `projectileMovementSystem.update` registered in update systems (after `skillCastSystem.update`)
+- `projectileCollisionSystem.update` registered in update systems (after `combatSystem.update`, before `movementSystem.update`)
+- `skillCastSystem.handleKeypress` called in `WorldScene:keypressed()` method (handles keys 1-4)
+- `renderProjectileSystem.draw` registered in draw systems (after `renderEquipmentSystem.draw`, before `renderMouseLookSystem.draw`)
+- `uiSkillsBarSystem.draw` registered via `uiMain.draw` system (draws after bottom bar)
+- Book icon click handled in `mousepressed()`: Checks `bottomBarBookRect` and opens skills scene
 
 #### Entity Changes
 
-**New Entity: `entities/projectile.lua`**
-```lua
-local Projectile = {}
-Projectile.__index = Projectile
+**✅ `entities/projectile.lua` - IMPLEMENTED**
+- Creates projectile entity with all required components
+- Generates unique ID if not provided
+- Initializes `position`, `size`, `movement`, `renderable`, `projectile` components
+- Sets initial velocity (`vx`, `vy`) from normalized direction vector
+- Uses `renderable.kind = "circle"` for rendering
+- Supports color override from spell definition
 
-function Projectile.new(opts)
-    opts = opts or {}
-
-    local createPosition = require("components.position")
-    local createSize = require("components.size")
-    local createMovement = require("components.movement")
-    local createRenderable = require("components.renderable")
-    local createProjectile = require("components.projectile")
-
-    local entity = {
-        id = opts.id or "projectile_" .. math.random(10000, 99999),
-        position = createPosition({
-            x = opts.x or 0,
-            y = opts.y or 0,
-        }),
-        size = createSize({
-            w = opts.size or 12,
-            h = opts.size or 12,
-        }),
-        movement = createMovement({
-            speed = opts.speed or 300,
-        }),
-        renderable = createRenderable({
-            kind = "circle", -- or "image" if using sprite
-            color = opts.color or { 1.0, 0.4, 0.1, 1 },
-        }),
-        projectile = createProjectile({
-            spellId = opts.spellId,
-            targetId = opts.targetId,
-            targetX = opts.targetX,
-            targetY = opts.targetY,
-            damage = opts.damage,
-            ownerId = opts.ownerId,
-            lifetime = opts.lifetime or 3.0,
-            maxLifetime = opts.lifetime or 3.0,
-        }),
-    }
-
-    return setmetatable(entity, Projectile)
-end
-
-return Projectile
-```
-
-**Modify: `entities/player.lua`**
-- Add `skills` component to player creation:
-  ```lua
-  local createSkills = require("components.skills")
-  -- ...
-  skills = createSkills(opts.skills or {
-      equipped = {}, -- Empty by default
-  }),
-  ```
+**✅ `entities/player.lua` - MODIFIED**
+- `skills` component added to player creation
+- Defaults to empty equipped slots array
+- Uses component factory pattern consistent with codebase
 
 #### Scene Changes
 
-**New Scene: `scenes/skills.lua`**
-- Similar structure to `inventory.lua`
-- Systems:
-  - `renderSkillsBackground` - Draw background
-  - `renderSkillsList` - List all available spells (currently only fireball)
-  - `renderSkillsEquipped` - Show equipped skill slots (4 slots)
-  - `renderSkillsHelp` - Show help text ("Click to equip/unequip, S to close")
-  - `renderSkillsTooltip` - Show spell details on hover
+**✅ `scenes/skills.lua` - IMPLEMENTED**
+- Similar structure to `inventory.lua` scene
+- Systems registered:
+  - `renderSkillsBackground` - Draws background panel
+  - `renderSkillsList` - Lists all available spells with icons and mana costs
+  - `renderSkillsEquipped` - Shows 4 equipped skill slots
+  - `renderSkillsHelp` - Shows help text
+  - `renderSkillsTooltip` - Shows spell details on hover
 - Mouse click handling:
-  - Click on available spell: Equip to first empty slot (or replace first slot)
-  - Click on equipped slot: Unequip skill
+  - Click on available spell: Equips to first empty slot (or replaces first slot if all full)
+  - Click on equipped slot: Unequips skill from that slot
+  - Prevents duplicate equipping (checks if spell already equipped)
 - Key handling:
-  - "s" or "escape": Close skills scene
+  - "k" or "escape": Closes skills scene (note: uses "k" not "s")
+- Uses `SkillsLayout` helper for panel calculations
 
-**Modify: `modules/scene_manager.lua`**
-- Add `toggleSkills(key)` method similar to `toggleInventory(key)`
-- Import `SkillsScene` from `scenes.skills`
-- Handle "s" key to toggle skills scene
+#### Rendering Systems
 
-#### System Registration
+**✅ `systems/render/skills_background.lua` - IMPLEMENTED**
+- Draws background panel for skills scene
 
-**Modify: `scenes/world.lua`**
-- Add `skillCastSystem.update` to update systems (after `playerAttackSystem.update`)
-- Add `projectileMovementSystem.update` to update systems (after `skillCastSystem.update`)
-- Add `projectileCollisionSystem.update` to update systems (after `combatSystem.update`, before `movementSystem.update`)
-- Add `skillCastSystem.handleKeypress` call in `WorldScene:keypressed()` method
-- Add `renderProjectileSystem.draw` to draw systems (after `renderEquipmentSystem.draw`, before `renderMouseLookSystem.draw`)
-- Add `uiSkillsBarSystem.draw` to draw systems (after `uiBottomBar.draw`)
-- Handle book icon click in `mousepressed()` method
+**✅ `systems/render/skills_list.lua` - IMPLEMENTED**
+- Lists all available spells with icons, labels, and mana costs
+- Handles hover highlighting
+- Stores clickable rects for equip functionality
 
-**Modify: `scenes/skills.lua`**
-- Register all render systems in `systems.draw` array
-- Handle keyboard input in `keypressed()` method
-- Handle mouse input in `mousepressed()` method
+**✅ `systems/render/skills_equipped.lua` - IMPLEMENTED**
+- Renders 4 equipped skill slots
+- Shows skill icons when equipped
+- Handles click detection for unequipping
 
-#### Rendering Changes
+**✅ `systems/render/skills_help.lua` - IMPLEMENTED**
+- Displays help text for skills scene
 
-**Modify: `systems/render/render_world.lua`**
-- Ensure projectiles are rendered (should already be handled by `renderProjectileSystem`)
+**✅ `systems/render/skills_tooltip.lua` - IMPLEMENTED**
+- Shows spell details on hover
 
-**Modify: `systems/ui/bottom_bar.lua`**
-- Refactor icon rendering into shared helper function
-- Add book icon rendering next to bag icon
-- Store `bottomBarBookRect` for click detection
-- Position book icon to the left of bag icon
-
-**New System: `systems/ui/skills_bar.lua`**
-- Draw 4 skill slots horizontally after book/bag icons
-- Each slot: 32x32px rectangle
-- If skill equipped: Draw icon from `spell.icon` (resize to fit)
-- Draw hotkey label ("1"/"2"/"3"/"4") in corner
-- Visual state: Gray out if insufficient mana
+**✅ `systems/render/render_world.lua` - NO CHANGES NEEDED**
+- Projectiles handled by dedicated `renderProjectileSystem`
 
 #### Implementation Notes
 
-- **Mana Consumption**: Spells consume mana immediately on cast; if insufficient mana, cast fails silently
-- **Projectile Targeting**: Projectiles target the current target (`world.currentTargetId`) if available, otherwise use mouse position
+- **Mana Consumption**: Spells consume mana immediately on cast; if insufficient mana, cast fails silently (returns false)
+- **Projectile Targeting**: Prioritizes current target (`world.currentTargetId`), falls back to player look direction (500px range), then mouse position
 - **Projectile Collision**: Uses circular collision detection; projectiles disappear on first hit
-- **Skill Equipping**: Players can equip/unequip skills via the skills scene; maximum 4 equipped skills
-- **Hotkeys**: Skills are triggered with number keys 1/2/3/4 (mapped to equipped slots)
-- **Fireball**: First and only spell initially; uses `resources/skills/fireball.png` for icon
-- **Skills Scene**: Accessed via "s" key or clicking book icon in bottom bar
-- **Bottom Bar Refactor**: Icon rendering logic extracted to shared helper for reusability
+- **Skill Equipping**: Players can equip/unequip skills via the skills scene; maximum 4 equipped skills; prevents duplicate equipping
+- **Hotkeys**: Skills triggered with number keys 1/2/3/4 (mapped to equipped slots); keys 1/2 prioritize potions if pressed without skill equipped
+- **Fireball**: First and only spell initially; uses `resources/skills/fireball.png` for icon; 10 mana cost, 15-25 damage range
+- **Skills Scene**: Accessed via "k" key (changed from original "s" plan) or clicking book icon in bottom bar
+- **Bottom Bar**: Icon rendering logic extracted to shared `drawIconBox()` helper; supports badges, shadows, cooldown overlays
+- **Queue System**: Skill casting uses queue-based system to prevent frame timing issues
+- **Projectile Lifetime**: Default 2.5 seconds for fireball; projectiles despawn on timeout or collision
 
 ---
 
@@ -584,7 +439,7 @@ return Projectile
 1. ✅ **Foe Attack System** - **COMPLETED** - Combat loop is now complete with enemy attacks, knockback, and visual feedback
 2. ✅ **EXP System** - **COMPLETED** - Foundation for progression with leveling, XP awards, and stat bonuses
 3. ✅ **Potion System** - **COMPLETED** - Adds survivability with health/mana potions and cooldown mechanics
-4. **Magic/Skills System** - Adds ranged combat options and spell variety
+4. ✅ **Magic/Skills System** - **COMPLETED** - Adds ranged combat options with projectile spells, skills scene, and hotkey casting
 
 ---
 
@@ -626,21 +481,21 @@ return Projectile
 - [x] Stat bonuses applied on level up (+5 health, +1 damage min/max, +1 defense)
 - [x] Multiple level ups handled correctly in single frame
 
-### Magic/Skills System
-- [ ] Skills scene opens with "s" key or book icon click
-- [ ] Skills scene closes with "s" or "escape" key
-- [ ] Fireball spell can be equipped/unequipped in skills scene
-- [ ] Maximum 4 skills can be equipped
-- [ ] Equipped skills appear in bottom bar (4 slots)
-- [ ] Skills cast with hotkeys 1/2/3/4
-- [ ] Casting fireball consumes mana correctly
-- [ ] Cannot cast if insufficient mana
-- [ ] Fireball projectile spawns from player position
-- [ ] Fireball projectile travels toward target/mouse position
-- [ ] Fireball projectile renders correctly (orange-red circle)
-- [ ] Fireball projectile hits enemies on collision
-- [ ] Fireball projectile applies damage correctly
-- [ ] Fireball projectile despawns on hit or timeout
-- [ ] Damage numbers appear when fireball hits
-- [ ] Book icon renders correctly next to bag icon
-- [ ] Bottom bar icon rendering helper works for both icons
+### Magic/Skills System ✅ **COMPLETE**
+- [x] Skills scene opens with "k" key or book icon click
+- [x] Skills scene closes with "k" or "escape" key
+- [x] Fireball spell can be equipped/unequipped in skills scene
+- [x] Maximum 4 skills can be equipped
+- [x] Equipped skills appear in bottom bar (4 slots)
+- [x] Skills cast with hotkeys 1/2/3/4
+- [x] Casting fireball consumes mana correctly
+- [x] Cannot cast if insufficient mana
+- [x] Fireball projectile spawns from player position
+- [x] Fireball projectile travels toward target/mouse position (with smart targeting)
+- [x] Fireball projectile renders correctly (orange-red circle)
+- [x] Fireball projectile hits enemies on collision
+- [x] Fireball projectile applies damage correctly
+- [x] Fireball projectile despawns on hit or timeout
+- [x] Damage numbers appear when fireball hits (via combat event system)
+- [x] Book icon renders correctly next to bag icon
+- [x] Bottom bar icon rendering helper works for all icons
