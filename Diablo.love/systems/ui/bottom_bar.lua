@@ -114,7 +114,8 @@ function uiBottomBar.draw(world)
     local healthBarHeight = 20 -- Match player_status.lua barHeight
     local buttonSize = 48 -- Bag icon height - total height should match this
     local spacing = buttonSize - (healthBarHeight * 2) -- Calculate spacing so both bars + gap = buttonSize
-    local manaBarY = screenHeight - healthBarHeight - 32
+    local bottomOffset = 32 + 12 -- Original 32px offset + 12px spacing
+    local manaBarY = screenHeight - healthBarHeight - bottomOffset
     local healthBarY = manaBarY - healthBarHeight - spacing
 
     -- Layout icons horizontally: health/mana bars | health potion | mana potion | bag

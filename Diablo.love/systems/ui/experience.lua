@@ -20,13 +20,18 @@ function uiExperienceSystem.draw(world)
     xpProgress = math.max(0, xpProgress)
     xpRequired = math.max(0, xpRequired)
 
-    local ratio = xpRequired > 0 and math.min(1, xpProgress / xpRequired) or 1
+    local ratio = xpRequired > 0 and math.min(1, xpProgress / xpRequired) or 0
+    if ratio < 0.001 then
+        ratio = 0
+    end
 
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
     local barHeight = 20
-    local barWidth = screenWidth - 32
-    local barX = 16
+    -- Align with bottom bar and player status bars (both use barX = 32)
+    local barX = 32
+    -- Maintain 32px right margin to match left margin
+    local barWidth = screenWidth - barX - 32
     local barY = screenHeight - barHeight - 8
 
     love.graphics.push("all")
@@ -34,8 +39,13 @@ function uiExperienceSystem.draw(world)
     love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
     love.graphics.rectangle("fill", barX, barY, barWidth, barHeight, 4, 4)
 
-    love.graphics.setColor(0.2, 0.6, 1.0, 1)
-    love.graphics.rectangle("fill", barX, barY, barWidth * ratio, barHeight, 4, 4)
+    if ratio > 0 then
+        local fillWidth = math.min(barWidth * ratio, barWidth)
+        love.graphics.setScissor(barX, barY, barWidth, barHeight)
+        love.graphics.setColor(0.2, 0.6, 1.0, 1)
+        love.graphics.rectangle("fill", barX, barY, fillWidth, barHeight, 4, 4)
+        love.graphics.setScissor()
+    end
 
     love.graphics.setColor(0.9, 0.85, 0.65, 1)
     love.graphics.setLineWidth(2)

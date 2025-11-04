@@ -31,7 +31,8 @@ function uiPlayerStatus.draw(world)
     local buttonSize = 48 -- Bag icon height - total height should match this
     local spacing = buttonSize - (barHeight * 2) -- Calculate spacing so both bars + gap = buttonSize
     local barX = 32
-    local manaBarY = screenHeight - barHeight - 32 -- Mana bar at bottom
+    local bottomOffset = 32 + 12
+    local manaBarY = screenHeight - barHeight - bottomOffset -- Mana bar at bottom
     local healthBarY = manaBarY - barHeight - spacing -- Health bar above mana bar
 
     barWidth = math.floor(barWidth + 0.5)
