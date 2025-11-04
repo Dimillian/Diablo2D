@@ -25,6 +25,7 @@ local starterGearSystem = require("systems.core.starter_gear")
 local combatSystem = require("systems.combat.combat")
 local lootPickupSystem = require("systems.core.loot_pickup")
 local lootDropSystem = require("systems.core.loot_drops")
+local lootScatterSystem = require("systems.core.loot_scatter")
 local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
 local potionConsumptionSystem = require("systems.core.potion_consumption")
@@ -84,6 +85,7 @@ function WorldScene.new(opts)
                 foeAttackSystem.update,
                 combatSystem.update,
                 lootDropSystem.update,
+                lootScatterSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
             },
