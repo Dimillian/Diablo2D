@@ -25,9 +25,11 @@ local starterGearSystem = require("systems.core.starter_gear")
 local combatSystem = require("systems.combat.combat")
 local lootPickupSystem = require("systems.core.loot_pickup")
 local lootDropSystem = require("systems.core.loot_drops")
+local experienceSystem = require("systems.core.experience")
 local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
 local potionConsumptionSystem = require("systems.core.potion_consumption")
+local uiExperienceSystem = require("systems.ui.experience")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -84,6 +86,7 @@ function WorldScene.new(opts)
                 foeAttackSystem.update,
                 combatSystem.update,
                 lootDropSystem.update,
+                experienceSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
             },
@@ -95,6 +98,7 @@ function WorldScene.new(opts)
                 renderHealthSystem.draw,
                 renderDamageNumbersSystem.draw,
                 uiPlayerStatus.draw,
+                uiExperienceSystem.draw,
                 uiBottomBar.draw,
                 uiTargetSystem.draw,
                 lootTooltipSystem.draw,

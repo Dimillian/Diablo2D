@@ -19,6 +19,7 @@ function Player.new(opts)
     local createMana = require("components.mana")
     local createCombat = require("components.combat")
     local createPotions = require("components.potions")
+    local createExperience = require("components.experience")
 
     local entity = {
         id = opts.id or "player",
@@ -42,6 +43,10 @@ function Player.new(opts)
         potions = createPotions(opts.potions or {
             healthPotionCount = 3,
             manaPotionCount = 2,
+        }),
+        experience = createExperience(opts.experience or {
+            level = 1,
+            currentXP = 0,
         }),
     }
 
