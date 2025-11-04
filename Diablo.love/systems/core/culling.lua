@@ -53,6 +53,15 @@ function cullingSystem.update(world, dt)
             entity.position.y
         )
 
+        if entity.chunkResident then
+            if distSquared > INACTIVE_DISTANCE_SQUARED then
+                entity.inactive = true
+            else
+                entity.inactive = false
+            end
+            goto continue
+        end
+
         -- Despawn entities that are very far away
         if distSquared > DESPAWN_DISTANCE_SQUARED then
             table.insert(entitiesToRemove, entity.id)

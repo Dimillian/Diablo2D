@@ -19,8 +19,10 @@ local detectionSystem = require("systems.ai.detection")
 local chaseSystem = require("systems.ai.chase")
 local foeAttackSystem = require("systems.combat.foe_attack")
 local spawnSystem = require("systems.ai.spawn")
+local chunkActivationSystem = require("systems.world.chunk_activation")
 local cullingSystem = require("systems.core.culling")
 local uiMain = require("systems.ui.main")
+local uiMinimapSystem = require("systems.ui.ui_minimap")
 local cameraSystem = require("systems.core.camera")
 local applyStatsSystem = require("systems.core.apply_stats")
 local starterGearSystem = require("systems.core.starter_gear")
@@ -35,6 +37,8 @@ local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
 local potionConsumptionSystem = require("systems.core.potion_consumption")
 local manaRegenSystem = require("systems.core.mana_regen")
+local ChunkManager = require("modules.world.chunk_manager")
+local SpawnResolver = require("modules.world.spawn_resolver")
 local ECS = require("modules.ecs")
 
 local WorldScene = {}
@@ -87,6 +91,7 @@ function WorldScene.new(opts)
                 playerAttackSystem.update,
                 skillCastSystem.update,
                 projectileMovementSystem.update,
+                chunkActivationSystem.update,
                 spawnSystem.update,
                 cullingSystem.update,
                 detectionSystem.update,
@@ -110,6 +115,7 @@ function WorldScene.new(opts)
                 renderHealthSystem.draw,
                 renderDamageNumbersSystem.draw,
                 uiMain.draw,
+                uiMinimapSystem.draw,
                 uiTargetSystem.draw,
                 lootTooltipSystem.draw,
             },
@@ -148,8 +154,39 @@ function WorldScene.new(opts)
     scene.playerId = player.id
     scene:addEntity(player)
 
-    -- Spawn initial groups of foes around the player
-    spawnSystem.spawnInitialGroups(scene)
+    scene.worldSeed = opts.worldSeed or love.math.random(0, 1000000)
+    scene.generatedChunks = opts.generatedChunks or {}
+    scene.visitedChunks = opts.visitedChunks or {}
+    scene.chunkConfig = {
+        chunkSize = opts.chunkSize or 512,
+        activeRadius = opts.activeRadius or 2,
+    }
+
+    for _, chunk in pairs(scene.generatedChunks) do
+        chunk.spawnedEntities = {}
+        chunk.defeatedFoes = chunk.defeatedFoes or {}
+        chunk.lootedStructures = chunk.lootedStructures or {}
+    end
+
+    scene.spawnResolver = SpawnResolver.new({
+        chunkSize = scene.chunkConfig.chunkSize,
+    })
+
+    scene.chunkManager = ChunkManager.new({
+        chunkSize = scene.chunkConfig.chunkSize,
+        activeRadius = scene.chunkConfig.activeRadius,
+        worldSeed = scene.worldSeed,
+        spawnResolver = scene.spawnResolver,
+    })
+
+    local chunkX, chunkY = ChunkManager.getChunkCoords(scene.chunkManager, player.position.x, player.position.y)
+    ChunkManager.ensureChunkLoaded(scene.chunkManager, scene, chunkX, chunkY)
+
+    scene.minimapState = opts.minimapState or { visible = true, zoom = 1 }
+    if scene.minimapState.visible == nil then
+        scene.minimapState.visible = true
+    end
+    scene.minimapState.zoom = scene.minimapState.zoom or 1
 
     return scene
 end
@@ -163,6 +200,99 @@ function WorldScene:update(dt)
     for _, system in ipairs(self.systems.update) do
         system(self, dt)
     end
+end
+
+local function shallowCopyTable(source)
+    local result = {}
+    for key, value in pairs(source or {}) do
+        result[key] = value
+    end
+    return result
+end
+
+local function copyDescriptorList(list)
+    local result = {}
+    for index, descriptor in ipairs(list or {}) do
+        if type(descriptor) == "table" then
+            result[index] = shallowCopyTable(descriptor)
+        else
+            result[index] = descriptor
+        end
+    end
+    return result
+end
+
+function WorldScene:resetWorld(seed)
+    self.worldSeed = seed or love.math.random(0, 1000000)
+    self.generatedChunks = {}
+    self.visitedChunks = {}
+    self.activeChunkKeys = {}
+    self.pendingCombatEvents = {}
+
+    self.spawnResolver = SpawnResolver.new({
+        chunkSize = self.chunkConfig and self.chunkConfig.chunkSize or 512,
+    })
+
+    self.chunkManager = ChunkManager.new({
+        chunkSize = self.chunkConfig and self.chunkConfig.chunkSize or 512,
+        activeRadius = self.chunkConfig and self.chunkConfig.activeRadius or 2,
+        worldSeed = self.worldSeed,
+        spawnResolver = self.spawnResolver,
+    })
+
+    for id, entity in pairs(self.entities) do
+        if id ~= self.playerId then
+            self:removeEntity(id)
+        end
+    end
+
+    local player = self:getPlayer()
+    if player and player.position then
+        local chunkX, chunkY = ChunkManager.getChunkCoords(self.chunkManager, player.position.x, player.position.y)
+        ChunkManager.ensureChunkLoaded(self.chunkManager, self, chunkX, chunkY)
+    end
+end
+
+function WorldScene:serializeState()
+    local state = {
+        worldSeed = self.worldSeed,
+        chunkSize = self.chunkConfig and self.chunkConfig.chunkSize or 512,
+        activeRadius = self.chunkConfig and self.chunkConfig.activeRadius or 2,
+        minimapState = {
+            visible = self.minimapState and self.minimapState.visible or true,
+            zoom = self.minimapState and self.minimapState.zoom or 1,
+        },
+        visitedChunks = shallowCopyTable(self.visitedChunks or {}),
+        generatedChunks = {},
+    }
+
+    for key, chunk in pairs(self.generatedChunks or {}) do
+        local transitionCopy = nil
+        if chunk.transition then
+            transitionCopy = shallowCopyTable(chunk.transition)
+            if chunk.transition.neighbors then
+                transitionCopy.neighbors = copyDescriptorList(chunk.transition.neighbors)
+            end
+        end
+
+        state.generatedChunks[key] = {
+            key = key,
+            chunkX = chunk.chunkX,
+            chunkY = chunk.chunkY,
+            biomeId = chunk.biomeId,
+            biomeLabel = chunk.biomeLabel,
+            transition = transitionCopy,
+            descriptors = {
+                foes = copyDescriptorList(chunk.descriptors and chunk.descriptors.foes or {}),
+                structures = copyDescriptorList(chunk.descriptors and chunk.descriptors.structures or {}),
+            },
+            props = copyDescriptorList(chunk.props or {}),
+            defeatedFoes = shallowCopyTable(chunk.defeatedFoes or {}),
+            lootedStructures = shallowCopyTable(chunk.lootedStructures or {}),
+        }
+    end
+
+    return state
 end
 
 function WorldScene:draw()
@@ -184,6 +314,34 @@ end
 function WorldScene:keypressed(key)
     if key == "t" then
         self.debugMode = not self.debugMode
+        return
+    end
+
+    if key == "f5" then
+        self:resetWorld()
+        return
+    end
+
+    if key == "f7" then
+        self.debugChunks = not self.debugChunks
+        return
+    end
+
+    if key == "m" then
+        self.minimapState = self.minimapState or { visible = true, zoom = 1 }
+        self.minimapState.visible = not self.minimapState.visible
+        return
+    end
+
+    if key == "[" then
+        self.minimapState = self.minimapState or { visible = true, zoom = 1 }
+        self.minimapState.zoom = math.max(0.5, (self.minimapState.zoom or 1) - 0.1)
+        return
+    end
+
+    if key == "]" then
+        self.minimapState = self.minimapState or { visible = true, zoom = 1 }
+        self.minimapState.zoom = math.min(2.5, (self.minimapState.zoom or 1) + 0.1)
         return
     end
 

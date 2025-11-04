@@ -117,6 +117,22 @@ local function handleDeath(world, target, attacker, position)
         Targeting.clear(world)
     end
 
+    if target.chunkResident then
+        local chunkKey = target.chunkResident.chunkKey
+        local chunk = world.generatedChunks and world.generatedChunks[chunkKey]
+        if chunk then
+            if target.chunkResident.kind == "foe" then
+                chunk.defeatedFoes[target.chunkResident.descriptorId] = true
+            elseif target.chunkResident.kind == "structure" then
+                chunk.lootedStructures[target.chunkResident.descriptorId] = true
+            end
+
+            if chunk.spawnedEntities then
+                chunk.spawnedEntities[target.chunkResident.descriptorId] = nil
+            end
+        end
+    end
+
     world:removeEntity(targetId)
 end
 
