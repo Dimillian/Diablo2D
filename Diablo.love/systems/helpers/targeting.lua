@@ -33,6 +33,8 @@ end
 
 function Targeting.resolveMouseTarget(scene, opts)
     opts = opts or {}
+    local checkPlayerRange = opts.checkPlayerRange ~= false
+    local clearOnNoTarget = opts.clearOnNoTarget == true
 
     local player = scene:getPlayer()
     if not player then
@@ -65,8 +67,9 @@ function Targeting.resolveMouseTarget(scene, opts)
 
                 if distanceToMouse and (range <= 0 or distanceToMouse <= range * 1.25) then
                     local distanceToPlayer = playerX and vector.distance(playerX, playerY, foeX, foeY) or math.huge
+                    local inRange = not checkPlayerRange or distanceToPlayer <= range
 
-                    if distanceToPlayer <= range then
+                    if inRange then
                         if not bestDistance or distanceToMouse < bestDistance then
                             bestDistance = distanceToMouse
                             bestEntity = foe
@@ -83,7 +86,11 @@ function Targeting.resolveMouseTarget(scene, opts)
         return bestEntity
     end
 
-    ensureSceneTargetState(scene)
+    if clearOnNoTarget then
+        Targeting.clear(scene)
+    else
+        ensureSceneTargetState(scene)
+    end
     return nil
 end
 

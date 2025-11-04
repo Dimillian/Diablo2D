@@ -104,16 +104,6 @@ local function chooseRandom(list)
     return list[index], index
 end
 
-local function takeRandom(list)
-    if #list == 0 then
-        return nil
-    end
-    local index = math.random(1, #list)
-    local value = list[index]
-    table.remove(list, index)
-    return value
-end
-
 local function createBaseStats(itemType, rarity)
     local stats = {
         damageMin = 0,
@@ -172,7 +162,7 @@ local function createBaseStats(itemType, rarity)
         stats.moveSpeed = itemType.base.moveSpeed
     end
 
-    local multiplier = rarity.statMultiplier or 1
+    local multiplier = rarity.baseStatMultiplier or 1
     stats.damageMin = stats.damageMin * multiplier
     stats.damageMax = stats.damageMax * multiplier
     stats.defense = stats.defense * multiplier
@@ -210,26 +200,25 @@ local function rollRange(range)
     return min + math.random() * (max - min)
 end
 
-local function applyStats(stats, definition, multiplier)
-    multiplier = multiplier or 1.0
+local function applyStats(stats, definition)
     for key, modifiers in pairs(definition.stats) do
         if key == "damage" then
             if modifiers.flat then
-                local value = rollRange(modifiers.flat) * multiplier
+                local value = rollRange(modifiers.flat)
                 stats.damageMin = stats.damageMin + value
                 stats.damageMax = stats.damageMax + value
             end
             if modifiers.percent then
-                local value = rollRange(modifiers.percent) * multiplier
+                local value = rollRange(modifiers.percent)
                 stats.damageMin = stats.damageMin * (1 + value)
                 stats.damageMax = stats.damageMax * (1 + value)
             end
         else
             if modifiers.flat then
-                applyFlat(stats, key, rollRange(modifiers.flat) * multiplier)
+                applyFlat(stats, key, rollRange(modifiers.flat))
             end
             if modifiers.percent then
-                applyPercent(stats, key, rollRange(modifiers.percent) * multiplier)
+                applyPercent(stats, key, rollRange(modifiers.percent))
             end
         end
     end
@@ -237,6 +226,25 @@ end
 
 local function round(value)
     return math.floor(value + 0.5)
+end
+
+local MAX_STAT_CAPS = {
+    critChance = 0.5,
+    dodgeChance = 0.6,
+    lifeSteal = 0.35,
+    attackSpeed = 0.6,
+    resistAll = 0.75,
+}
+
+local function capStat(stats, key)
+    local cap = MAX_STAT_CAPS[key]
+    if not cap then
+        return
+    end
+
+    if stats[key] > cap then
+        stats[key] = cap
+    end
 end
 
 local function finalizeStats(stats)
@@ -252,6 +260,13 @@ local function finalizeStats(stats)
     stats.lifeSteal = math.max(0, stats.lifeSteal)
     stats.attackSpeed = math.max(0, stats.attackSpeed)
     stats.resistAll = math.max(0, stats.resistAll)
+    stats.manaRegen = math.max(0, stats.manaRegen or 0)
+
+    capStat(stats, "critChance")
+    capStat(stats, "dodgeChance")
+    capStat(stats, "lifeSteal")
+    capStat(stats, "attackSpeed")
+    capStat(stats, "resistAll")
 
     return stats
 end
@@ -319,14 +334,60 @@ local function rollAffixes(pool, count, slot, rarityId)
     end
 
     local affixes = {}
+    if count <= 0 then
+        return affixes
+    end
 
-    -- Ensure we only roll exactly 'count' number of affixes
-    for _ = 1, count do
+    local allowDuplicates = #available < count
+
+    local function weightedTake(list)
+        local totalWeight = 0
+        for _, entry in ipairs(list) do
+            totalWeight = totalWeight + (entry.weight or 1)
+        end
+
+        if totalWeight <= 0 then
+            return nil, nil
+        end
+
+        local roll = math.random() * totalWeight
+        local acc = 0
+
+        for index, entry in ipairs(list) do
+            acc = acc + (entry.weight or 1)
+            if roll <= acc then
+                return entry, index
+            end
+        end
+
+        local lastIndex = #list
+        return list[lastIndex], lastIndex
+    end
+
+    while #affixes < count do
         if #available == 0 then
             break
         end
-        local affix = takeRandom(available)
-        if affix then
+
+        local affix, index = weightedTake(available)
+        if not affix then
+            break
+        end
+
+        affixes[#affixes + 1] = affix
+
+        if allowDuplicates then
+            goto continue
+        end
+
+        table.remove(available, index)
+
+        ::continue::
+    end
+
+    if allowDuplicates and #affixes < count and #available > 0 then
+        while #affixes < count do
+            local affix = available[math.random(1, #available)]
             affixes[#affixes + 1] = affix
         end
     end
@@ -383,14 +444,12 @@ function ItemGenerator.generate(opts)
     local suffixes = rollAffixes(ItemData.suffixes, rarity.suffixCount, itemType.slot, rarity.id)
 
     local stats = createBaseStats(itemType, rarity)
-    local multiplier = rarity.statMultiplier or 1.0
-
     for _, prefix in ipairs(prefixes) do
-        applyStats(stats, prefix, multiplier)
+        applyStats(stats, prefix)
     end
 
     for _, suffix in ipairs(suffixes) do
-        applyStats(stats, suffix, multiplier)
+        applyStats(stats, suffix)
     end
 
     finalizeStats(stats)

@@ -100,12 +100,30 @@ local function drawIconBox(x, y, size, iconName, opts)
     end
 end
 
+local function drawIconButton(world, config)
+    local rect = {
+        x = config.x,
+        y = config.y,
+        w = config.size,
+        h = config.size,
+    }
+
+    drawIconBox(config.x, config.y, config.size, config.iconName, config.opts)
+
+    if config.rectField then
+        world[config.rectField] = rect
+    end
+
+    return rect
+end
+
 function uiBottomBar.draw(world)
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 
     world.bottomBarHealthPotionRect = nil
     world.bottomBarManaPotionRect = nil
+    world.bottomBarBookRect = nil
     world.bottomBarBagRect = nil
 
     -- Bottom bar positioning - next to health and mana bars
@@ -119,23 +137,36 @@ function uiBottomBar.draw(world)
     local buttonSpacing = UIConfig.buttonSpacing
     local healthPotionX = healthBarX + healthBarWidth + buttonSpacing
     local manaPotionX = healthPotionX + buttonSize + buttonSpacing
-    local bagX = manaPotionX + buttonSize + buttonSpacing
+    local bookX = manaPotionX + buttonSize + buttonSpacing
+    local bagX = bookX + buttonSize + buttonSpacing
 
     love.graphics.push("all")
 
-    -- Draw bag icon with shadow and badge
-    drawIconBox(bagX, buttonY, buttonSize, "bag", {
-        shadow = true,
-        badgeText = "I",
-        iconPadding = 8,
+    drawIconButton(world, {
+        x = bookX,
+        y = buttonY,
+        size = buttonSize,
+        iconName = "book",
+        rectField = "bottomBarBookRect",
+        opts = {
+            shadow = true,
+            badgeText = "K",
+            iconPadding = 8,
+        },
     })
 
-    world.bottomBarBagRect = {
+    drawIconButton(world, {
         x = bagX,
         y = buttonY,
-        w = buttonSize,
-        h = buttonSize,
-    }
+        size = buttonSize,
+        iconName = "bag",
+        rectField = "bottomBarBagRect",
+        opts = {
+            shadow = true,
+            badgeText = "I",
+            iconPadding = 8,
+        },
+    })
 
     local player = world:getPlayer()
     local potions = player and player.potions
@@ -153,37 +184,37 @@ function uiBottomBar.draw(world)
     local healthDisabled = healthCount <= 0
     local manaDisabled = manaCount <= 0
 
-    drawIconBox(healthPotionX, buttonY, buttonSize, "health_potion", {
-        shadow = true,
-        badgeText = "1",
-        badgeSize = 16,
-        iconPadding = 8,
-        disabled = healthDisabled,
-        cooldownRatio = cooldownRatio,
-    })
-
-    drawIconBox(manaPotionX, buttonY, buttonSize, "mana_potion", {
-        shadow = true,
-        badgeText = "2",
-        badgeSize = 16,
-        iconPadding = 8,
-        disabled = manaDisabled,
-        cooldownRatio = cooldownRatio,
-    })
-
-    world.bottomBarHealthPotionRect = {
+    drawIconButton(world, {
         x = healthPotionX,
         y = buttonY,
-        w = buttonSize,
-        h = buttonSize,
-    }
+        size = buttonSize,
+        iconName = "health_potion",
+        rectField = "bottomBarHealthPotionRect",
+        opts = {
+            shadow = true,
+            badgeText = "1",
+            badgeSize = 16,
+            iconPadding = 8,
+            disabled = healthDisabled,
+            cooldownRatio = cooldownRatio,
+        },
+    })
 
-    world.bottomBarManaPotionRect = {
+    drawIconButton(world, {
         x = manaPotionX,
         y = buttonY,
-        w = buttonSize,
-        h = buttonSize,
-    }
+        size = buttonSize,
+        iconName = "mana_potion",
+        rectField = "bottomBarManaPotionRect",
+        opts = {
+            shadow = true,
+            badgeText = "2",
+            badgeSize = 16,
+            iconPadding = 8,
+            disabled = manaDisabled,
+            cooldownRatio = cooldownRatio,
+        },
+    })
 
     love.graphics.pop()
 end

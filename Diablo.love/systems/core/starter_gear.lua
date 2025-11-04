@@ -16,10 +16,17 @@ function starterGearSystem.update(world, _dt)
         return
     end
 
-    -- Ensure player has inventory and equipment components
     EquipmentHelper.ensure(player)
 
-    -- Generate starter gear: weapon + 4 armor pieces (helmet, chest, gloves, boots)
+    if not player.skills then
+        local createSkills = require("components.skills")
+        player.skills = createSkills()
+    end
+
+    if not player.skills.equipped[1] then
+        player.skills.equipped[1] = "fireball"
+    end
+
     local starterWeapon = ItemGenerator.roll({
         rarity = "common",
         allowedTypes = { "sword", "axe" },
@@ -50,17 +57,13 @@ function starterGearSystem.update(world, _dt)
         source = "starter",
     })
 
-    -- Auto-equip all starter gear directly (items will be added to inventory when unequipped)
     EquipmentHelper.equip(player, starterWeapon)
     EquipmentHelper.equip(player, starterHelmet)
     EquipmentHelper.equip(player, starterChest)
     EquipmentHelper.equip(player, starterGloves)
     EquipmentHelper.equip(player, starterBoots)
 
-    -- Mark as generated to prevent re-running
     world.starterGearGenerated = true
-
-    -- Stats will be recomputed automatically on the next update cycle by applyStatsSystem
 end
 
 return starterGearSystem

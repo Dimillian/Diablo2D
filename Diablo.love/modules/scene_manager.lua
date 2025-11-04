@@ -1,6 +1,7 @@
 ---Scene Manager module for managing scene stack and transitions.
 ---Handles scene lifecycle (enter/exit) and provides utilities for finding scenes by kind.
 local InventoryScene = require("scenes.inventory")
+local SkillsScene = require("scenes.skills")
 
 local SceneManager = {}
 SceneManager.__index = SceneManager
@@ -67,6 +68,37 @@ function SceneManager:toggleInventory(key)
 
     self:push(
         InventoryScene.new({
+            world = world,
+        })
+    )
+end
+
+function SceneManager:toggleSkills(key)
+    local top = self:current()
+
+    if key == "escape" then
+        if top and top.kind == "skills" then
+            self:pop()
+        end
+        return
+    end
+
+    if key ~= "k" then
+        return
+    end
+
+    if top and top.kind == "skills" then
+        self:pop()
+        return
+    end
+
+    local world = self:findByKind("world")
+    if not world then
+        return
+    end
+
+    self:push(
+        SkillsScene.new({
             world = world,
         })
     )

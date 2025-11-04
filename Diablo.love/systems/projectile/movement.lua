@@ -1,0 +1,62 @@
+local vector = require("modules.vector")
+local coordinates = require("systems.helpers.coordinates")
+
+local projectileMovementSystem = {}
+
+local function removeProjectile(world, projectile)
+    world:removeEntity(projectile.id)
+end
+
+function projectileMovementSystem.update(world, dt)
+    local projectiles = world:queryEntities({ "projectile", "position", "movement", "size" })
+    for _, projectile in ipairs(projectiles) do
+        if projectile.inactive then
+            goto continue
+        end
+
+        local projectileComponent = projectile.projectile
+        projectileComponent.lifetime = (projectileComponent.lifetime or 0) - dt
+        if projectileComponent.lifetime and projectileComponent.lifetime <= 0 then
+            removeProjectile(world, projectile)
+            goto continue
+        end
+
+        local targetX, targetY
+        local targetId = projectileComponent.targetId
+        if targetId then
+            local target = world:getEntity(targetId)
+            if target and target.position and not target.dead and target.health and target.health.current > 0 then
+                targetX, targetY = coordinates.getEntityCenter(target)
+            else
+                projectileComponent.targetId = nil
+            end
+        end
+
+        if not targetX and projectileComponent.targetX and projectileComponent.targetY then
+            targetX = projectileComponent.targetX
+            targetY = projectileComponent.targetY
+        end
+
+        if not targetX or not targetY then
+            removeProjectile(world, projectile)
+            goto continue
+        end
+
+        local centerX, centerY = coordinates.getEntityCenter(projectile)
+        if not centerX or not centerY then
+            goto continue
+        end
+
+        local dx = targetX - centerX
+        local dy = targetY - centerY
+        local ndx, ndy = vector.normalize(dx, dy)
+
+        projectile.movement.vx = ndx
+        projectile.movement.vy = ndy
+        projectile.movement.speed = projectileComponent.speed or projectile.movement.speed
+
+        ::continue::
+    end
+end
+
+return projectileMovementSystem
