@@ -104,16 +104,6 @@ local function chooseRandom(list)
     return list[index], index
 end
 
-local function takeRandom(list)
-    if #list == 0 then
-        return nil
-    end
-    local index = math.random(1, #list)
-    local value = list[index]
-    table.remove(list, index)
-    return value
-end
-
 local function createBaseStats(itemType, rarity)
     local stats = {
         damageMin = 0,

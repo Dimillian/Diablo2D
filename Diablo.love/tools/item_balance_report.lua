@@ -78,12 +78,14 @@ local function sortFrequencies(freqMap)
     return items
 end
 
+-- luacheck: ignore 212/totalSamples
 local function formatStat(statKey, average, maximum, capHits, totalSamples)
     if statKey == "damageMin" or statKey == "damageMax" or statKey == "defense" or statKey == "health" then
         return string.format("%.1f (max %.1f)", average, maximum or 0)
     end
 
-    return string.format("%.2f (max %.2f%s)", average, maximum or 0, capHits > 0 and string.format(", %d hits cap", capHits) or "")
+    local capHitsText = capHits > 0 and string.format(", %d hits cap", capHits) or ""
+    return string.format("%.2f (max %.2f%s)", average, maximum or 0, capHitsText)
 end
 
 local resultsByRarity = {}

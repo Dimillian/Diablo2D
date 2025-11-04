@@ -43,3 +43,7 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 - Hook inventory/equipment data into the UI, add interactions (equip, drop, compare).
 - Prototype procedural world generation and encounter spawning.
 - Implement combat loop, loot tables, and progression pacing.
+
+## Development Checklist
+- Run `luacheck .` before committing to catch lint issues.
+- After modifying loot tables, affixes, or rarity weights, generate a balance snapshot with `lua tools/item_balance_report.lua 5000`. The script prints per-rarity stat averages plus overall rarity/slot drop percentages so you can compare against previous runs.

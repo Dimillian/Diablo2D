@@ -299,6 +299,24 @@ Items.prefixes = {
         },
     },
     {
+        name = "Stonewall",
+        slots = { "head", "chest", "feet" },
+        minRarity = "rare",
+        stats = {
+            defense = { percent = { 0.14, 0.22 } },
+            health = { flat = { 30, 55 } },
+        },
+    },
+    {
+        name = "Spellward",
+        slots = { "head", "chest", "feet", "gloves" },
+        minRarity = "rare",
+        stats = {
+            resistAll = { percent = { 0.12, 0.18 } },
+            dodgeChance = { flat = { 0.03, 0.06 } },
+        },
+    },
+    {
         name = "Celerity",
         slots = { "feet" },
         minRarity = "rare",
@@ -362,6 +380,26 @@ Items.prefixes = {
             defense = { flat = { 8, 12 } },
             resistAll = { percent = { 0.12, 0.2 } },
             health = { flat = { 50, 80 } },
+        },
+    },
+    {
+        name = "Aegisforged",
+        slots = { "head", "chest", "feet" },
+        minRarity = "epic",
+        stats = {
+            defense = { percent = { 0.22, 0.3 } },
+            resistAll = { percent = { 0.14, 0.22 } },
+            health = { flat = { 45, 70 } },
+        },
+    },
+    {
+        name = "Soulguard",
+        slots = { "head", "chest", "feet", "gloves" },
+        minRarity = "epic",
+        stats = {
+            health = { flat = { 60, 90 } },
+            resistAll = { percent = { 0.12, 0.18 } },
+            dodgeChance = { flat = { 0.06, 0.1 } },
         },
     },
     {
@@ -438,6 +476,30 @@ Items.prefixes = {
             health = { flat = { 80, 130 } },
             resistAll = { percent = { 0.14, 0.26 } },
             dodgeChance = { flat = { 0.08, 0.16 } },
+        },
+    },
+    {
+        name = "Bastion",
+        slots = { "head", "chest", "feet", "gloves" },
+        minRarity = "legendary",
+        weight = 0.4,
+        stats = {
+            defense = { percent = { 0.24, 0.34 } },
+            health = { flat = { 90, 150 } },
+            resistAll = { percent = { 0.16, 0.26 } },
+            dodgeChance = { flat = { 0.1, 0.16 } },
+        },
+    },
+    {
+        name = "Wardbreaker",
+        slots = { "head", "chest", "feet" },
+        minRarity = "legendary",
+        weight = 0.35,
+        stats = {
+            defense = { flat = { 12, 20 } },
+            resistAll = { percent = { 0.18, 0.28 } },
+            health = { flat = { 80, 130 } },
+            attackSpeed = { percent = { 0.1, 0.16 } },
         },
     },
     {

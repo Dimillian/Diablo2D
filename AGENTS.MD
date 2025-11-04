@@ -239,3 +239,4 @@ end
 - Stay light; expand this doc as systems/specs grow.
 - Keep README aligned with this vision so new contributors understand the direction.
 - Always run `luacheck .` and fix all warnings before committing changes.
+- Run `lua tools/item_balance_report.lua 5000` after loot/affix changes to verify stat distribution and drop mix.
