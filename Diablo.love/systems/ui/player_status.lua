@@ -1,3 +1,5 @@
+local UIConfig = require("systems.ui.config")
+
 local uiPlayerStatus = {}
 
 function uiPlayerStatus.draw(world)
@@ -26,16 +28,12 @@ function uiPlayerStatus.draw(world)
     local currentHealth = math.max(0, math.min(health.current, maxHealth))
     local healthRatio = maxHealth > 0 and (currentHealth / maxHealth) or 0
 
-    local barWidth = math.min(screenWidth * 0.3, 240)
-    local barHeight = 20
-    local buttonSize = 48 -- Bag icon height - total height should match this
-    local spacing = buttonSize - (barHeight * 2) -- Calculate spacing so both bars + gap = buttonSize
-    local barX = 32
-    local bottomOffset = 32 + 12
-    local manaBarY = screenHeight - barHeight - bottomOffset -- Mana bar at bottom
-    local healthBarY = manaBarY - barHeight - spacing -- Health bar above mana bar
-
-    barWidth = math.floor(barWidth + 0.5)
+    local barWidth = math.floor(UIConfig.getHealthBarWidth(screenWidth) + 0.5)
+    local barHeight = UIConfig.barHeight
+    local barX = UIConfig.barX
+    local positions = UIConfig.getBottomBarPositions(screenWidth, screenHeight)
+    local manaBarY = positions.manaBarY
+    local healthBarY = positions.healthBarY
 
     love.graphics.push("all")
 

@@ -1,8 +1,9 @@
 local Leveling = require("modules.leveling")
+local UIConfig = require("systems.ui.config")
 
-local uiExperienceSystem = {}
+local uiExperienceBar = {}
 
-function uiExperienceSystem.draw(world)
+function uiExperienceBar.draw(world)
     local player = world:getPlayer()
     if not player or not player.experience then
         return
@@ -27,12 +28,11 @@ function uiExperienceSystem.draw(world)
 
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
-    local barHeight = 20
-    -- Align with bottom bar and player status bars (both use barX = 32)
-    local barX = 32
-    -- Maintain 32px right margin to match left margin
-    local barWidth = screenWidth - barX - 32
-    local barY = screenHeight - barHeight - 8
+    local pos = UIConfig.getExperienceBarPosition(screenWidth, screenHeight)
+    local barX = pos.barX
+    local barY = pos.barY
+    local barWidth = pos.barWidth
+    local barHeight = pos.barHeight
 
     love.graphics.push("all")
 
@@ -60,4 +60,4 @@ function uiExperienceSystem.draw(world)
     love.graphics.pop()
 end
 
-return uiExperienceSystem
+return uiExperienceBar

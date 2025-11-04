@@ -1,4 +1,5 @@
 local Resources = require("modules.resources")
+local UIConfig = require("systems.ui.config")
 
 local uiBottomBar = {}
 
@@ -108,20 +109,18 @@ function uiBottomBar.draw(world)
     world.bottomBarBagRect = nil
 
     -- Bottom bar positioning - next to health and mana bars
-    -- Use the same bar height as player_status.lua (20px, not 24px)
-    local healthBarWidth = math.min(screenWidth * 0.3, 240)
-    local healthBarX = 32
-    local healthBarHeight = 20 -- Match player_status.lua barHeight
-    local buttonSize = 48 -- Bag icon height - total height should match this
-    local spacing = buttonSize - (healthBarHeight * 2) -- Calculate spacing so both bars + gap = buttonSize
-    local bottomOffset = 32 + 12 -- Original 32px offset + 12px spacing
-    local manaBarY = screenHeight - healthBarHeight - bottomOffset
-    local healthBarY = manaBarY - healthBarHeight - spacing
+    local healthBarWidth = UIConfig.getHealthBarWidth(screenWidth)
+    local healthBarX = UIConfig.barX
+    local healthBarHeight = UIConfig.barHeight
+    local buttonSize = UIConfig.buttonSize
+    local positions = UIConfig.getBottomBarPositions(screenWidth, screenHeight)
+    local manaBarY = positions.manaBarY
+    local healthBarY = positions.healthBarY
+    local buttonY = positions.buttonY
 
     -- Layout icons horizontally: health/mana bars | health potion | mana potion | bag
-    local buttonSpacing = 8
+    local buttonSpacing = UIConfig.buttonSpacing
     local healthPotionX = healthBarX + healthBarWidth + buttonSpacing
-    local buttonY = healthBarY
     local manaPotionX = healthPotionX + buttonSize + buttonSpacing
     local bagX = manaPotionX + buttonSize + buttonSpacing
 
