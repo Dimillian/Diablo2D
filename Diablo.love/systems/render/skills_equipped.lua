@@ -67,7 +67,8 @@ function renderSkillsEquipped.draw(scene)
             index = slotIndex,
         }
 
-        local isHovered = mouseX >= rect.x and mouseX <= rect.x + rect.w and mouseY >= rect.y and mouseY <= rect.y + rect.h
+        local isHovered = mouseX >= rect.x and mouseX <= rect.x + rect.w
+            and mouseY >= rect.y and mouseY <= rect.y + rect.h
         if isHovered then
             scene.hoveredSlotIndex = slotIndex
         end

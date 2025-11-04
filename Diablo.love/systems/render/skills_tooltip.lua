@@ -27,7 +27,9 @@ local function buildTooltipLines(spell)
         lines[#lines + 1] = spell.description
     end
     if spell.damage then
-        lines[#lines + 1] = string.format("Damage: %d - %d", spell.damage.min or 0, spell.damage.max or spell.damage.min or 0)
+        local minDamage = spell.damage.min or 0
+        local maxDamage = spell.damage.max or spell.damage.min or 0
+        lines[#lines + 1] = string.format("Damage: %d - %d", minDamage, maxDamage)
     end
     lines[#lines + 1] = string.format("Mana Cost: %d", spell.manaCost or 0)
     return lines

@@ -45,7 +45,7 @@ function uiSkillsBarSystem.draw(world)
         return
     end
 
-    local startX = nil
+    local startX
     local baseRect = world.bottomBarBagRect or world.bottomBarManaPotionRect
     if baseRect then
         startX = baseRect.x + baseRect.w + 12
@@ -54,7 +54,7 @@ function uiSkillsBarSystem.draw(world)
         startX = screenWidth - (SLOT_SIZE + SLOT_SPACING) * 4 - 32
     end
 
-    local startY = nil
+    local startY
     if world.bottomBarBagRect then
         startY = world.bottomBarBagRect.y + (world.bottomBarBagRect.h - SLOT_SIZE) / 2
     else

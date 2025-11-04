@@ -37,7 +37,6 @@ function renderSkillsList.draw(scene)
             love.graphics.setColor(1, 1, 1, 1)
             local iconSize = rect.h - 16
             local scale = math.min(iconSize / icon:getWidth(), iconSize / icon:getHeight())
-            local drawWidth = icon:getWidth() * scale
             local drawHeight = icon:getHeight() * scale
             love.graphics.draw(icon, rect.x + 12, rect.y + (rect.h - drawHeight) / 2, 0, scale, scale)
         end

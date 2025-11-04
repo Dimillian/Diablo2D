@@ -48,7 +48,7 @@ function SkillsLayout.calculateListArea(panel, columns)
     }
 end
 
-function SkillsLayout.calculateSlotsArea(panel, columns)
+function SkillsLayout.calculateSlotsArea(_panel, columns)
     local slotsTop = snap(columns.headerY + 48)
     local slotSize = 48
     local slotSpacing = 16

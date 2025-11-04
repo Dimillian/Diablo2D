@@ -8,7 +8,8 @@ function renderSkillsHelp.draw(scene)
     local helpPos = SkillsLayout.calculateHelpPosition(panel)
 
     love.graphics.setColor(0.85, 0.8, 0.6, 1)
-    love.graphics.print("Click a spell to equip. Click an equipped slot to unequip. Press S to close.", helpPos.x, helpPos.y)
+    local helpText = "Click a spell to equip. Click an equipped slot to unequip. Press S to close."
+    love.graphics.print(helpText, helpPos.x, helpPos.y)
 end
 
 return renderSkillsHelp
