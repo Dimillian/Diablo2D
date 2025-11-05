@@ -112,7 +112,9 @@ function renderWindowChrome.draw(scene, opts)
     local font = love.graphics.getFont()
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
     local title = opts.title or scene.title or "Window"
-    love.graphics.print(title, layout.header.iconX + layout.header.iconSize + 12, layout.header.titleY - font:getHeight() / 2)
+    local titleX = layout.header.iconX + layout.header.iconSize + 12
+    local titleY = layout.header.titleY - font:getHeight() / 2
+    love.graphics.print(title, titleX, titleY)
 
     -- Column divider if supplied
     if layout.columns and layout.columns.dividerX then

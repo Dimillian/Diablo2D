@@ -120,7 +120,12 @@ function InventoryScene:mousepressed(x, y, button)
     end
 
     local closeRect = self.windowRects and self.windowRects.close
-    if closeRect and x >= closeRect.x and x <= closeRect.x + closeRect.w and y >= closeRect.y and y <= closeRect.y + closeRect.h then
+    if closeRect
+        and x >= closeRect.x
+        and x <= closeRect.x + closeRect.w
+        and y >= closeRect.y
+        and y <= closeRect.y + closeRect.h
+    then
         if self.world.sceneManager then
             self.world.sceneManager:pop()
         end
