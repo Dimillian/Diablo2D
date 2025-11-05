@@ -145,8 +145,11 @@ Players now carry dedicated health and mana potions, consume them from the botto
 - Draws potion icons with hotkey badges, live counts, disabled states when full/out-of-stock, and cooldown shading.
 - Stores hitboxes for click detection so the world scene can trigger consumption.
 
+**✅ `systems/helpers/window_layout.lua` & `systems/render/window/chrome.lua` - NEW**
+- Provide a reusable window scaffold (centered panel sizing, header/footer metrics, column splits) and draw the shared chrome: dim overlay, header icon/title, column divider, and close button hitbox. Inventory and skills scenes stash layout options and consume the resulting `scene.windowLayout`.
+
 **✅ `systems/render/inventory/grid.lua` & `scenes/inventory.lua` - UPDATED**
-- Reserve space for a dedicated bottom bar and expose panel bounds so auxiliary UI can anchor cleanly beneath the item slots.
+- Reserve space for a dedicated bottom bar via the shared window layout and expose panel bounds so auxiliary UI can anchor cleanly beneath the item slots.
 
 **✅ `systems/render/inventory/bottom_bar.lua` - NEW**
 - Draws the inventory bottom bar with gold, health potion, and mana potion counts using icon+value pairs separated by dividers.
@@ -375,9 +378,9 @@ All core functionality has been implemented:
 #### Scene Changes
 
 **✅ `scenes/skills.lua` - IMPLEMENTED**
-- Similar structure to `inventory.lua` scene
+- Shares the common window chrome with the inventory overlay
 - Systems registered:
-  - `renderSkillsBackground` - Draws background panel
+  - `renderWindowChrome` - Draws backdrop, header, column divider, and close button
   - `renderSkillsList` - Lists all available spells with icons and mana costs
   - `renderSkillsEquipped` - Shows 4 equipped skill slots
   - `renderSkillsTooltip` - Shows spell details on hover
@@ -386,13 +389,10 @@ All core functionality has been implemented:
   - Click on equipped slot: Unequips skill from that slot
   - Prevents duplicate equipping (checks if spell already equipped)
 - Key handling:
-  - "k" or "escape": Closes skills scene (note: uses "k" not "s")
-- Uses `SkillsLayout` helper for panel calculations
+  - "k" or "escape": Closes skills scene
+- Relies on the shared `window_layout` helper instead of a bespoke skills layout
 
 #### Rendering Systems
-
-**✅ `systems/render/skills/background.lua` - IMPLEMENTED**
-- Draws background panel for skills scene
 
 **✅ `systems/render/skills/list.lua` - IMPLEMENTED**
 - Lists all available spells with icons, labels, and mana costs

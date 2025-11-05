@@ -1,15 +1,12 @@
 ---Render system for inventory stats section
 local EquipmentHelper = require("systems.helpers.equipment")
-local InventoryLayout = require("systems.helpers.inventory_layout")
 
 local renderInventoryStats = {}
 
--- Utility function to snap values to nearest pixel
 local function snap(value)
     return math.floor(value + 0.5)
 end
 
--- Configuration for stat display order and formatting
 local statDisplayOrder = {
     { key = "health", label = "Health", always = true, type = "int" },
     { key = "defense", label = "Defense", type = "int" },
@@ -22,9 +19,6 @@ local statDisplayOrder = {
     { key = "resistAll", label = "All Resist", type = "percent" },
 }
 
----Build formatted stat summary lines from total stats
----@param total table Total stats object
----@return table Array of formatted stat strings
 local function buildSummaryLines(total)
     local lines = {}
 
@@ -52,50 +46,53 @@ local function buildSummaryLines(total)
     return lines
 end
 
----Draw stats section with total stats
----@param scene table Inventory scene
 function renderInventoryStats.draw(scene)
     local player = scene.world:getPlayer()
     if not player then
         return
     end
 
-    -- Calculate layout
-    local panelLayout = InventoryLayout.calculatePanelLayout()
-    local headersLayout = InventoryLayout.calculateHeadersLayout(
-        panelLayout.panelX,
-        panelLayout.panelY,
-        panelLayout.panelWidth
-    )
-    local equipmentLayout = InventoryLayout.calculateEquipmentLayout(
-        panelLayout.panelX,
-        panelLayout.panelHeight,
-        headersLayout.headerY,
-        headersLayout.dividerX,
-        headersLayout.equipmentHeaderX
-    )
+    local layout = scene.windowLayout
+    if not layout then
+        return
+    end
 
-    -- Draw divider line
+    local areas = layout.inventoryAreas
+    if not areas or not areas.stats then
+        return
+    end
+
+    local statsArea = areas.stats
+    if statsArea.height <= 0 then
+        return
+    end
+
     love.graphics.setColor(0.35, 0.32, 0.28, 1)
-    local dividerLineEndX = equipmentLayout.equipmentAreaX + equipmentLayout.equipmentAreaWidth
+    love.graphics.setLineWidth(1)
     love.graphics.line(
-        equipmentLayout.equipmentAreaX,
-        equipmentLayout.statsDividerY,
-        dividerLineEndX,
-        equipmentLayout.statsDividerY
+        statsArea.x,
+        statsArea.y,
+        statsArea.x + statsArea.width,
+        statsArea.y
     )
 
-    -- Draw header
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("Stats", equipmentLayout.equipmentAreaX, equipmentLayout.statsHeaderY)
+    local font = love.graphics.getFont()
+    local headerY = statsArea.y + 12
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print("Stats", statsArea.x, headerY)
 
-    -- Draw stat lines
     local totalStats = EquipmentHelper.computeTotalStats(player)
     local statLines = buildSummaryLines(totalStats)
-    local statLineHeight = 18
-    for idx, line in ipairs(statLines) do
-        local statY = snap(equipmentLayout.statsStartY + (idx - 1) * statLineHeight)
-        love.graphics.print(line, equipmentLayout.equipmentAreaX, statY)
+    local lineHeight = font:getHeight() + 4
+    local startY = snap(headerY + font:getHeight() + 8)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    for index, line in ipairs(statLines) do
+        local y = startY + (index - 1) * lineHeight
+        if y > statsArea.y + statsArea.height - lineHeight then
+            break
+        end
+        love.graphics.print(line, statsArea.x, y)
     end
 end
 

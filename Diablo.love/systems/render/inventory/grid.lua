@@ -1,36 +1,30 @@
 ---Render system for inventory grid
 local Resources = require("modules.resources")
 local EquipmentHelper = require("systems.helpers.equipment")
-local InventoryLayout = require("systems.helpers.inventory_layout")
 local Tooltips = require("systems.helpers.tooltips")
+local WindowLayout = require("systems.helpers.window_layout")
 
 local renderInventoryGrid = {}
 
--- Utility function to snap values to nearest pixel
 local function snap(value)
     return math.floor(value + 0.5)
 end
 
----Draw a filled inventory slot with item sprite and rarity-colored border
----@param scene table Inventory scene
----@param item table Item object
----@param slotX number Slot X position
----@param slotY number Slot Y position
----@param slotSize number Slot size (width and height)
----@param slotIndex number Slot index in inventory
+local MAX_SLOTS = 48
+local GRID_COLUMNS = 8
+local SLOT_SIZE = 40
+local SLOT_SPACING = 6
+
 local function drawInventorySlotFilled(scene, item, slotX, slotY, slotSize, slotIndex)
     local rarityColor = Tooltips.getRarityColor(item.rarity)
 
-    -- Draw background
     love.graphics.setColor(0, 0, 0, 0.7)
     love.graphics.rectangle("fill", slotX, slotY, slotSize, slotSize, 4, 4)
 
-    -- Draw rarity-colored border
     love.graphics.setColor(rarityColor)
     love.graphics.setLineWidth(3)
     love.graphics.rectangle("line", slotX, slotY, slotSize, slotSize, 4, 4)
 
-    -- Draw sprite centered (32x32)
     local sprite = Resources.loadImageSafe(item.spritePath)
     if sprite then
         local spriteSize = 32
@@ -40,17 +34,9 @@ local function drawInventorySlotFilled(scene, item, slotX, slotY, slotSize, slot
         love.graphics.setColor(1, 1, 1, 1)
         local spriteScaleX = spriteSize / sprite:getWidth()
         local spriteScaleY = spriteSize / sprite:getHeight()
-        love.graphics.draw(
-            sprite,
-            spriteX,
-            spriteY,
-            0,
-            spriteScaleX,
-            spriteScaleY
-        )
+        love.graphics.draw(sprite, spriteX, spriteY, 0, spriteScaleX, spriteScaleY)
     end
 
-    -- Store rect for click detection
     scene.itemRects[#scene.itemRects + 1] = {
         item = item,
         index = slotIndex,
@@ -61,23 +47,14 @@ local function drawInventorySlotFilled(scene, item, slotX, slotY, slotSize, slot
     }
 end
 
----Draw an empty inventory slot
----@param scene table Inventory scene
----@param slotX number Slot X position
----@param slotY number Slot Y position
----@param slotSize number Slot size (width and height)
----@param slotIndex number Slot index in inventory
 local function drawInventorySlotEmpty(scene, slotX, slotY, slotSize, slotIndex)
-    -- Draw empty slot background
     love.graphics.setColor(0.16, 0.16, 0.18, 0.95)
     love.graphics.rectangle("fill", slotX, slotY, slotSize, slotSize, 4, 4)
 
-    -- Draw empty slot border
     love.graphics.setColor(0.35, 0.35, 0.35, 1)
     love.graphics.setLineWidth(1)
     love.graphics.rectangle("line", slotX, slotY, slotSize, slotSize, 4, 4)
 
-    -- Store rect for click detection
     scene.itemRects[#scene.itemRects + 1] = {
         item = nil,
         index = slotIndex,
@@ -88,8 +65,6 @@ local function drawInventorySlotEmpty(scene, slotX, slotY, slotSize, slotIndex)
     }
 end
 
----Draw inventory grid with filled and empty slots
----@param scene table Inventory scene
 function renderInventoryGrid.draw(scene)
     local player = scene.world:getPlayer()
     if not player then
@@ -99,61 +74,56 @@ function renderInventoryGrid.draw(scene)
     local inventory = EquipmentHelper.ensure(player)
     local items = inventory and inventory.items or {}
 
-    -- Calculate layout
-    local panelLayout = InventoryLayout.calculatePanelLayout()
-    local headersLayout = InventoryLayout.calculateHeadersLayout(
-        panelLayout.panelX,
-        panelLayout.panelY,
-        panelLayout.panelWidth
-    )
-    local gridLayout = InventoryLayout.calculateInventoryLayout(
-        headersLayout.inventoryHeaderX,
-        headersLayout.headerY,
-        panelLayout.panelX,
-        panelLayout.panelY,
-        panelLayout.panelWidth,
-        panelLayout.panelHeight
-    )
+    local layout = scene.windowLayout
+    if not layout then
+        return
+    end
 
-    -- Draw inventory grid (empty slots + filled slots)
-    local lastSlotBottom = gridLayout.gridStartY + gridLayout.gridSlotSize
-    local bottomLimit = gridLayout.gridBottomLimit or (panelLayout.panelY + panelLayout.panelHeight - 60)
+    local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.43 })
+    layout.columns = columns
+    local rightColumn = columns.right
 
-    for slotIndex = 1, gridLayout.gridMaxSlots do
-        local col = ((slotIndex - 1) % gridLayout.gridCols)
-        local row = math.floor((slotIndex - 1) / gridLayout.gridCols)
+    local padding = layout.padding
+    local font = love.graphics.getFont()
 
-        local slotX = snap(
-            gridLayout.gridStartX + col * (gridLayout.gridSlotSize + gridLayout.gridSpacing)
-        )
-        local slotY = snap(
-            gridLayout.gridStartY + row * (gridLayout.gridSlotSize + gridLayout.gridSpacing)
-        )
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print("Inventory", rightColumn.x, rightColumn.y)
 
-        -- Stop if we go beyond reserved grid area
-        if slotY + gridLayout.gridSlotSize > bottomLimit then
+    local headerHeight = font:getHeight()
+    local contentTop = rightColumn.y + headerHeight + padding * 0.5
+    local contentHeight = rightColumn.height - (contentTop - rightColumn.y)
+    if contentHeight <= 0 then
+        return
+    end
+
+    local cols = GRID_COLUMNS
+    local slotSpacing = SLOT_SPACING
+    local slotXStart = snap(rightColumn.x)
+    local slotYStart = snap(contentTop)
+
+    local lastSlotBottom = slotYStart
+    local footerTop = layout.footer and layout.footer.y - padding or (rightColumn.y + rightColumn.height)
+    local bottomLimit = footerTop - padding
+
+    for slotIndex = 1, MAX_SLOTS do
+        local col = (slotIndex - 1) % cols
+        local row = math.floor((slotIndex - 1) / cols)
+
+        local slotX = snap(slotXStart + col * (SLOT_SIZE + slotSpacing))
+        local slotY = snap(slotYStart + row * (SLOT_SIZE + slotSpacing))
+
+        if slotY + SLOT_SIZE > bottomLimit then
             break
         end
 
         local item = items[slotIndex]
-
         if item then
-            drawInventorySlotFilled(scene, item, slotX, slotY, gridLayout.gridSlotSize, slotIndex)
+            drawInventorySlotFilled(scene, item, slotX, slotY, SLOT_SIZE, slotIndex)
         else
-            drawInventorySlotEmpty(scene, slotX, slotY, gridLayout.gridSlotSize, slotIndex)
+            drawInventorySlotEmpty(scene, slotX, slotY, SLOT_SIZE, slotIndex)
         end
 
-        if slotY + gridLayout.gridSlotSize > lastSlotBottom then
-            lastSlotBottom = slotY + gridLayout.gridSlotSize
-        end
-    end
-
-    if gridLayout.gridComputedBottom and gridLayout.gridComputedBottom > lastSlotBottom then
-        lastSlotBottom = gridLayout.gridComputedBottom
-    end
-
-    if lastSlotBottom > bottomLimit then
-        lastSlotBottom = bottomLimit
+        lastSlotBottom = math.max(lastSlotBottom, slotY + SLOT_SIZE)
     end
 
     scene.inventoryGridBottomY = lastSlotBottom

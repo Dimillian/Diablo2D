@@ -1,6 +1,6 @@
 local Spells = require("data.spells")
 
-local renderSkillsBackground = require("systems.render.skills.background")
+local renderWindowChrome = require("systems.render.window.chrome")
 local renderSkillsList = require("systems.render.skills.list")
 local renderSkillsEquipped = require("systems.render.skills.equipped")
 local renderSkillsTooltip = require("systems.render.skills.tooltip")
@@ -43,13 +43,28 @@ function SkillsScene.new(opts)
         kind = "skills",
         title = "Skills",
         availableSpells = Spells.getAll(),
+        windowLayoutOptions = {
+            widthRatio = 0.62,
+            heightRatio = 0.6,
+            headerHeight = 72,
+            padding = 28,
+        },
         systems = {
             draw = {
-                renderSkillsBackground.draw,
+                renderWindowChrome.draw,
                 renderSkillsList.draw,
                 renderSkillsEquipped.draw,
                 renderSkillsTooltip.draw,
             },
+        },
+    }
+
+    scene.windowChromeConfig = {
+        title = scene.title,
+        icon = "book_open",
+        columns = {
+            leftRatio = 0.35,
+            spacing = 28,
         },
     }
 
@@ -61,7 +76,8 @@ function SkillsScene:enter()
     self.slotRects = {}
     self.hoveredSpellId = nil
     self.hoveredSlotIndex = nil
-    self._skillsLayout = {}
+    self.windowRects = {}
+    self.windowLayout = nil
 end
 
 -- luacheck: ignore 212/self
@@ -77,6 +93,7 @@ function SkillsScene:draw()
 
     self.hoveredSpellId = nil
     self.hoveredSlotIndex = nil
+    self.windowRects = {}
 
     for _, system in ipairs(self.systems.draw) do
         system(self)
@@ -86,7 +103,7 @@ function SkillsScene:draw()
 end
 
 function SkillsScene:keypressed(key)
-    if key ~= "s" and key ~= "escape" then
+    if key ~= "k" and key ~= "escape" then
         return
     end
 
@@ -102,6 +119,14 @@ function SkillsScene:mousepressed(x, y, button)
 
     local player = self.world and self.world:getPlayer()
     if not player or not player.skills then
+        return
+    end
+
+    local closeRect = self.windowRects and self.windowRects.close
+    if closeRect and x >= closeRect.x and x <= closeRect.x + closeRect.w and y >= closeRect.y and y <= closeRect.y + closeRect.h then
+        if self.world and self.world.sceneManager then
+            self.world.sceneManager:pop()
+        end
         return
     end
 

@@ -1,15 +1,27 @@
 local Resources = require("modules.resources")
-local SkillsLayout = require("systems.helpers.skills_layout")
+local WindowLayout = require("systems.helpers.window_layout")
 
 local renderSkillsList = {}
 
 function renderSkillsList.draw(scene)
     local spells = scene.availableSpells or {}
-    local layout = scene._skillsLayout or {}
-    local panel = layout.panel or SkillsLayout.calculatePanel()
-    local columns = layout.columns or SkillsLayout.calculateColumns(panel)
-    local listArea = SkillsLayout.calculateListArea(panel, columns)
-    scene._skillsLayout.list = listArea
+    local layout = scene.windowLayout
+    if not layout then
+        return
+    end
+
+    local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.35 })
+    layout.columns = columns
+    local rightColumn = columns.right
+    local padding = layout.padding
+    local font = love.graphics.getFont()
+
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print("Spells", rightColumn.x, rightColumn.y)
+
+    local itemHeight = 54
+    local spacing = 12
+    local listTop = rightColumn.y + font:getHeight() + padding * 0.5
 
     scene.spellRects = {}
     scene.hoveredSpellId = nil
@@ -17,12 +29,12 @@ function renderSkillsList.draw(scene)
     local mouseX, mouseY = love.mouse.getPosition()
 
     for index, spell in ipairs(spells) do
-        local itemY = listArea.y + (index - 1) * (listArea.itemHeight + listArea.spacing)
+        local rectY = listTop + (index - 1) * (itemHeight + spacing)
         local rect = {
-            x = listArea.x,
-            y = itemY,
-            w = listArea.width,
-            h = listArea.itemHeight,
+            x = rightColumn.x,
+            y = rectY,
+            w = rightColumn.width,
+            h = itemHeight,
             spell = spell,
         }
 
@@ -45,8 +57,7 @@ function renderSkillsList.draw(scene)
         love.graphics.print(spell.label or spell.id, rect.x + 72, rect.y + 8)
 
         love.graphics.setColor(0.8, 0.75, 0.5, 1)
-        local manaText = string.format("Mana: %d", spell.manaCost or 0)
-        love.graphics.print(manaText, rect.x + 72, rect.y + rect.h / 2)
+        love.graphics.print(string.format("Mana: %d", spell.manaCost or 0), rect.x + 72, rect.y + rect.h / 2)
 
         if mouseX >= rect.x and mouseX <= rect.x + rect.w and mouseY >= rect.y and mouseY <= rect.y + rect.h then
             love.graphics.setColor(1, 1, 1, 0.15)

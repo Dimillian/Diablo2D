@@ -1,30 +1,19 @@
 ---Render system for inventory equipment slots
 local Resources = require("modules.resources")
 local EquipmentHelper = require("systems.helpers.equipment")
-local InventoryLayout = require("systems.helpers.inventory_layout")
+local WindowLayout = require("systems.helpers.window_layout")
 local Tooltips = require("systems.helpers.tooltips")
 
 local renderInventoryEquipment = {}
 
--- Utility function to snap values to nearest pixel
 local function snap(value)
     return math.floor(value + 0.5)
 end
 
----Draw a single equipment slot with item sprite if equipped
----@param scene table Inventory scene
----@param slot table Slot definition {id, label}
----@param slotX number Slot X position
----@param slotY number Slot Y position
----@param slotWidth number Slot width
----@param slotHeight number Slot height
----@param equippedItem table|nil Equipped item or nil
 local function drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeight, equippedItem)
-    -- Draw slot background
     love.graphics.setColor(0.16, 0.16, 0.18, 0.95)
     love.graphics.rectangle("fill", slotX, slotY, slotWidth, slotHeight, 6, 6)
 
-    -- Draw border with rarity color if item is equipped, otherwise default border
     if equippedItem then
         local rarityColor = Tooltips.getRarityColor(equippedItem.rarity)
         love.graphics.setColor(rarityColor)
@@ -35,7 +24,6 @@ local function drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeigh
     end
     love.graphics.rectangle("line", slotX, slotY, slotWidth, slotHeight, 6, 6)
 
-    -- Draw slot label
     local labelY = snap(slotY + 6)
     local font = love.graphics.getFont()
     local labelHeight = font:getHeight()
@@ -43,21 +31,14 @@ local function drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeigh
     love.graphics.print(slot.label, snap(slotX + 8), labelY)
 
     if equippedItem then
-        -- Draw equipped item sprite
         local sprite = Resources.loadImageSafe(equippedItem.spritePath)
         if sprite then
             local spriteSize = 40
             local spriteX = snap(slotX + (slotWidth - spriteSize) / 2)
-            -- Center sprite vertically in the slot, accounting for label space
-            -- Calculate where label area ends (label + padding)
             local labelBottom = labelY + labelHeight + 6
-            -- Calculate available space below label for sprite
-            local spriteAreaTop = labelBottom
-            local bottomMargin = 8 -- Extra margin at bottom of slot
-            local spriteAreaBottom = slotY + slotHeight - bottomMargin
-            local spriteAreaHeight = spriteAreaBottom - spriteAreaTop
-            -- Center sprite in available space
-            local spriteY = snap(spriteAreaTop + (spriteAreaHeight - spriteSize) / 2)
+            local spriteAreaBottom = slotY + slotHeight - 8
+            local spriteAreaHeight = spriteAreaBottom - labelBottom
+            local spriteY = snap(labelBottom + (spriteAreaHeight - spriteSize) / 2)
             love.graphics.setColor(1, 1, 1, 1)
             love.graphics.draw(
                 sprite,
@@ -78,11 +59,10 @@ local function drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeigh
             h = slotHeight,
         }
     else
-        -- Draw "Empty" text
         love.graphics.setColor(0.5, 0.5, 0.5, 1)
-        local emptyTextY = snap(slotY + (slotHeight / 2))
-        local emptyTextX = snap(slotX + (slotWidth - love.graphics.getFont():getWidth("Empty")) / 2)
-        love.graphics.print("Empty", emptyTextX, emptyTextY)
+        local emptyText = "Empty"
+        local textWidth = love.graphics.getFont():getWidth(emptyText)
+        love.graphics.print(emptyText, snap(slotX + (slotWidth - textWidth) / 2), snap(slotY + slotHeight / 2))
 
         scene.equipmentRects[#scene.equipmentRects + 1] = {
             slot = slot.id,
@@ -95,65 +75,88 @@ local function drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeigh
     end
 end
 
----Draw all equipment slots in a grid layout
----@param scene table Inventory scene
 function renderInventoryEquipment.draw(scene)
     local player = scene.world:getPlayer()
     if not player then
         return
     end
 
-    local _, equipment = EquipmentHelper.ensure(player)
-    if not equipment then
+    local inventory, equipment = EquipmentHelper.ensure(player)
+    if not inventory or not equipment then
         return
     end
 
-    -- Calculate layout
-    local panelLayout = InventoryLayout.calculatePanelLayout()
-    local headersLayout = InventoryLayout.calculateHeadersLayout(
-        panelLayout.panelX,
-        panelLayout.panelY,
-        panelLayout.panelWidth
-    )
-    local equipmentLayout = InventoryLayout.calculateEquipmentLayout(
-        panelLayout.panelX,
-        panelLayout.panelHeight,
-        headersLayout.headerY,
-        headersLayout.dividerX,
-        headersLayout.equipmentHeaderX
-    )
+    local layout = scene.windowLayout
+    if not layout then
+        return
+    end
 
-    -- Draw divider line
-    love.graphics.setColor(0.8, 0.75, 0.5, 1)
-    local dividerEndY = panelLayout.panelY + panelLayout.panelHeight
-    love.graphics.line(
-        headersLayout.dividerX,
-        panelLayout.panelY,
-        headersLayout.dividerX,
-        dividerEndY
-    )
+    local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.43 })
+    layout.columns = columns
 
-    -- Draw headers
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("Equipment", headersLayout.equipmentHeaderX, headersLayout.headerY)
-    love.graphics.print("Inventory", headersLayout.inventoryHeaderX, headersLayout.headerY)
+    local leftColumn = columns.left
+    local padding = layout.padding
+    local font = love.graphics.getFont()
 
-    -- Draw equipment slots
-    local columns = 2
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print("Equipment", leftColumn.x, leftColumn.y)
+
+    local titleHeight = font:getHeight()
+    local contentTop = leftColumn.y + titleHeight + padding * 0.5
+    local availableHeight = leftColumn.height - (contentTop - leftColumn.y)
+    if availableHeight <= 0 then
+        return
+    end
+
+    local spacing = padding
+    local slotsHeight = math.max(160, availableHeight * 0.6)
+    if slotsHeight > availableHeight then
+        slotsHeight = availableHeight
+        spacing = 0
+    end
+    local statsHeight = availableHeight - slotsHeight - spacing
+    if statsHeight < 0 then
+        statsHeight = 0
+        spacing = 0
+    end
+
+    local slotsArea = {
+        x = leftColumn.x,
+        y = contentTop,
+        width = leftColumn.width,
+        height = slotsHeight,
+    }
+
+    local statsArea = {
+        x = leftColumn.x,
+        y = slotsArea.y + slotsArea.height + spacing,
+        width = leftColumn.width,
+        height = statsHeight,
+    }
+
+    layout.inventoryAreas = layout.inventoryAreas or {}
+    layout.inventoryAreas.slots = slotsArea
+    layout.inventoryAreas.stats = statsArea
+
     local slotSpacingX = 14
     local slotSpacingY = 12
-    local slotWidth = snap((equipmentLayout.equipmentAreaWidth - slotSpacingX * (columns - 1)) / columns)
+    local columnsCount = 2
+    local slotWidth = snap((slotsArea.width - slotSpacingX * (columnsCount - 1)) / columnsCount)
     local slotHeight = 64
 
     local slots = EquipmentHelper.slots()
     for index, slot in ipairs(slots) do
-        local col = ((index - 1) % columns)
-        local row = math.floor((index - 1) / columns)
+        local col = (index - 1) % columnsCount
+        local row = math.floor((index - 1) / columnsCount)
 
-        local slotX = snap(equipmentLayout.equipmentAreaX + col * (slotWidth + slotSpacingX))
-        local slotY = snap(equipmentLayout.equipmentAreaTop + row * (slotHeight + slotSpacingY))
+        local slotX = snap(slotsArea.x + col * (slotWidth + slotSpacingX))
+        local slotY = snap(slotsArea.y + row * (slotHeight + slotSpacingY))
+
+        if slotY + slotHeight > slotsArea.y + slotsArea.height then
+            break
+        end
+
         local equippedItem = equipment[slot.id]
-
         drawEquipmentSlot(scene, slot, slotX, slotY, slotWidth, slotHeight, equippedItem)
     end
 end
