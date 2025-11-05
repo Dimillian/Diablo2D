@@ -85,6 +85,8 @@ local function createProjectile(world, caster, spell, targetX, targetY, targetId
         lifetime = spell.lifetime,
         vx = ndx,
         vy = ndy,
+        renderKind = spell.projectileRenderKind,
+        impactDuration = spell.projectileImpactDuration,
     })
 
     world:addEntity(projectile)

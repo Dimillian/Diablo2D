@@ -10,6 +10,8 @@ Spells.types = {
         projectileSpeed = 300,
         projectileSize = 12,
         projectileColor = { 1.0, 0.4, 0.1, 1 },
+        projectileRenderKind = "fireball",
+        projectileImpactDuration = 0.2,
         icon = "resources/skills/fireball.png",
         lifetime = 2.5,
     },
