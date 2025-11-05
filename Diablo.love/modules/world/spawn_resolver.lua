@@ -47,7 +47,10 @@ function SpawnResolver.new(opts)
     opts = opts or {}
     local resolver = {
         chunkSize = opts.chunkSize or DEFAULT_CHUNK_SIZE,
-        foesPerChunk = opts.foesPerChunk or { min = 4, max = 8 },
+        foeChunkSpawnChance = opts.foeChunkSpawnChance or 0.6,
+        groupsPerChunk = opts.groupsPerChunk or { min = 1, max = 2 },
+        foesPerGroup = opts.foesPerGroup or { min = 2, max = 4 },
+        groupSpreadRadius = opts.groupSpreadRadius or 80,
         structuresPerChunk = opts.structuresPerChunk or { min = 1, max = 3 },
         propsPerChunk = opts.propsPerChunk or { min = 3, max = 8 },
     }
@@ -64,16 +67,39 @@ function SpawnResolver.populateChunk(self, world, chunk)
     chunk.descriptors.structures = chunk.descriptors.structures or {}
     chunk.props = chunk.props or {}
 
-    local foeCount = rng:random(self.foesPerChunk.min, self.foesPerChunk.max)
-    for i = 1, foeCount do
+    local safeZone = world.spawnSafeZone
+    local isSafeChunk = safeZone and safeZone.chunkKey == chunk.key
+    local groupCount = 0
+    if not isSafeChunk and rng:random() <= self.foeChunkSpawnChance then
+        local minGroups = math.max(0, self.groupsPerChunk.min or 0)
+        local maxGroups = math.max(minGroups, self.groupsPerChunk.max or minGroups)
+        groupCount = rng:random(minGroups, maxGroups)
+    end
+
+    for groupIndex = 1, groupCount do
         local foeTypeId = weightedChoice(rng, biome and biome.foeWeights or nil) or foeTypes.getRandomType()
-        local x, y = randomInChunk(rng, chunk.chunkX, chunk.chunkY, self.chunkSize, 48)
-        chunk.descriptors.foes[#chunk.descriptors.foes + 1] = {
-            id = chunk.key .. ":foe:" .. i,
-            foeType = foeTypeId,
-            x = x,
-            y = y,
-        }
+        local centerX, centerY = randomInChunk(rng, chunk.chunkX, chunk.chunkY, self.chunkSize, 96)
+        local packId = chunk.key .. ":pack:" .. groupIndex
+
+        local minGroupSize = math.max(1, self.foesPerGroup.min or 1)
+        local maxGroupSize = math.max(minGroupSize, self.foesPerGroup.max or minGroupSize)
+        local groupSize = rng:random(minGroupSize, maxGroupSize)
+
+        for memberIndex = 1, groupSize do
+            local angle = (memberIndex / groupSize) * math.pi * 2 + rng:random() * 0.35
+            local spread = rng:random() * self.groupSpreadRadius
+            local x = centerX + math.cos(angle) * spread
+            local y = centerY + math.sin(angle) * spread
+
+            chunk.descriptors.foes[#chunk.descriptors.foes + 1] = {
+                id = chunk.key .. ":foe_group:" .. groupIndex .. ":" .. memberIndex,
+                foeType = foeTypeId,
+                x = x,
+                y = y,
+                groupId = groupIndex,
+                packId = packId,
+            }
+        end
     end
 
     local structureCount = rng:random(self.structuresPerChunk.min, self.structuresPerChunk.max)

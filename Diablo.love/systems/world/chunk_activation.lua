@@ -23,6 +23,7 @@ local function instantiateFoe(world, chunk, descriptor)
         width = 20,
         height = 20,
         config = config,
+        packId = descriptor.packId,
     })
 
     foe.chunkResident = {

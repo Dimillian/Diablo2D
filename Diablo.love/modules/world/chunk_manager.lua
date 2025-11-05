@@ -26,6 +26,33 @@ local function clamp(value, minValue, maxValue)
     return value
 end
 
+local function applyStartBiome(manager, chunk)
+    if not manager.startBiomeId or manager.forceStartBiome == false then
+        return
+    end
+
+    local center = manager.startBiomeCenter
+    local radius = manager.startBiomeRadius or 0
+    if not center then
+        return
+    end
+
+    local dx = chunk.chunkX - center.chunkX
+    local dy = chunk.chunkY - center.chunkY
+    if (dx * dx + dy * dy) > radius * radius then
+        return
+    end
+
+    local biome = biomes.getById(manager.startBiomeId)
+    chunk.biomeId = manager.startBiomeId
+    chunk.biomeLabel = biome and biome.label or manager.startBiomeId
+    chunk.transition = chunk.transition or {}
+    chunk.transition.noiseValue = chunk.transition.noiseValue or 0
+    chunk.transition.normalized = 0.5
+    chunk.transition.transitionStrength = 0
+    chunk.transition.neighbors = chunk.transition.neighbors or {}
+end
+
 function ChunkManager.new(opts)
     opts = opts or {}
 
@@ -34,6 +61,10 @@ function ChunkManager.new(opts)
         activeRadius = opts.activeRadius or DEFAULT_ACTIVE_RADIUS,
         worldSeed = opts.worldSeed or 0,
         spawnResolver = opts.spawnResolver,
+        startBiomeId = opts.startBiomeId,
+        startBiomeCenter = opts.startBiomeCenter,
+        startBiomeRadius = math.max(0, opts.startBiomeRadius or 0),
+        forceStartBiome = opts.forceStartBiome,
     }
 
     return setmetatable(manager, ChunkManager)
@@ -62,6 +93,7 @@ function ChunkManager.ensureChunkLoaded(manager, world, chunkX, chunkY)
         chunk.defeatedFoes = chunk.defeatedFoes or {}
         chunk.lootedStructures = chunk.lootedStructures or {}
         chunk.props = chunk.props or {}
+        applyStartBiome(manager, chunk)
         return chunk
     end
 
@@ -84,6 +116,8 @@ function ChunkManager.ensureChunkLoaded(manager, world, chunkX, chunkY)
         lootedStructures = {},
         props = {},
     }
+
+    applyStartBiome(manager, chunk)
 
     if manager.spawnResolver then
         manager.spawnResolver:populateChunk(world, chunk)

@@ -110,6 +110,10 @@ function love.load()
         opts.worldSeed = persisted.worldSeed
         opts.chunkSize = persisted.chunkSize
         opts.activeRadius = persisted.activeRadius
+        opts.startBiomeId = persisted.startBiomeId
+        opts.startBiomeRadius = persisted.startBiomeRadius
+        opts.startBiomeCenter = persisted.startBiomeCenter
+        opts.forceStartBiome = persisted.forceStartBiome
         opts.generatedChunks = normalizeChunks(persisted.generatedChunks)
         opts.visitedChunks = persisted.visitedChunks
         opts.minimapState = persisted.minimapState

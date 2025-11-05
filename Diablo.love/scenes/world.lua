@@ -159,8 +159,32 @@ function WorldScene.new(opts)
     scene.visitedChunks = opts.visitedChunks or {}
     scene.chunkConfig = {
         chunkSize = opts.chunkSize or 512,
-        activeRadius = opts.activeRadius or 2,
+        activeRadius = opts.activeRadius or 4,
     }
+    scene.startBiomeId = opts.startBiomeId or "forest"
+    scene.startBiomeRadius = math.max(0, opts.startBiomeRadius or 2)
+
+    local hasPersistedChunks = opts.generatedChunks and next(opts.generatedChunks) ~= nil
+    if opts.forceStartBiome ~= nil then
+        scene.forceStartBiome = opts.forceStartBiome
+    else
+        scene.forceStartBiome = not hasPersistedChunks
+    end
+
+    local chunkSize = scene.chunkConfig.chunkSize
+    local currentChunkX = math.floor(player.position.x / chunkSize)
+    local currentChunkY = math.floor(player.position.y / chunkSize)
+    if opts.startBiomeCenter then
+        scene.startBiomeCenter = {
+            chunkX = opts.startBiomeCenter.chunkX,
+            chunkY = opts.startBiomeCenter.chunkY,
+        }
+    else
+        scene.startBiomeCenter = {
+            chunkX = currentChunkX,
+            chunkY = currentChunkY,
+        }
+    end
 
     for _, chunk in pairs(scene.generatedChunks) do
         chunk.spawnedEntities = {}
@@ -177,9 +201,20 @@ function WorldScene.new(opts)
         activeRadius = scene.chunkConfig.activeRadius,
         worldSeed = scene.worldSeed,
         spawnResolver = scene.spawnResolver,
+        startBiomeId = scene.startBiomeId,
+        startBiomeCenter = scene.startBiomeCenter,
+        startBiomeRadius = scene.startBiomeRadius,
+        forceStartBiome = scene.forceStartBiome,
     })
 
-    local chunkX, chunkY = ChunkManager.getChunkCoords(scene.chunkManager, player.position.x, player.position.y)
+    local chunkX = currentChunkX
+    local chunkY = currentChunkY
+    scene.spawnSafeZone = {
+        chunkKey = ChunkManager.getChunkKey(scene.chunkManager, chunkX, chunkY),
+        centerX = player.position.x,
+        centerY = player.position.y,
+        radius = opts.spawnSafeRadius or 192,
+    }
     ChunkManager.ensureChunkLoaded(scene.chunkManager, scene, chunkX, chunkY)
 
     scene.minimapState = opts.minimapState or { visible = true, zoom = 1 }
@@ -228,27 +263,51 @@ function WorldScene:resetWorld(seed)
     self.visitedChunks = {}
     self.activeChunkKeys = {}
     self.pendingCombatEvents = {}
+    self.forceStartBiome = true
+    self.startBiomeRadius = math.max(0, self.startBiomeRadius or 2)
+
+    local chunkSize = self.chunkConfig and self.chunkConfig.chunkSize or 512
+    local activeRadius = self.chunkConfig and self.chunkConfig.activeRadius or 4
+    local player = self:getPlayer()
+    local chunkX, chunkY = 0, 0
+    if player and player.position then
+        chunkX = math.floor(player.position.x / chunkSize)
+        chunkY = math.floor(player.position.y / chunkSize)
+    end
+    self.startBiomeCenter = {
+        chunkX = chunkX,
+        chunkY = chunkY,
+    }
 
     self.spawnResolver = SpawnResolver.new({
-        chunkSize = self.chunkConfig and self.chunkConfig.chunkSize or 512,
+        chunkSize = chunkSize,
     })
 
     self.chunkManager = ChunkManager.new({
-        chunkSize = self.chunkConfig and self.chunkConfig.chunkSize or 512,
-        activeRadius = self.chunkConfig and self.chunkConfig.activeRadius or 2,
+        chunkSize = chunkSize,
+        activeRadius = activeRadius,
         worldSeed = self.worldSeed,
         spawnResolver = self.spawnResolver,
+        startBiomeId = self.startBiomeId,
+        startBiomeCenter = self.startBiomeCenter,
+        startBiomeRadius = self.startBiomeRadius,
+        forceStartBiome = self.forceStartBiome,
     })
 
-    for id, entity in pairs(self.entities) do
+    for id in pairs(self.entities) do
         if id ~= self.playerId then
             self:removeEntity(id)
         end
     end
 
-    local player = self:getPlayer()
+    player = self:getPlayer()
     if player and player.position then
-        local chunkX, chunkY = ChunkManager.getChunkCoords(self.chunkManager, player.position.x, player.position.y)
+        self.spawnSafeZone = {
+            chunkKey = ChunkManager.getChunkKey(self.chunkManager, chunkX, chunkY),
+            centerX = player.position.x,
+            centerY = player.position.y,
+            radius = (self.spawnSafeZone and self.spawnSafeZone.radius) or 192,
+        }
         ChunkManager.ensureChunkLoaded(self.chunkManager, self, chunkX, chunkY)
     end
 end
@@ -257,7 +316,14 @@ function WorldScene:serializeState()
     local state = {
         worldSeed = self.worldSeed,
         chunkSize = self.chunkConfig and self.chunkConfig.chunkSize or 512,
-        activeRadius = self.chunkConfig and self.chunkConfig.activeRadius or 2,
+        activeRadius = self.chunkConfig and self.chunkConfig.activeRadius or 4,
+        startBiomeId = self.startBiomeId,
+        startBiomeRadius = self.startBiomeRadius,
+        startBiomeCenter = self.startBiomeCenter and {
+            chunkX = self.startBiomeCenter.chunkX,
+            chunkY = self.startBiomeCenter.chunkY,
+        } or nil,
+        forceStartBiome = self.forceStartBiome,
         minimapState = {
             visible = self.minimapState and self.minimapState.visible or true,
             zoom = self.minimapState and self.minimapState.zoom or 1,

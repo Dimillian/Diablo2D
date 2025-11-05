@@ -34,12 +34,15 @@ local function drawChunk(world, chunk, centerX, centerY, scale, chunkPixelSize)
     local alpha = visited and 0.9 or 0.2
 
     love.graphics.setColor(color[1], color[2], color[3], alpha)
-    love.graphics.rectangle("fill", chunkCenterX - chunkPixelSize / 2, chunkCenterY - chunkPixelSize / 2, chunkPixelSize, chunkPixelSize)
+    local halfSize = chunkPixelSize / 2
+    local rectX = chunkCenterX - halfSize
+    local rectY = chunkCenterY - halfSize
+    love.graphics.rectangle("fill", rectX, rectY, chunkPixelSize, chunkPixelSize)
 
     if visited then
         local accent = biome and biome.tileColors.accent or { 1, 1, 1, 1 }
         love.graphics.setColor(accent[1], accent[2], accent[3], 0.3)
-        love.graphics.rectangle("line", chunkCenterX - chunkPixelSize / 2, chunkCenterY - chunkPixelSize / 2, chunkPixelSize, chunkPixelSize)
+        love.graphics.rectangle("line", rectX, rectY, chunkPixelSize, chunkPixelSize)
     end
 end
 
@@ -90,7 +93,6 @@ function minimapSystem.draw(world)
     end
 
     local width = love.graphics.getWidth()
-    local height = love.graphics.getHeight()
     local mapSize = CONFIG.size
     local x = width - mapSize - CONFIG.padding
     local y = CONFIG.padding
@@ -100,13 +102,13 @@ function minimapSystem.draw(world)
     love.graphics.push("all")
     love.graphics.setColor(CONFIG.backgroundColor)
     love.graphics.rectangle("fill", x, y, mapSize, mapSize, 6, 6)
-    love.graphics.setColor(CONFIG.borderColor)
-    love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", x, y, mapSize, mapSize, 6, 6)
 
+    love.graphics.setScissor(x, y, mapSize, mapSize)
     local manager = world.chunkManager
     local chunkSize = manager.chunkSize
-    local scale = (mapSize / (chunkSize * (manager.activeRadius * 2 + 1))) * (minimapState.zoom or 1)
+    local radius = manager.activeRadius or 0
+    local displayRadius = math.max(0, radius - 2)
+    local scale = (mapSize / (chunkSize * (displayRadius * 2 + 1))) * (minimapState.zoom or 1)
     local chunkPixelSize = chunkSize * scale
 
     for _, chunk in pairs(world.generatedChunks or {}) do
@@ -122,6 +124,11 @@ function minimapSystem.draw(world)
         love.graphics.setColor(0.2, 0.8, 0.2, 1)
         love.graphics.circle("fill", centerX, centerY, 4)
     end
+
+    love.graphics.setScissor()
+    love.graphics.setColor(CONFIG.borderColor)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", x, y, mapSize, mapSize, 6, 6)
 
     love.graphics.pop()
 end
