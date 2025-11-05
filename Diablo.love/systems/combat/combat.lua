@@ -104,6 +104,7 @@ local function handleDeath(world, target, attacker, position)
     end
 
     local foeLevel = target.level or 1
+    local foeTypeId = target.foeTypeId or (target.foe and target.foe.typeId)
 
     pushCombatEvent(world, {
         type = "death",
@@ -111,6 +112,7 @@ local function handleDeath(world, target, attacker, position)
         sourceId = attacker and attacker.id or nil,
         position = position and { x = position.x, y = position.y } or nil,
         foeLevel = foeLevel,
+        foeTypeId = foeTypeId,
         time = world.time or 0,
     })
 

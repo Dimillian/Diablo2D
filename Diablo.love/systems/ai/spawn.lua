@@ -45,6 +45,7 @@ local function spawnGroup(world, centerX, centerY, foeType)
             width = 20,
             height = 20,
             config = config,
+            foeTypeId = foeType,
             foeType = foeType,
             packId = packId,
             packAggro = config.packAggro,

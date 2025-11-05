@@ -56,7 +56,10 @@
 - `components/potions.lua` tracks per-type counts, max stacks, shared cooldown metadata, and is attached to the player at creation.
 - `systems/core/potion_consumption.lua` decays cooldown timers, gates usage on resource caps, and responds to hotkeys `1`/`2` or HUD clicks registered by `systems/ui/bottom_bar.lua`.
 - Potion loot is generated in `systems/core/loot_drops.lua` (15% drop chance) and routed through `systems/core/loot_pickup.lua`, which increments stacks while respecting caps and skipping equipment flows.
-- HUD: `systems/ui/bottom_bar.lua` draws potion boxes with cooldown shading/badges and stores clickable rects; the inventory scene renders potion counts via `systems/render/inventory_potions.lua`.
+- HUD: `systems/ui/bottom_bar.lua` draws potion boxes with cooldown shading/badges and stores clickable rects; the inventory scene mirrors those counts in a consolidated bar via `systems/render/inventory/bottom_bar.lua`.
+- Modal windows (inventory, skills, future overlays) share a common scaffold: `systems/helpers/window_layout.lua` computes panel/header/footer metrics and `systems/render/window/chrome.lua` draws the dim backdrop, header (icon + title), column divider, and close button hitbox. Individual scenes stash `scene.windowLayoutOptions`/`scene.windowChromeConfig` so child renderers can snap to `scene.windowLayout.content`, `scene.windowLayout.columns`, or `scene.windowLayout.footer`.
+- Inventory content renderers live under `systems/render/inventory/` (equipment grid, stats list, item grid, footer) and assume the chrome system seeded `scene.windowLayout`; they publish slot rectangles for interaction and surface shared areas to siblings via `layout.inventoryAreas`.
+- Skills scene renderers live under `systems/render/skills/` and similarly rely on the window layout columns for equipped slots vs spell list, reusing the same close-button plumbing.
 
 ### Experience & Leveling
 - Player spawns with `components/experience.lua` (level, current XP, target XP) configured by `modules/leveling.lua`.

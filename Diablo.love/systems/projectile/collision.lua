@@ -46,11 +46,16 @@ local function handleDeath(world, target, attacker, hitPosition)
         world:addComponent(target.id, "dead", createDead())
     end
 
+    local foeLevel = target.level or 1
+    local foeTypeId = target.foeTypeId or (target.foe and target.foe.typeId)
+
     pushCombatEvent(world, {
         type = "death",
         targetId = target.id,
         sourceId = attacker and attacker.id or nil,
         position = hitPosition,
+        foeLevel = foeLevel,
+        foeTypeId = foeTypeId,
         time = world.time or 0,
     })
 
