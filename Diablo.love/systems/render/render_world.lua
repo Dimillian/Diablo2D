@@ -55,6 +55,15 @@ function renderSystem.draw(world)
                 love.graphics.circle("line", pos.x, pos.y, detection.range)
             end
 
+            -- Visualize forced aggro leash when active
+            if detection.forceAggro then
+                local leashRadius = detection.leashRange or ((detection.range or 0) + (detection.leashExtension or 0))
+                if leashRadius and leashRadius > 0 then
+                    love.graphics.setColor(0, 0.7, 1, 0.35) -- Cyan-ish leash range
+                    love.graphics.circle("line", pos.x, pos.y, leashRadius)
+                end
+            end
+
             ::continue::
         end
     end

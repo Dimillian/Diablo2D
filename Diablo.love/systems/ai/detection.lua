@@ -34,12 +34,9 @@ function detectionSystem.update(world, _dt)
         local range = detection.range or 0
         local rangeSquared = range * range
         local detected = false
+        local hasForcedAggro = detection.forceAggro and detection.detectedTargetId == player.id
 
-        if distSquared <= rangeSquared then
-            detected = true
-            detection.forceAggro = false
-            detection.leashRange = nil
-        elseif detection.forceAggro and detection.detectedTargetId == player.id then
+        if hasForcedAggro then
             local leashRange = detection.leashRange
             if not leashRange then
                 local extension = detection.leashExtension or 0
@@ -54,6 +51,9 @@ function detectionSystem.update(world, _dt)
                 detection.forceAggro = false
                 detection.leashRange = nil
             end
+        elseif distSquared <= rangeSquared then
+            detected = true
+            detection.leashRange = nil
         end
 
         if detected then
