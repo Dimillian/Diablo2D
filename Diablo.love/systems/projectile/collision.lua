@@ -96,6 +96,14 @@ function collisionSystem.update(world, _dt)
         end
 
         local projectileComponent = projectile.projectile
+        if projectileComponent and projectileComponent.state == "impact" then
+            goto continue_projectile
+        end
+
+        if not projectileComponent then
+            goto continue_projectile
+        end
+
         local owner = world:getEntity(projectileComponent.ownerId)
         local projectileCenterX, projectileCenterY = coordinates.getEntityCenter(projectile)
         local projectileRadius = (projectile.size.w or projectile.size.h or 0) / 2

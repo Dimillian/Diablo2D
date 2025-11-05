@@ -98,7 +98,9 @@ local function drawFlyingFireball(args)
         local distance = radius * (0.8 + wobble)
         local sparkleSize = radius * (0.25 + 0.05 * math.sin(time * 7 + i * 1.7))
         love.graphics.setColor(core[1], core[2], core[3], 0.55)
-        love.graphics.circle("fill", centerX + math.cos(angle) * distance, centerY + math.sin(angle) * distance, sparkleSize)
+        local sparkleX = centerX + math.cos(angle) * distance
+        local sparkleY = centerY + math.sin(angle) * distance
+        love.graphics.circle("fill", sparkleX, sparkleY, sparkleSize)
     end
 
     love.graphics.setColor(secondary[1], secondary[2], secondary[3], 0.45)
@@ -146,7 +148,9 @@ local function drawImpactFireball(args)
         local emberDistance = outerRadius * (0.4 + eased + 0.1 * math.sin(time * 6 + i))
         local emberSize = radius * (0.3 * (1 - progress) + 0.08)
         love.graphics.setColor(secondary[1], secondary[2], secondary[3], 0.8 * (1 - progress))
-        love.graphics.circle("fill", centerX + math.cos(angle) * emberDistance, centerY + math.sin(angle) * emberDistance, emberSize)
+        local emberX = centerX + math.cos(angle) * emberDistance
+        local emberY = centerY + math.sin(angle) * emberDistance
+        love.graphics.circle("fill", emberX, emberY, emberSize)
     end
 
     love.graphics.setBlendMode("alpha")
@@ -176,7 +180,8 @@ function renderProjectileSystem.draw(world)
         local spell = projectileComponent.spellId and Spells.types[projectileComponent.spellId]
 
         local baseColor = resolveColor(renderable.color, spell and spell.projectileColor)
-        local secondaryColor = resolveColor(renderable.secondaryColor, { baseColor[1], baseColor[2], baseColor[3], 0.9 })
+        local secondaryDefault = { baseColor[1], baseColor[2], baseColor[3], 0.9 }
+        local secondaryColor = resolveColor(renderable.secondaryColor, secondaryDefault)
         local coreColor = resolveColor(renderable.coreColor, { 1, 0.9, 0.7, 1 })
 
         local radius = (projectile.size.w or projectile.size.h or 0) / 2
@@ -240,7 +245,9 @@ function renderProjectileSystem.draw(world)
         end
 
         if renderable.kind == "fireball" then
-            local dirX, dirY = normalizeDirection(projectileComponent.lastDirectionX, projectileComponent.lastDirectionY)
+            local lastDirX = projectileComponent.lastDirectionX
+            local lastDirY = projectileComponent.lastDirectionY
+            local dirX, dirY = normalizeDirection(lastDirX, lastDirY)
             drawFlyingFireball({
                 centerX = centerX,
                 centerY = centerY,
