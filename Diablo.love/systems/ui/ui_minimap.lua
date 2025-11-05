@@ -61,8 +61,26 @@ local function drawChunkContent(world, chunk, centerX, centerY, scale)
 
     love.graphics.push("all")
 
+    local defeatedFoes = chunk.defeatedFoes or {}
+    local spawnedEntities = chunk.spawnedEntities or {}
+    local liveFoeDescriptors = {}
+
+    for descriptorId, entityId in pairs(spawnedEntities) do
+        if not defeatedFoes[descriptorId] then
+            local entity = world:getEntity(entityId)
+            local position = entity and entity.position
+            if position then
+                local mapX = centerX + (position.x - playerX) * scale
+                local mapY = centerY + (position.y - playerY) * scale
+                love.graphics.setColor(0.85, 0.2, 0.2, 0.9)
+                love.graphics.circle("fill", mapX, mapY, 3)
+                liveFoeDescriptors[descriptorId] = true
+            end
+        end
+    end
+
     for _, descriptor in ipairs(chunk.descriptors.foes or {}) do
-        if not chunk.defeatedFoes[descriptor.id] then
+        if not defeatedFoes[descriptor.id] and not liveFoeDescriptors[descriptor.id] then
             local mapX = centerX + (descriptor.x - playerX) * scale
             local mapY = centerY + (descriptor.y - playerY) * scale
             love.graphics.setColor(0.85, 0.2, 0.2, 0.9)

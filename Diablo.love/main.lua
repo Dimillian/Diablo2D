@@ -1,5 +1,5 @@
 ---@diagnostic disable: undefined-global
--- luacheck: globals love
+-- luacheck: globals love pcall
 
 local WorldScene = require("scenes.world")
 local SceneManager = require("modules.scene_manager")

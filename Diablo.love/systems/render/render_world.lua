@@ -49,7 +49,15 @@ local function drawChunkProps(world, chunk)
             love.graphics.rectangle("fill", prop.x - size / 2, prop.y - size / 2, size, size)
         elseif style.kind == "polygon" then
             local r = (prop.radius or 20) * 0.9
-            love.graphics.polygon("fill", prop.x - r, prop.y + r * 0.4, prop.x + r, prop.y + r * 0.4, prop.x, prop.y - r)
+            love.graphics.polygon(
+                "fill",
+                prop.x - r,
+                prop.y + r * 0.4,
+                prop.x + r,
+                prop.y + r * 0.4,
+                prop.x,
+                prop.y - r
+            )
         elseif style.kind == "line" then
             love.graphics.setLineWidth(2)
             love.graphics.line(prop.x - 6, prop.y + 6, prop.x + 6, prop.y - 6)

@@ -42,7 +42,9 @@ function BiomeResolver.resolveChunk(worldSeed, chunkX, chunkY)
     }
 
     for _, dir in ipairs(directions) do
-        local neighborValue = love.math.noise((chunkX + dir.dx) * NOISE_SCALE + seedOffset, (chunkY + dir.dy) * NOISE_SCALE - seedOffset)
+        local neighborNoiseX = (chunkX + dir.dx) * NOISE_SCALE + seedOffset
+        local neighborNoiseY = (chunkY + dir.dy) * NOISE_SCALE - seedOffset
+        local neighborValue = love.math.noise(neighborNoiseX, neighborNoiseY)
         neighborSamples[#neighborSamples + 1] = {
             dx = dir.dx,
             dy = dir.dy,
