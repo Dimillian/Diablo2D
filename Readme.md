@@ -60,3 +60,8 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 ## Development Checklist
 - Run `luacheck .` before committing to catch lint issues.
 - After modifying loot tables, affixes, or rarity weights, generate a balance snapshot with `lua tools/item_balance_report.lua 5000`. The script prints per-rarity stat averages plus overall rarity/slot drop percentages so you can compare against previous runs.
+
+## Testing
+- Install [busted](https://olivinelabs.com/busted/) (via `luarocks install busted`) to enable the Lua test harness.
+- From the project root, run `busted spec` to execute the fast unit tests. The initial suite covers aggro helpers using a lightweight ECS stub so combat/AI regressions surface quickly.
+- Place shared testing utilities under `spec/support/` and require `spec.spec_helper` from new specs to inherit the project package paths.
