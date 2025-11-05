@@ -53,14 +53,6 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 - Scenes: `I` toggles inventory, `K` toggles the skills spellbook, `Esc` closes modal scenes.
 - Debug: press `T` to toggle debug overlays.
 
-## Roadmap
-- Expand ECS scaffolding: additional components (combat stats, damage), and system registry utilities.
-- Extend foe types: create specialized foe factories with varied detection ranges, speeds, and behaviors.
-- Hook inventory/equipment data into the UI, add interactions (equip, drop, compare).
-- Prototype procedural world generation and encounter spawning.
-- Grow the spell roster, add skill synergies, and tune mana costs/cooldowns.
-- Integrate potion economy with vendors and refine progression pacing as more regions unlock.
-
 ## Development Checklist
 - Run `luacheck .` before committing to catch lint issues.
 - After modifying loot tables, affixes, or rarity weights, generate a balance snapshot with `lua tools/item_balance_report.lua 5000`. The script prints per-rarity stat averages plus overall rarity/slot drop percentages so you can compare against previous runs.
