@@ -66,6 +66,7 @@ describe("systems.core.loot_drops", function()
             targetId = "foe_1",
             position = { x = 100, y = 100 },
             sourceId = player.id,
+            foeTypeId = "slow",
         }
 
         lootDropSystem.update(world, 0)

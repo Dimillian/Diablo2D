@@ -1,6 +1,11 @@
 ---Inventory layout helper module
 ---Calculates all layout positions and dimensions for inventory UI
 local InventoryLayout = {}
+local BOTTOM_BAR_HEIGHT = 44
+local BOTTOM_BAR_PADDING = 16
+
+InventoryLayout.BOTTOM_BAR_HEIGHT = BOTTOM_BAR_HEIGHT
+InventoryLayout.BOTTOM_BAR_PADDING = BOTTOM_BAR_PADDING
 
 -- Utility function to snap values to nearest pixel for crisp rendering
 local function snap(value)
@@ -72,10 +77,8 @@ end
 ---@return table Layout table with grid dimensions and positions
 function InventoryLayout.calculateInventoryLayout(inventoryHeaderX, headerY, panelX, panelY, panelWidth, panelHeight)
     local gridSlotSize = 40 -- 32px sprite + 8px padding
-    local gridCols = 8
-    local gridRows = 6
-    local gridMaxSlots = gridCols * gridRows
     local gridSpacing = 4
+    local gridCols = 8
     local gridStartX = inventoryHeaderX
     local gridStartY = snap(headerY + 32)
     local gridAreaWidth = snap((panelX + panelWidth) - 40 - gridStartX)
@@ -84,8 +87,21 @@ function InventoryLayout.calculateInventoryLayout(inventoryHeaderX, headerY, pan
     local availableCols = math.floor((gridAreaWidth + gridSpacing) / (gridSlotSize + gridSpacing))
     if availableCols < gridCols then
         gridCols = math.max(1, availableCols)
-        gridMaxSlots = gridCols * gridRows
     end
+
+    local panelBottom = panelY + panelHeight
+    local barReserve = BOTTOM_BAR_HEIGHT + BOTTOM_BAR_PADDING
+    local gridBottomLimit = snap(panelBottom - barReserve)
+    if gridBottomLimit <= gridStartY + gridSlotSize then
+        gridBottomLimit = gridStartY + gridSlotSize + gridSpacing
+    end
+
+    local availableHeight = gridBottomLimit - gridStartY
+    local rowsThatFit = math.max(1, math.floor((availableHeight + gridSpacing) / (gridSlotSize + gridSpacing)))
+    local gridRows = rowsThatFit
+    local gridMaxSlots = gridCols * gridRows
+    local gridHeight = gridRows * gridSlotSize + (gridRows - 1) * gridSpacing
+    local computedGridBottom = gridStartY + gridHeight
 
     return {
         gridSlotSize = gridSlotSize,
@@ -98,6 +114,8 @@ function InventoryLayout.calculateInventoryLayout(inventoryHeaderX, headerY, pan
         gridAreaWidth = gridAreaWidth,
         panelY = panelY,
         panelHeight = panelHeight,
+        gridBottomLimit = gridBottomLimit,
+        gridComputedBottom = computedGridBottom,
     }
 end
 

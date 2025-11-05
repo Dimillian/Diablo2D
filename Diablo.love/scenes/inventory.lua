@@ -2,14 +2,13 @@ local ItemGenerator = require("items.generator")
 local EquipmentHelper = require("systems.helpers.equipment")
 
 -- Import render systems
-local renderInventoryBackground = require("systems.render.inventory_background")
-local renderInventoryEquipment = require("systems.render.inventory_equipment")
-local renderInventoryStats = require("systems.render.inventory_stats")
-local renderInventoryGrid = require("systems.render.inventory_grid")
-local renderInventoryGold = require("systems.render.inventory_gold")
-local renderInventoryPotions = require("systems.render.inventory_potions")
-local renderInventoryHelp = require("systems.render.inventory_help")
-local renderInventoryTooltip = require("systems.render.inventory_tooltip")
+local renderInventoryBackground = require("systems.render.inventory.background")
+local renderInventoryEquipment = require("systems.render.inventory.equipment")
+local renderInventoryStats = require("systems.render.inventory.stats")
+local renderInventoryGrid = require("systems.render.inventory.grid")
+local renderInventoryBottomBar = require("systems.render.inventory.bottom_bar")
+local renderInventoryHelp = require("systems.render.inventory.help")
+local renderInventoryTooltip = require("systems.render.inventory.tooltip")
 
 local InventoryScene = {}
 InventoryScene.__index = InventoryScene
@@ -32,8 +31,7 @@ function InventoryScene.new(opts)
                 renderInventoryEquipment.draw,
                 renderInventoryStats.draw,
                 renderInventoryGrid.draw,
-                renderInventoryGold.draw,
-                renderInventoryPotions.draw,
+                renderInventoryBottomBar.draw,
                 renderInventoryHelp.draw,
                 renderInventoryTooltip.draw,
             },

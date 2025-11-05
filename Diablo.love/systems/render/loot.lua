@@ -68,16 +68,6 @@ function renderLootSystem.draw(world)
             end
         end
 
-        if hasGold then
-            love.graphics.setColor(0, 0, 0, 0.75)
-            love.graphics.rectangle("fill", x, y + h - 12, w, 12)
-
-            love.graphics.setColor(1, 0.9, 0.4, 1)
-            local text = tostring(lootable.gold)
-            local textWidth = love.graphics.getFont():getWidth(text)
-            love.graphics.print(text, x + (w - textWidth) / 2, y + h - 12)
-        end
-
         love.graphics.pop()
 
         ::continue::

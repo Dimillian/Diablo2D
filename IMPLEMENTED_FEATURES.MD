@@ -145,11 +145,11 @@ Players now carry dedicated health and mana potions, consume them from the botto
 - Draws potion icons with hotkey badges, live counts, disabled states when full/out-of-stock, and cooldown shading.
 - Stores hitboxes for click detection so the world scene can trigger consumption.
 
-**✅ `systems/render/inventory_grid.lua` & `scenes/inventory.lua` - UPDATED**
-- Track the rendered grid bounds each frame so downstream systems can anchor extra UI (like potion info) below the item slots.
+**✅ `systems/render/inventory/grid.lua` & `scenes/inventory.lua` - UPDATED**
+- Reserve space for a dedicated bottom bar and expose panel bounds so auxiliary UI can anchor cleanly beneath the item slots.
 
-**✅ `systems/render/inventory_potions.lua` - NEW**
-- Renders a dedicated potion section beneath the inventory grid with icons and `current / max` counts for both potion types.
+**✅ `systems/render/inventory/bottom_bar.lua` - NEW**
+- Draws the inventory bottom bar with gold, health potion, and mana potion counts using icon+value pairs separated by dividers.
 
 #### Additional Notes
 
@@ -380,7 +380,6 @@ All core functionality has been implemented:
   - `renderSkillsBackground` - Draws background panel
   - `renderSkillsList` - Lists all available spells with icons and mana costs
   - `renderSkillsEquipped` - Shows 4 equipped skill slots
-  - `renderSkillsHelp` - Shows help text
   - `renderSkillsTooltip` - Shows spell details on hover
 - Mouse click handling:
   - Click on available spell: Equips to first empty slot (or replaces first slot if all full)
@@ -392,23 +391,20 @@ All core functionality has been implemented:
 
 #### Rendering Systems
 
-**✅ `systems/render/skills_background.lua` - IMPLEMENTED**
+**✅ `systems/render/skills/background.lua` - IMPLEMENTED**
 - Draws background panel for skills scene
 
-**✅ `systems/render/skills_list.lua` - IMPLEMENTED**
+**✅ `systems/render/skills/list.lua` - IMPLEMENTED**
 - Lists all available spells with icons, labels, and mana costs
 - Handles hover highlighting
 - Stores clickable rects for equip functionality
 
-**✅ `systems/render/skills_equipped.lua` - IMPLEMENTED**
+**✅ `systems/render/skills/equipped.lua` - IMPLEMENTED**
 - Renders 4 equipped skill slots
 - Shows skill icons when equipped
 - Handles click detection for unequipping
 
-**✅ `systems/render/skills_help.lua` - IMPLEMENTED**
-- Displays help text for skills scene
-
-**✅ `systems/render/skills_tooltip.lua` - IMPLEMENTED**
+**✅ `systems/render/skills/tooltip.lua` - IMPLEMENTED**
 - Shows spell details on hover
 
 **✅ `systems/render/render_world.lua` - NO CHANGES NEEDED**

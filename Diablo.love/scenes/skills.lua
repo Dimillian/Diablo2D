@@ -1,9 +1,9 @@
 local Spells = require("data.spells")
 
-local renderSkillsBackground = require("systems.render.skills_background")
-local renderSkillsList = require("systems.render.skills_list")
-local renderSkillsEquipped = require("systems.render.skills_equipped")
-local renderSkillsTooltip = require("systems.render.skills_tooltip")
+local renderSkillsBackground = require("systems.render.skills.background")
+local renderSkillsList = require("systems.render.skills.list")
+local renderSkillsEquipped = require("systems.render.skills.equipped")
+local renderSkillsTooltip = require("systems.render.skills.tooltip")
 
 local SkillsScene = {}
 SkillsScene.__index = SkillsScene

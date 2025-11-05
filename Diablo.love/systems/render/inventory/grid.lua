@@ -117,6 +117,7 @@ function renderInventoryGrid.draw(scene)
 
     -- Draw inventory grid (empty slots + filled slots)
     local lastSlotBottom = gridLayout.gridStartY + gridLayout.gridSlotSize
+    local bottomLimit = gridLayout.gridBottomLimit or (panelLayout.panelY + panelLayout.panelHeight - 60)
 
     for slotIndex = 1, gridLayout.gridMaxSlots do
         local col = ((slotIndex - 1) % gridLayout.gridCols)
@@ -129,8 +130,8 @@ function renderInventoryGrid.draw(scene)
             gridLayout.gridStartY + row * (gridLayout.gridSlotSize + gridLayout.gridSpacing)
         )
 
-        -- Stop if we go beyond panel bounds
-        if slotY + gridLayout.gridSlotSize > gridLayout.panelY + gridLayout.panelHeight - 60 then
+        -- Stop if we go beyond reserved grid area
+        if slotY + gridLayout.gridSlotSize > bottomLimit then
             break
         end
 
@@ -145,6 +146,14 @@ function renderInventoryGrid.draw(scene)
         if slotY + gridLayout.gridSlotSize > lastSlotBottom then
             lastSlotBottom = slotY + gridLayout.gridSlotSize
         end
+    end
+
+    if gridLayout.gridComputedBottom and gridLayout.gridComputedBottom > lastSlotBottom then
+        lastSlotBottom = gridLayout.gridComputedBottom
+    end
+
+    if lastSlotBottom > bottomLimit then
+        lastSlotBottom = bottomLimit
     end
 
     scene.inventoryGridBottomY = lastSlotBottom
