@@ -40,8 +40,13 @@ function Foe.new(opts)
         }),
         detection = createDetection({
             range = config.detectionRange,
+            leashExtension = config.leashExtension,
         }),
-        foe = createFoeTag(),
+        foe = createFoeTag({
+            type = opts.foeType,
+            packId = opts.packId,
+            packAggro = opts.packAggro,
+        }),
         health = createHealth({
             max = config.health,
             current = config.health,

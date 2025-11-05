@@ -12,7 +12,9 @@ foeTypes.types = {
         damageMin = 2,
         damageMax = 4,
         attackSpeed = 0.5,
-        range = 50
+        range = 50,
+        leashExtension = 350,
+        packAggro = false,
     },
     medium = {
         name = "Medium Foe",
@@ -25,6 +27,8 @@ foeTypes.types = {
         damageMax = 5,
         attackSpeed = 0.8,
         range = 50,
+        leashExtension = 350,
+        packAggro = false,
     },
     aggressive = {
         name = "Aggressive Foe",
@@ -37,6 +41,8 @@ foeTypes.types = {
         damageMax = 7,
         attackSpeed = 1.0,
         range = 50,
+        leashExtension = 350,
+        packAggro = true,
     },
 }
 

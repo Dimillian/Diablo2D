@@ -1,5 +1,6 @@
 local vector = require("modules.vector")
 local coordinates = require("systems.helpers.coordinates")
+local Aggro = require("systems.helpers.aggro")
 local createRecentlyDamaged = require("components.recently_damaged")
 local createDead = require("components.dead")
 local projectileEffects = require("systems.helpers.projectile_effects")
@@ -145,6 +146,10 @@ function collisionSystem.update(world, _dt)
                 position = { x = foeCenterX, y = foeCenterY },
                 time = world.time or 0,
             })
+
+            if owner and owner.playerControlled and (foe.health.current or 0) > 0 then
+                Aggro.ensureAggro(world, foe, owner.id, { target = owner })
+            end
 
             if foe.health.current <= 0 then
                 handleDeath(world, foe, owner, { x = foeCenterX, y = foeCenterY })
