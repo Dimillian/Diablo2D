@@ -15,6 +15,10 @@ function Projectile.new(opts)
 
     local size = opts.size or 12
 
+    local primaryColor = opts.color or { 1.0, 0.4, 0.1, 1 }
+    local secondaryColor = opts.secondaryColor or { 1.0, 0.6, 0.2, 0.9 }
+    local coreColor = opts.coreColor or { 1.0, 0.9, 0.7, 1 }
+
     local entity = {
         id = opts.id or ("projectile_" .. math.random(10000, 99999)),
         position = createPosition({
@@ -31,8 +35,11 @@ function Projectile.new(opts)
             vy = opts.vy or 0,
         }),
         renderable = createRenderable({
-            kind = "circle",
-            color = opts.color or { 1.0, 0.4, 0.1, 1 },
+            kind = opts.renderKind or "circle",
+            color = primaryColor,
+            secondaryColor = secondaryColor,
+            coreColor = coreColor,
+            sparkleSeed = opts.sparkleSeed or math.random(),
         }),
         projectile = createProjectile({
             spellId = opts.spellId,
@@ -44,6 +51,9 @@ function Projectile.new(opts)
             lifetime = opts.lifetime,
             maxLifetime = opts.lifetime,
             speed = opts.speed or 300,
+            impactDuration = opts.impactDuration,
+            directionX = opts.vx or 0,
+            directionY = opts.vy or 0,
         }),
     }
 

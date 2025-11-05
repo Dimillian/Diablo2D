@@ -1,8 +1,12 @@
 local function createFoeTag(opts)
     opts = opts or {}
+    local typeId = opts.typeId or opts.type
 
     return {
-        typeId = opts.typeId,
+        type = opts.type or typeId,
+        typeId = typeId,
+        packId = opts.packId,
+        packAggro = opts.packAggro or false,
     }
 end
 

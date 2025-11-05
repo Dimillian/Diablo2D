@@ -29,6 +29,8 @@ local function spawnGroup(world, centerX, centerY, foeType)
     local config = foeTypes.getConfig(foeType)
     local groupSize = math.random(SPAWN_CONFIG.minFoesPerGroup, SPAWN_CONFIG.maxFoesPerGroup)
     local foes = {}
+    world.nextFoePackId = (world.nextFoePackId or 0) + 1
+    local packId = world.nextFoePackId
 
     for i = 1, groupSize do
         -- Spread foes around the group center
@@ -44,6 +46,9 @@ local function spawnGroup(world, centerX, centerY, foeType)
             height = 20,
             config = config,
             foeTypeId = foeType,
+            foeType = foeType,
+            packId = packId,
+            packAggro = config.packAggro,
         })
 
         world:addEntity(foe)

@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  busted:
+    name: Run unit tests
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install luarocks
+          luarocks install busted
+
+      - name: Run busted suite
+        run: |
+          busted spec
