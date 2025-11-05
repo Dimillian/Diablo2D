@@ -1,6 +1,6 @@
 local Spells = require("data.spells")
 local Resources = require("modules.resources")
-local SkillsLayout = require("systems.helpers.skills_layout")
+local WindowLayout = require("systems.helpers.window_layout")
 
 local renderSkillsEquipped = {}
 
@@ -45,10 +45,23 @@ function renderSkillsEquipped.draw(scene)
         return
     end
 
-    local layout = scene._skillsLayout or {}
-    local panel = layout.panel or SkillsLayout.calculatePanel()
-    local columns = layout.columns or SkillsLayout.calculateColumns(panel)
-    local slotsLayout = SkillsLayout.calculateSlotsArea(panel, columns)
+    local layout = scene.windowLayout
+    if not layout then
+        return
+    end
+
+    local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.35 })
+    layout.columns = columns
+    local leftColumn = columns.left
+    local padding = layout.padding
+    local font = love.graphics.getFont()
+
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print("Equipped", leftColumn.x, leftColumn.y)
+
+    local slotsTop = leftColumn.y + font:getHeight() + padding * 0.5
+    local slotSize = 52
+    local slotSpacing = 18
 
     scene.slotRects = {}
     scene.hoveredSlotIndex = nil
@@ -56,14 +69,14 @@ function renderSkillsEquipped.draw(scene)
     local mouseX, mouseY = love.mouse.getPosition()
 
     for slotIndex = 1, 4 do
-        local slotX = slotsLayout.x
-        local slotY = slotsLayout.y + (slotIndex - 1) * (slotsLayout.slotSize + slotsLayout.slotSpacing)
+        local slotX = leftColumn.x
+        local slotY = slotsTop + (slotIndex - 1) * (slotSize + slotSpacing)
 
         local rect = {
             x = slotX,
             y = slotY,
-            w = slotsLayout.slotSize,
-            h = slotsLayout.slotSize,
+            w = slotSize,
+            h = slotSize,
             index = slotIndex,
         }
 

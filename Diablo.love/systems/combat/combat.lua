@@ -1,5 +1,6 @@
 local vector = require("modules.vector")
 local Targeting = require("systems.helpers.targeting")
+local Aggro = require("systems.helpers.aggro")
 local createRecentlyDamaged = require("components.recently_damaged")
 local createDead = require("components.dead")
 local createKnockback = require("components.knockback")
@@ -103,6 +104,7 @@ local function handleDeath(world, target, attacker, position)
     end
 
     local foeLevel = target.level or 1
+    local foeTypeId = target.foeTypeId or (target.foe and target.foe.typeId)
 
     pushCombatEvent(world, {
         type = "death",
@@ -110,6 +112,7 @@ local function handleDeath(world, target, attacker, position)
         sourceId = attacker and attacker.id or nil,
         position = position and { x = position.x, y = position.y } or nil,
         foeLevel = foeLevel,
+        foeTypeId = foeTypeId,
         time = world.time or 0,
     })
 
@@ -208,6 +211,10 @@ function combatSystem.update(world, dt)
             position = { x = targetX, y = targetY },
             time = world.time or 0,
         })
+
+        if target.foe and entity.playerControlled and (target.health.current or 0) > 0 then
+            Aggro.ensureAggro(world, target, entity.id, { target = entity })
+        end
 
         if target.health.current <= 0 then
             handleDeath(world, target, entity, { x = targetX, y = targetY })

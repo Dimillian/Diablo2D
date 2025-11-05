@@ -3,6 +3,7 @@ local foeTypes = {}
 -- Define 3 foe types with different characteristics
 foeTypes.types = {
     slow = {
+        id = "slow",
         name = "Slow Foe",
         speed = 60,
         detectionRange = 100,
@@ -12,9 +13,14 @@ foeTypes.types = {
         damageMin = 2,
         damageMax = 4,
         attackSpeed = 0.5,
-        range = 50
+        range = 50,
+        leashExtension = 350,
+        packAggro = false,
+        goldRange = { min = 3, max = 8 },
+        goldChance = 0.6,
     },
     medium = {
+        id = "medium",
         name = "Medium Foe",
         speed = 100,
         detectionRange = 180,
@@ -25,8 +31,13 @@ foeTypes.types = {
         damageMax = 5,
         attackSpeed = 0.8,
         range = 50,
+        leashExtension = 350,
+        packAggro = false,
+        goldRange = { min = 5, max = 12 },
+        goldChance = 0.7,
     },
     aggressive = {
+        id = "aggressive",
         name = "Aggressive Foe",
         speed = 150,
         detectionRange = 250,
@@ -37,6 +48,10 @@ foeTypes.types = {
         damageMax = 7,
         attackSpeed = 1.0,
         range = 50,
+        leashExtension = 350,
+        packAggro = true,
+        goldRange = { min = 8, max = 18 },
+        goldChance = 0.75,
     },
 }
 

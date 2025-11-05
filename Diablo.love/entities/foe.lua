@@ -6,6 +6,11 @@ Foe.__index = Foe
 ---@return Foe
 function Foe.new(opts)
     local config = opts.config
+    local typeId = opts.foeTypeId or (config and config.id)
+    local packAggro = opts.packAggro
+    if packAggro == nil and config then
+        packAggro = config.packAggro
+    end
 
     local createPosition = require("components.position")
     local createSize = require("components.size")
@@ -40,8 +45,14 @@ function Foe.new(opts)
         }),
         detection = createDetection({
             range = config.detectionRange,
+            leashExtension = config.leashExtension,
         }),
-        foe = createFoeTag(),
+        foe = createFoeTag({
+            type = opts.foeType or typeId,
+            typeId = typeId,
+            packId = opts.packId,
+            packAggro = packAggro,
+        }),
         health = createHealth({
             max = config.health,
             current = config.health,
@@ -52,6 +63,7 @@ function Foe.new(opts)
             baseDamageMin = config.damageMin,
             baseDamageMax = config.damageMax,
         }),
+        foeTypeId = typeId,
     }
 
     return setmetatable(entity, Foe)

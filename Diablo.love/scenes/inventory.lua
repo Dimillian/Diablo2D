@@ -2,13 +2,12 @@ local ItemGenerator = require("items.generator")
 local EquipmentHelper = require("systems.helpers.equipment")
 
 -- Import render systems
-local renderInventoryBackground = require("systems.render.inventory_background")
-local renderInventoryEquipment = require("systems.render.inventory_equipment")
-local renderInventoryStats = require("systems.render.inventory_stats")
-local renderInventoryGrid = require("systems.render.inventory_grid")
-local renderInventoryPotions = require("systems.render.inventory_potions")
-local renderInventoryHelp = require("systems.render.inventory_help")
-local renderInventoryTooltip = require("systems.render.inventory_tooltip")
+local renderWindowChrome = require("systems.render.window.chrome")
+local renderInventoryEquipment = require("systems.render.inventory.equipment")
+local renderInventoryStats = require("systems.render.inventory.stats")
+local renderInventoryGrid = require("systems.render.inventory.grid")
+local renderInventoryBottomBar = require("systems.render.inventory.bottom_bar")
+local renderInventoryTooltip = require("systems.render.inventory.tooltip")
 
 local InventoryScene = {}
 InventoryScene.__index = InventoryScene
@@ -25,16 +24,34 @@ function InventoryScene.new(opts)
         world = world,
         title = opts.title or "Inventory",
         kind = "inventory",
+        windowLayoutOptions = {
+            widthRatio = 0.8,
+            heightRatio = 0.8,
+            headerHeight = 76,
+            footerHeight = renderInventoryBottomBar.HEIGHT,
+            footerSpacing = 20,
+            padding = 28,
+        },
         systems = {
             draw = {
-                renderInventoryBackground.draw,
+                renderWindowChrome.draw,
                 renderInventoryEquipment.draw,
                 renderInventoryStats.draw,
                 renderInventoryGrid.draw,
-                renderInventoryPotions.draw,
-                renderInventoryHelp.draw,
+                renderInventoryBottomBar.draw,
                 renderInventoryTooltip.draw,
             },
+        },
+    }
+
+    scene.windowChromeConfig = {
+        title = scene.title,
+        icon = "bag",
+        columns = {
+            leftRatio = 0.43,
+            spacing = 28,
+            topInset = 0,
+            bottomInset = 24,
         },
     }
 
@@ -46,6 +63,8 @@ function InventoryScene:enter()
     self.itemRects = {}
     self.equipmentRects = {}
     self.inventoryGridBottomY = nil
+    self.windowRects = {}
+    self.windowLayout = nil
 end
 
 -- luacheck: ignore 212/self
@@ -64,6 +83,7 @@ function InventoryScene:draw()
     self.itemRects = {}
     self.equipmentRects = {}
     self.inventoryGridBottomY = nil
+    self.windowRects = {}
 
     -- Iterate through all render systems
     for _, system in ipairs(self.systems.draw) do
@@ -96,6 +116,19 @@ function InventoryScene:mousepressed(x, y, button)
 
     local player = self.world:getPlayer()
     if not player then
+        return
+    end
+
+    local closeRect = self.windowRects and self.windowRects.close
+    if closeRect
+        and x >= closeRect.x
+        and x <= closeRect.x + closeRect.w
+        and y >= closeRect.y
+        and y <= closeRect.y + closeRect.h
+    then
+        if self.world.sceneManager then
+            self.world.sceneManager:pop()
+        end
         return
     end
 

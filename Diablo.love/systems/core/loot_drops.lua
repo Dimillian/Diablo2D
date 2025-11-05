@@ -2,9 +2,11 @@ local ItemGenerator = require("items.generator")
 local ItemData = require("data.items")
 local LootEntity = require("entities.loot")
 local Tooltips = require("systems.helpers.tooltips")
+local FoeTypes = require("data.foe_types")
 
 local lootDropSystem = {}
 local TWO_PI = math.pi * 2
+local ITEM_DROP_CHANCE = 0.7
 
 local function buildLootRenderable(item)
     local color = Tooltips.getRarityColor(item and item.rarity) or Tooltips.rarityColors.common
@@ -48,6 +50,16 @@ local function rollScatterData(opts)
     }
 end
 
+local function selectGoldIcon(amount)
+    if amount <= 2 then
+        return "gold/gold_1"
+    elseif amount <= 6 then
+        return "gold/gold_2"
+    end
+
+    return "gold/gold_3"
+end
+
 local function hasPotionCapacity(potions, potionTypeId)
     if not potions then
         return true
@@ -88,7 +100,11 @@ local function createPotionItem(potionTypeId)
     }
 end
 
-local function spawnPotionLoot(world, event, basePosition)
+local function spawnPotionLoot(world, event)
+    if not event.position then
+        return
+    end
+
     local potionDropChance = 0.15
     if math.random() >= potionDropChance then
         return
@@ -119,8 +135,8 @@ local function spawnPotionLoot(world, event, basePosition)
     local potionColor = potionTypeId == "health_potion" and { 0.8, 0.2, 0.2, 1 } or { 0.2, 0.4, 0.9, 1 }
     local width = 26
     local height = 26
-    local baseX = basePosition.x - width / 2
-    local baseY = basePosition.y - height / 2
+    local baseX = event.position.x - width / 2
+    local baseY = event.position.y - height / 2
     local scatter = rollScatterData({
         minSpeed = 70,
         maxSpeed = 150,
@@ -156,7 +172,11 @@ local function spawnPotionLoot(world, event, basePosition)
     world:addEntity(potionLoot)
 end
 
-local function spawnLoot(world, event)
+local function spawnItemLoot(world, event)
+    if math.random() >= ITEM_DROP_CHANCE then
+        return
+    end
+
     if not event.position then
         return
     end
@@ -200,8 +220,82 @@ local function spawnLoot(world, event)
     })
 
     world:addEntity(loot)
+end
 
-    spawnPotionLoot(world, event, event.position)
+local function spawnGoldLoot(world, event)
+    if not event.position or not event.foeTypeId then
+        return
+    end
+
+    local foeConfig = FoeTypes.getConfig(event.foeTypeId)
+    if not foeConfig then
+        return
+    end
+
+    local goldRange = foeConfig.goldRange
+    if not goldRange then
+        return
+    end
+
+    local chance = foeConfig.goldChance or 0.6
+    if math.random() >= chance then
+        return
+    end
+
+    local minGold = math.max(0, math.floor(goldRange.min or 0))
+    local maxGold = math.max(minGold, math.floor(goldRange.max or minGold))
+
+    if maxGold <= 0 then
+        return
+    end
+
+    local amount = math.random(minGold, maxGold)
+    if amount <= 0 then
+        return
+    end
+
+    local width = 26
+    local height = 26
+    local baseX = event.position.x - width / 2
+    local baseY = event.position.y - height / 2
+    local scatter = rollScatterData({
+        minSpeed = 80,
+        maxSpeed = 180,
+        offsetDistanceMin = 12,
+        offsetDistanceMax = 32,
+    })
+
+    local iconName = selectGoldIcon(amount)
+    local iconPath = string.format("resources/icons/%s.png", iconName)
+
+    local loot = LootEntity.new({
+        x = baseX + scatter.offsetX,
+        y = baseY + scatter.offsetY,
+        width = width,
+        height = height,
+        renderable = {
+            kind = "loot",
+            color = { 0.95, 0.78, 0.2, 1 },
+        },
+        lootable = {
+            gold = amount,
+            pickupRadius = 128,
+            source = event.lootSource or event.targetId,
+            despawnTimer = 45,
+            maxDespawnTimer = 45,
+            iconPath = iconPath,
+            goldIcon = iconName,
+        },
+        lootScatter = {
+            vx = scatter.vx,
+            vy = scatter.vy,
+            friction = scatter.friction,
+            maxDuration = scatter.maxDuration,
+            stopThreshold = scatter.stopThreshold,
+        },
+    })
+
+    world:addEntity(loot)
 end
 
 function lootDropSystem.update(world, _dt)
@@ -211,8 +305,10 @@ function lootDropSystem.update(world, _dt)
     end
 
     for _, event in ipairs(events) do
-        if event.type == "death" and not event._spawnedLoot then
-            spawnLoot(world, event)
+        if event.type == "death" and event.foeTypeId and not event._spawnedLoot then
+            spawnItemLoot(world, event)
+            spawnPotionLoot(world, event)
+            spawnGoldLoot(world, event)
             event._spawnedLoot = true
         end
     end

@@ -24,6 +24,7 @@ function EquipmentHelper.ensure(player)
 
     player.inventory = player.inventory or { items = {} }
     player.inventory.items = player.inventory.items or {}
+    player.inventory.gold = player.inventory.gold or 0
 
     player.equipment = player.equipment or {}
     for _, slot in ipairs(equipmentSlots) do

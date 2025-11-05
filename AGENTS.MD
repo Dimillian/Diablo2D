@@ -30,6 +30,12 @@
 - Target HUD: `ui_target` frame keeps padded spacing between enemy name text and health bar to remain legible across font sizes.
 - Keep systems decoupled and data-driven to enable procedural content later.
 
+## Testing Workflow
+- Unit tests live under `spec/` and run with busted (`busted spec`). Keep this command green before pushing, and add specs alongside gameplay changes so regressions surface quickly.
+- The test harness uses lightweight stubs in `spec/system_helpers/` for Love2D dependencies (coordinates, projectile effects, item generator, loot entity, tooltips, etc.). When production code starts depending on a new helper or module, add/extend a stub rather than requiring Love APIs in specs.
+- Fast TestWorld/ECS doubles support combat, AI, projectile, experience, and loot flows. Lean on these helpers when adding new systems so you can assert on component mutations and combat events directly.
+- Update README + this file if the test command or setup steps change (e.g., new rocks, environment variables) so future agents can execute the suite without guesswork.
+
 ### Combat System Notes
 - Player attacks originate in `systems/player_attack.lua`: it ticks the targeting helper, respects attack speed modifiers, and raises a `combat.queuedAttack` payload when the mouse button is held and the foe is in range.
 - `systems/foe_attack.lua` handles enemy offensive cadence: it checks chase targets, archetype melee ranges, and cooldowns before queueing retaliatory swings so enemies feel threatening without overwhelming the player.
@@ -50,7 +56,10 @@
 - `components/potions.lua` tracks per-type counts, max stacks, shared cooldown metadata, and is attached to the player at creation.
 - `systems/core/potion_consumption.lua` decays cooldown timers, gates usage on resource caps, and responds to hotkeys `1`/`2` or HUD clicks registered by `systems/ui/bottom_bar.lua`.
 - Potion loot is generated in `systems/core/loot_drops.lua` (15% drop chance) and routed through `systems/core/loot_pickup.lua`, which increments stacks while respecting caps and skipping equipment flows.
-- HUD: `systems/ui/bottom_bar.lua` draws potion boxes with cooldown shading/badges and stores clickable rects; the inventory scene renders potion counts via `systems/render/inventory_potions.lua`.
+- HUD: `systems/ui/bottom_bar.lua` draws potion boxes with cooldown shading/badges and stores clickable rects; the inventory scene mirrors those counts in a consolidated bar via `systems/render/inventory/bottom_bar.lua`.
+- Modal windows (inventory, skills, future overlays) share a common scaffold: `systems/helpers/window_layout.lua` computes panel/header/footer metrics and `systems/render/window/chrome.lua` draws the dim backdrop, header (icon + title), column divider, and close button hitbox. Individual scenes stash `scene.windowLayoutOptions`/`scene.windowChromeConfig` so child renderers can snap to `scene.windowLayout.content`, `scene.windowLayout.columns`, or `scene.windowLayout.footer`.
+- Inventory content renderers live under `systems/render/inventory/` (equipment grid, stats list, item grid, footer) and assume the chrome system seeded `scene.windowLayout`; they publish slot rectangles for interaction and surface shared areas to siblings via `layout.inventoryAreas`.
+- Skills scene renderers live under `systems/render/skills/` and similarly rely on the window layout columns for equipped slots vs spell list, reusing the same close-button plumbing.
 
 ### Experience & Leveling
 - Player spawns with `components/experience.lua` (level, current XP, target XP) configured by `modules/leveling.lua`.

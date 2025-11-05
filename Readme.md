@@ -1,6 +1,6 @@
 # Diablo2D
 
-![Diablo2D](screenshot.png)
+![Diablo2D](images/image3.png)
 
 Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua. Explore a procedurally generated forest, fight roaming packs, level up, and gather randomized gear before visiting small towns for vendors and respite.
 
@@ -24,11 +24,15 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 - Debug mode: press 't' to toggle debug visualization (detection circles). Debug status displayed in top-right corner.
 - UI: health bar positioned in bottom-left corner; debug status in top-right corner; mouse look direction arrow indicator around player; enemy target frame with improved spacing between name and health bar.
 
+![Diablo2D](images/image2.png)
+
 ### Combat Snapshot
 - `systems/combat.lua` processes queued attacks, clamps melee overlap, applies stat-aware damage/crit rolls, and raises structured events (`damage`, `death`) that other systems subscribe to.
 - Damage events spawn floating numbers with crit tinting while death events hand off to the loot dropper, which rolls gear via the shared item generator and ensures pickup metadata (radius, timers) is attached.
 - `systems/player_attack.lua` integrates the targeting helper to maintain a sticky foe selection, enforces attack cooldowns derived from player stats, and only queues strikes when the foe is alive and within effective range.
 - Loot pickup respects cursor hover plus proximity before pulling items into the inventory/equipment helper, preventing accidental looting mid-fight.
+
+![Diablo2D](images/image1.png)
 
 ## Feature Targets (Early Phase)
 - Procedural forest overworld with repeatable runs.
@@ -49,14 +53,11 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 - Scenes: `I` toggles inventory, `K` toggles the skills spellbook, `Esc` closes modal scenes.
 - Debug: press `T` to toggle debug overlays.
 
-## Roadmap
-- Expand ECS scaffolding: additional components (combat stats, damage), and system registry utilities.
-- Extend foe types: create specialized foe factories with varied detection ranges, speeds, and behaviors.
-- Hook inventory/equipment data into the UI, add interactions (equip, drop, compare).
-- Prototype procedural world generation and encounter spawning.
-- Grow the spell roster, add skill synergies, and tune mana costs/cooldowns.
-- Integrate potion economy with vendors and refine progression pacing as more regions unlock.
-
 ## Development Checklist
 - Run `luacheck .` before committing to catch lint issues.
 - After modifying loot tables, affixes, or rarity weights, generate a balance snapshot with `lua tools/item_balance_report.lua 5000`. The script prints per-rarity stat averages plus overall rarity/slot drop percentages so you can compare against previous runs.
+
+## Testing
+- Install [busted](https://olivinelabs.com/busted/) (via `luarocks install busted`) to enable the Lua test harness.
+- From the project root, run `busted spec` to execute the fast unit tests. The initial suite covers aggro helpers using a lightweight ECS stub so combat/AI regressions surface quickly.
+- Place shared testing utilities under `spec/support/` and require `spec.spec_helper` from new specs to inherit the project package paths.
