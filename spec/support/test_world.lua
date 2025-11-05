@@ -28,6 +28,7 @@ end
 function TestWorld:addComponent(entityId, componentName, component)
     local entity = self.entities[entityId]
     if not entity then
+        -- luacheck: globals error
         error(("Unknown entity '%s'"):format(tostring(entityId)))
     end
 

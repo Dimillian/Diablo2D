@@ -5,7 +5,16 @@ if repoRoot then
     if projectRoot then
         local sourcePath = projectRoot .. "/Diablo.love/?.lua"
         local initPath = projectRoot .. "/Diablo.love/?/init.lua"
-        package.path = string.format("%s;%s;%s", sourcePath, initPath, package.path)
+        local specPath = projectRoot .. "/spec/?.lua"
+        local specInitPath = projectRoot .. "/spec/?/init.lua"
+        package.path = string.format(
+            "%s;%s;%s;%s;%s",
+            sourcePath,
+            initPath,
+            specPath,
+            specInitPath,
+            package.path
+        )
     end
 end
 
@@ -15,16 +24,19 @@ local entityCounter = 0
 local function buildEntity(opts)
     opts = opts or {}
     entityCounter = entityCounter + 1
-    return {
+    local entity = {
         id = opts.id or ("entity_" .. tostring(entityCounter)),
         position = opts.position or { x = 0, y = 0 },
         size = opts.size or { w = 20, h = 20 },
-        detection = opts.detection,
-        foe = opts.foe,
-        chase = opts.chase,
-        inactive = opts.inactive,
-        playerControlled = opts.playerControlled,
     }
+
+    for key, value in pairs(opts) do
+        if key ~= "id" and key ~= "position" and key ~= "size" then
+            entity[key] = value
+        end
+    end
+
+    return entity
 end
 
 return {

@@ -30,6 +30,12 @@
 - Target HUD: `ui_target` frame keeps padded spacing between enemy name text and health bar to remain legible across font sizes.
 - Keep systems decoupled and data-driven to enable procedural content later.
 
+## Testing Workflow
+- Unit tests live under `spec/` and run with busted (`busted spec`). Keep this command green before pushing, and add specs alongside gameplay changes so regressions surface quickly.
+- The test harness uses lightweight stubs in `spec/system_helpers/` for Love2D dependencies (coordinates, projectile effects, item generator, loot entity, tooltips, etc.). When production code starts depending on a new helper or module, add/extend a stub rather than requiring Love APIs in specs.
+- Fast TestWorld/ECS doubles support combat, AI, projectile, experience, and loot flows. Lean on these helpers when adding new systems so you can assert on component mutations and combat events directly.
+- Update README + this file if the test command or setup steps change (e.g., new rocks, environment variables) so future agents can execute the suite without guesswork.
+
 ### Combat System Notes
 - Player attacks originate in `systems/player_attack.lua`: it ticks the targeting helper, respects attack speed modifiers, and raises a `combat.queuedAttack` payload when the mouse button is held and the foe is in range.
 - `systems/foe_attack.lua` handles enemy offensive cadence: it checks chase targets, archetype melee ranges, and cooldowns before queueing retaliatory swings so enemies feel threatening without overwhelming the player.
