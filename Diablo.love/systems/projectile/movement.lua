@@ -1,5 +1,6 @@
 local vector = require("modules.vector")
 local coordinates = require("systems.helpers.coordinates")
+local projectileEffects = require("systems.helpers.projectile_effects")
 
 local projectileMovementSystem = {}
 
@@ -10,14 +11,26 @@ end
 function projectileMovementSystem.update(world, dt)
     local projectiles = world:queryEntities({ "projectile", "position", "movement", "size" })
     for _, projectile in ipairs(projectiles) do
+        local projectileComponent = projectile.projectile
+        if not projectileComponent then
+            goto continue
+        end
+
+        if projectileComponent.state == "impact" then
+            projectileComponent.impactTimer = (projectileComponent.impactTimer or 0) - dt
+            if projectileComponent.impactTimer <= 0 then
+                removeProjectile(world, projectile)
+            end
+            goto continue
+        end
+
         if projectile.inactive then
             goto continue
         end
 
-        local projectileComponent = projectile.projectile
         projectileComponent.lifetime = (projectileComponent.lifetime or 0) - dt
         if projectileComponent.lifetime and projectileComponent.lifetime <= 0 then
-            removeProjectile(world, projectile)
+            projectileEffects.triggerImpact(world, projectile)
             goto continue
         end
 
@@ -38,7 +51,7 @@ function projectileMovementSystem.update(world, dt)
         end
 
         if not targetX or not targetY then
-            removeProjectile(world, projectile)
+            projectileEffects.triggerImpact(world, projectile)
             goto continue
         end
 
@@ -54,6 +67,9 @@ function projectileMovementSystem.update(world, dt)
         projectile.movement.vx = ndx
         projectile.movement.vy = ndy
         projectile.movement.speed = projectileComponent.speed or projectile.movement.speed
+
+        projectileComponent.lastDirectionX = ndx
+        projectileComponent.lastDirectionY = ndy
 
         ::continue::
     end
