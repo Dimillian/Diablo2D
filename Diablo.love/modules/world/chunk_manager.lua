@@ -86,7 +86,7 @@ function ChunkManager.ensureChunkLoaded(manager, world, chunkX, chunkY)
     }
 
     if manager.spawnResolver then
-        manager.spawnResolver.populateChunk(world, chunk)
+        manager.spawnResolver:populateChunk(world, chunk)
     end
 
     world.generatedChunks[key] = chunk
