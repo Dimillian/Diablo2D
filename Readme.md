@@ -1,6 +1,6 @@
 # Diablo2D
 
-![Diablo2D](screenshot.png)
+![Diablo2D](images/image3.png)
 
 Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua. Explore a procedurally generated forest, fight roaming packs, level up, and gather randomized gear before visiting small towns for vendors and respite.
 
@@ -24,11 +24,15 @@ Top-down action roguelike inspired by Diablo, built with LÖVE (Love2D) and Lua.
 - Debug mode: press 't' to toggle debug visualization (detection circles). Debug status displayed in top-right corner.
 - UI: health bar positioned in bottom-left corner; debug status in top-right corner; mouse look direction arrow indicator around player; enemy target frame with improved spacing between name and health bar.
 
+![Diablo2D](images/image2.png)
+
 ### Combat Snapshot
 - `systems/combat.lua` processes queued attacks, clamps melee overlap, applies stat-aware damage/crit rolls, and raises structured events (`damage`, `death`) that other systems subscribe to.
 - Damage events spawn floating numbers with crit tinting while death events hand off to the loot dropper, which rolls gear via the shared item generator and ensures pickup metadata (radius, timers) is attached.
 - `systems/player_attack.lua` integrates the targeting helper to maintain a sticky foe selection, enforces attack cooldowns derived from player stats, and only queues strikes when the foe is alive and within effective range.
 - Loot pickup respects cursor hover plus proximity before pulling items into the inventory/equipment helper, preventing accidental looting mid-fight.
+
+![Diablo2D](images/image1.png)
 
 ## Feature Targets (Early Phase)
 - Procedural forest overworld with repeatable runs.
