@@ -18,6 +18,14 @@ local function applyLevelUpBonuses(player)
                 player.baseStats.damageMax = (player.baseStats.damageMax or 8) + 1
                 player.baseStats.defense = (player.baseStats.defense or 2) + 1
                 player.baseStats.health = (player.baseStats.health or 50) + 5
+                player.baseStats.mana = (player.baseStats.mana or 25) + 5
+            end
+
+            if player.health then
+                player.health.current = player.health.max
+            end
+            if player.mana then
+                player.mana.current = player.mana.max
             end
         else
             break
