@@ -42,6 +42,7 @@ local SpawnResolver = require("modules.world.spawn_resolver")
 local ECS = require("modules.ecs")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
+local SceneKinds = require("modules.scene_kinds")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -53,7 +54,7 @@ function WorldScene.new(opts)
     opts = opts or {}
 
     local scene = {
-        kind = "world",
+        kind = SceneKinds.WORLD,
         camera = { x = 0, y = 0 },
         debugMode = false, -- Debug toggle flag
         time = 0,

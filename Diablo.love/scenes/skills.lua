@@ -1,6 +1,7 @@
 local Spells = require("data.spells")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
+local SceneKinds = require("modules.scene_kinds")
 
 local renderWindowChrome = require("systems.render.window.chrome")
 local renderSkillsList = require("systems.render.skills.list")
@@ -42,7 +43,7 @@ function SkillsScene.new(opts)
 
     local scene = {
         world = world,
-        kind = "skills",
+        kind = SceneKinds.SKILLS,
         title = "Skills",
         availableSpells = Spells.getAll(),
         windowLayoutOptions = {

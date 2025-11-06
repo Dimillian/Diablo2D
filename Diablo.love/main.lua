@@ -5,6 +5,7 @@ local WorldScene = require("scenes.world")
 local SceneManager = require("modules.scene_manager")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
+local SceneKinds = require("modules.scene_kinds")
 
 local sceneManager = SceneManager.new()
 
@@ -155,13 +156,13 @@ function love.keypressed(key)
         local currentScene = sceneManager:current()
 
         -- If pause menu is open, close it
-        if currentScene and currentScene.kind == "pause" then
+        if currentScene and currentScene.kind == SceneKinds.PAUSE then
             sceneManager:pop()
             return
         end
 
         -- If controls window is open, close it
-        if currentScene and currentScene.kind == "controls" then
+        if currentScene and currentScene.kind == SceneKinds.CONTROLS then
             sceneManager:pop()
             return
         end
@@ -169,14 +170,17 @@ function love.keypressed(key)
         -- Check if inventory or skills windows are open
         local hasOtherWindows = false
         for _, scene in sceneManager:each() do
-            if scene.kind == "inventory" or scene.kind == "skills" or scene.kind == "controls" then
+            if scene.kind == SceneKinds.INVENTORY
+                or scene.kind == SceneKinds.SKILLS
+                or scene.kind == SceneKinds.CONTROLS
+            then
                 hasOtherWindows = true
                 break
             end
         end
 
         -- If on world scene and no other windows, open pause menu
-        if currentScene and currentScene.kind == "world" and not hasOtherWindows then
+        if currentScene and currentScene.kind == SceneKinds.WORLD and not hasOtherWindows then
             local PauseScene = require("scenes.pause")
             sceneManager:push(
                 PauseScene.new({
@@ -235,7 +239,7 @@ end
 
 function love.quit()
     local scene = sceneManager:current()
-    if scene and scene.kind == "world" and scene.serializeState then
+    if scene and scene.kind == SceneKinds.WORLD and scene.serializeState then
         saveWorldState(scene:serializeState())
     end
 end

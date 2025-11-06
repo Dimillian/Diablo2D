@@ -1,6 +1,7 @@
 local renderPauseMenu = require("systems.render.pause.menu")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
+local SceneKinds = require("modules.scene_kinds")
 
 local PauseScene = {}
 PauseScene.__index = PauseScene
@@ -10,7 +11,7 @@ function PauseScene.new(opts)
 
     local scene = {
         world = opts.world,
-        kind = "pause",
+        kind = SceneKinds.PAUSE,
         title = "Pause Menu",
         systems = {
             draw = {

@@ -4,6 +4,7 @@ local InventoryScene = require("scenes.inventory")
 local SkillsScene = require("scenes.skills")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
+local SceneKinds = require("modules.scene_kinds")
 
 local SceneManager = {}
 SceneManager.__index = SceneManager
@@ -49,7 +50,7 @@ function SceneManager:toggleInventory(key)
     local action = InputManager.getActionForKey(key)
 
     if action == InputActions.CLOSE_MODAL then
-        if top and top.kind == "inventory" then
+        if top and top.kind == SceneKinds.INVENTORY then
             self:pop()
         end
         return
@@ -59,12 +60,12 @@ function SceneManager:toggleInventory(key)
         return
     end
 
-    if top and top.kind == "inventory" then
+    if top and top.kind == SceneKinds.INVENTORY then
         self:pop()
         return
     end
 
-    local world = self:findByKind("world")
+    local world = self:findByKind(SceneKinds.WORLD)
     if not world then
         return
     end
@@ -81,7 +82,7 @@ function SceneManager:toggleSkills(key)
     local action = InputManager.getActionForKey(key)
 
     if action == InputActions.CLOSE_MODAL then
-        if top and top.kind == "skills" then
+        if top and top.kind == SceneKinds.SKILLS then
             self:pop()
         end
         return
@@ -91,12 +92,12 @@ function SceneManager:toggleSkills(key)
         return
     end
 
-    if top and top.kind == "skills" then
+    if top and top.kind == SceneKinds.SKILLS then
         self:pop()
         return
     end
 
-    local world = self:findByKind("world")
+    local world = self:findByKind(SceneKinds.WORLD)
     if not world then
         return
     end
@@ -113,7 +114,7 @@ function SceneManager:togglePause(key)
     local action = InputManager.getActionForKey(key)
 
     if action == InputActions.CLOSE_MODAL then
-        if top and top.kind == "pause" then
+        if top and top.kind == SceneKinds.PAUSE then
             self:pop()
         end
         return

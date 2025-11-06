@@ -3,6 +3,7 @@ local renderControlsList = require("systems.render.controls.list")
 local renderScrollbar = require("systems.render.window.scrollbar")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
+local SceneKinds = require("modules.scene_kinds")
 
 local ControlsScene = {}
 ControlsScene.__index = ControlsScene
@@ -13,7 +14,7 @@ function ControlsScene.new(opts)
 
     local scene = {
         world = world,
-        kind = "controls",
+        kind = SceneKinds.CONTROLS,
         title = "Controls",
         windowLayoutOptions = {
             widthRatio = 0.6,

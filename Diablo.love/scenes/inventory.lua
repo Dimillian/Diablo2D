@@ -2,6 +2,7 @@ local ItemGenerator = require("items.generator")
 local EquipmentHelper = require("systems.helpers.equipment")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
+local SceneKinds = require("modules.scene_kinds")
 
 -- Import render systems
 local renderWindowChrome = require("systems.render.window.chrome")
@@ -25,7 +26,7 @@ function InventoryScene.new(opts)
     local scene = {
         world = world,
         title = opts.title or "Inventory",
-        kind = "inventory",
+        kind = SceneKinds.INVENTORY,
         windowLayoutOptions = {
             widthRatio = 0.8,
             heightRatio = 0.9,
