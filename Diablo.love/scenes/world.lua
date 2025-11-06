@@ -21,6 +21,7 @@ local foeAttackSystem = require("systems.combat.foe_attack")
 local spawnSystem = require("systems.ai.spawn")
 local chunkActivationSystem = require("systems.world.chunk_activation")
 local cullingSystem = require("systems.core.culling")
+local uiNotificationsSystem = require("systems.ui.notifications")
 local uiMain = require("systems.ui.main")
 local uiMinimapSystem = require("systems.ui.ui_minimap")
 local cameraSystem = require("systems.core.camera")
@@ -66,6 +67,7 @@ function WorldScene.new(opts)
         systemHelpers = {
             coordinates = require("systems.helpers.coordinates"),
         },
+        notifications = {},
         input = {
             mouse = {
                 primary = {
@@ -82,6 +84,7 @@ function WorldScene.new(opts)
         systems = {
             update = {
                 mouseInputSystem.update,
+                uiNotificationsSystem.update,
                 starterGearSystem.update,
                 applyStatsSystem.update,
                 manaRegenSystem.update,
@@ -119,6 +122,7 @@ function WorldScene.new(opts)
                 renderDamageNumbersSystem.draw,
                 uiMain.draw,
                 uiMinimapSystem.draw,
+                uiNotificationsSystem.draw,
                 uiTargetSystem.draw,
                 lootTooltipSystem.draw,
             },

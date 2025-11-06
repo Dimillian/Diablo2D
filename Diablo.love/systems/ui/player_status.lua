@@ -6,17 +6,6 @@ function uiPlayerStatus.draw(world)
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 
-    -- Draw debug info near the minimap
-    love.graphics.push("all")
-    love.graphics.setColor(1, 1, 1, 0.8)
-    local debugText = world.debugMode and "Debug: ON" or "Debug: OFF"
-    local minimapSize = require("systems.ui.ui_minimap").CONFIG and require("systems.ui.ui_minimap").CONFIG.size or 150
-    local textWidth = love.graphics.getFont():getWidth(debugText)
-    local textX = screenWidth - minimapSize - 16 + (minimapSize - textWidth) / 2
-    local textY = 16 + minimapSize + 8
-    love.graphics.print(debugText, textX, textY)
-    love.graphics.pop()
-
     -- Draw health bar in bottom left corner
     local player = world:getPlayer()
     if not player then
