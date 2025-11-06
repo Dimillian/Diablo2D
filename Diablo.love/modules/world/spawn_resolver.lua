@@ -4,8 +4,6 @@ local foeTypes = require("data.foe_types")
 local SpawnResolver = {}
 SpawnResolver.__index = SpawnResolver
 
-local DEFAULT_CHUNK_SIZE = 512
-
 local function weightedChoice(rng, weights)
     if not weights or #weights == 0 then
         return nil
@@ -46,7 +44,7 @@ end
 function SpawnResolver.new(opts)
     opts = opts or {}
     local resolver = {
-        chunkSize = opts.chunkSize or DEFAULT_CHUNK_SIZE,
+        chunkSize = opts.chunkSize,
         foeChunkSpawnChance = opts.foeChunkSpawnChance or 0.6,
         groupsPerChunk = opts.groupsPerChunk or { min = 1, max = 2 },
         foesPerGroup = opts.foesPerGroup or { min = 2, max = 4 },

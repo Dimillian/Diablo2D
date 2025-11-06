@@ -26,7 +26,7 @@ function InventoryScene.new(opts)
         kind = "inventory",
         windowLayoutOptions = {
             widthRatio = 0.8,
-            heightRatio = 0.8,
+            heightRatio = 0.9,
             headerHeight = 76,
             footerHeight = renderInventoryBottomBar.HEIGHT,
             footerSpacing = 20,

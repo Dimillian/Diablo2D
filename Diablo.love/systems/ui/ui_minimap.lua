@@ -4,7 +4,7 @@ local biomes = require("data.biomes")
 local minimapSystem = {}
 
 local CONFIG = {
-    size = 200,
+    size = 150,
     padding = 16,
     borderColor = { 0.1, 0.1, 0.1, 0.8 },
     backgroundColor = { 0, 0, 0, 0.45 },
@@ -112,16 +112,22 @@ function minimapSystem.draw(world)
 
     local width = love.graphics.getWidth()
     local mapSize = CONFIG.size
+    local mapRadius = mapSize / 2
     local x = width - mapSize - CONFIG.padding
     local y = CONFIG.padding
-    local centerX = x + mapSize / 2
-    local centerY = y + mapSize / 2
+    local centerX = x + mapRadius
+    local centerY = y + mapRadius
 
     love.graphics.push("all")
-    love.graphics.setColor(CONFIG.backgroundColor)
-    love.graphics.rectangle("fill", x, y, mapSize, mapSize, 6, 6)
 
-    love.graphics.setScissor(x, y, mapSize, mapSize)
+    love.graphics.stencil(function()
+        love.graphics.circle("fill", centerX, centerY, mapRadius)
+    end, "replace", 1)
+    love.graphics.setStencilTest("greater", 0)
+
+    love.graphics.setColor(CONFIG.backgroundColor)
+    love.graphics.circle("fill", centerX, centerY, mapRadius)
+
     local manager = world.chunkManager
     local chunkSize = manager.chunkSize
     local radius = manager.activeRadius or 0
@@ -143,10 +149,10 @@ function minimapSystem.draw(world)
         love.graphics.circle("fill", centerX, centerY, 4)
     end
 
-    love.graphics.setScissor()
+    love.graphics.setStencilTest()
     love.graphics.setColor(CONFIG.borderColor)
     love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", x, y, mapSize, mapSize, 6, 6)
+    love.graphics.circle("line", centerX, centerY, mapRadius)
 
     love.graphics.pop()
 end

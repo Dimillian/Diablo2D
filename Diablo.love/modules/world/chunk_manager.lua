@@ -5,9 +5,6 @@ local BiomeResolver = require("modules.world.biome_resolver")
 local ChunkManager = {}
 ChunkManager.__index = ChunkManager
 
-local DEFAULT_CHUNK_SIZE = 512
-local DEFAULT_ACTIVE_RADIUS = 2
-
 local HASH_PRIME_X = 73856093
 local HASH_PRIME_Y = 19349663
 local HASH_PRIME_SEED = 83492791
@@ -57,8 +54,8 @@ function ChunkManager.new(opts)
     opts = opts or {}
 
     local manager = {
-        chunkSize = opts.chunkSize or DEFAULT_CHUNK_SIZE,
-        activeRadius = opts.activeRadius or DEFAULT_ACTIVE_RADIUS,
+        chunkSize = opts.chunkSize,
+        activeRadius = opts.activeRadius,
         worldSeed = opts.worldSeed or 0,
         spawnResolver = opts.spawnResolver,
         startBiomeId = opts.startBiomeId,
