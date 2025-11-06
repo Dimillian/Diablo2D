@@ -150,7 +150,43 @@ function love.keypressed(key)
 
     local action = InputManager.getActionForKey(key)
 
+    -- Handle pause menu first (only if no other windows are open)
     if action == InputActions.CLOSE_MODAL then
+        local currentScene = sceneManager:current()
+
+        -- If pause menu is open, close it
+        if currentScene and currentScene.kind == "pause" then
+            sceneManager:pop()
+            return
+        end
+
+        -- If controls window is open, close it
+        if currentScene and currentScene.kind == "controls" then
+            sceneManager:pop()
+            return
+        end
+
+        -- Check if inventory or skills windows are open
+        local hasOtherWindows = false
+        for _, scene in sceneManager:each() do
+            if scene.kind == "inventory" or scene.kind == "skills" or scene.kind == "controls" then
+                hasOtherWindows = true
+                break
+            end
+        end
+
+        -- If on world scene and no other windows, open pause menu
+        if currentScene and currentScene.kind == "world" and not hasOtherWindows then
+            local PauseScene = require("scenes.pause")
+            sceneManager:push(
+                PauseScene.new({
+                    world = currentScene,
+                })
+            )
+            return
+        end
+
+        -- Otherwise, close inventory/skills windows
         sceneManager:toggleInventory(key)
         sceneManager:toggleSkills(key)
         return
@@ -187,6 +223,13 @@ function love.mousereleased(x, y, button, istouch, presses)
     local scene = sceneManager:current()
     if scene and scene.mousereleased then
         scene:mousereleased(x, y, button, istouch, presses)
+    end
+end
+
+function love.wheelmoved(x, y)
+    local scene = sceneManager:current()
+    if scene and scene.wheelmoved then
+        scene:wheelmoved(x, y)
     end
 end
 

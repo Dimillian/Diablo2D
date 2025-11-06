@@ -415,13 +415,12 @@ function WorldScene:keypressed(key)
         return
     end
 
-    local handledSkill = false
     if action == InputActions.SKILL_1
         or action == InputActions.SKILL_2
         or action == InputActions.SKILL_3
         or action == InputActions.SKILL_4
     then
-        handledSkill = skillCastSystem.handleKeypress(self, action)
+        skillCastSystem.handleKeypress(self, action)
     end
 
     if action == InputActions.POTION_HEALTH or action == InputActions.POTION_MANA then

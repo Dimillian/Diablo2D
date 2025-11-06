@@ -153,7 +153,7 @@ function skillCastSystem.handleKeypress(world, action)
 
     local InputActions = require("modules.input_actions")
 
-    local slotIndex = nil
+    local slotIndex
     if action == InputActions.SKILL_1 then
         slotIndex = 1
     elseif action == InputActions.SKILL_2 then

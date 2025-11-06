@@ -49,7 +49,6 @@ local defaultBindings = {
 local bindings = {}
 
 -- Track pressed keys for this frame (reset each update)
-local pressedKeys = {}
 local pressedKeysThisFrame = {}
 
 ---Initialize bindings with defaults (called automatically on first use)
@@ -163,14 +162,14 @@ end
 ---@param key string|number Love2D key string or mouse button number
 function InputManager.registerPress(key)
     pressedKeysThisFrame[key] = true
-    pressedKeys[key] = true
 end
 
 ---Register a key release.
 ---Called by main.lua love.keyreleased and love.mousereleased handlers.
 ---@param key string|number Love2D key string or mouse button number
 function InputManager.registerRelease(key)
-    pressedKeys[key] = false
+    -- Key release tracking (currently unused but kept for future use)
+    pressedKeysThisFrame[key] = false
 end
 
 ---Update input state (call once per frame).

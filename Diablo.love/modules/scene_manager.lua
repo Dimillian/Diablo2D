@@ -2,6 +2,8 @@
 ---Handles scene lifecycle (enter/exit) and provides utilities for finding scenes by kind.
 local InventoryScene = require("scenes.inventory")
 local SkillsScene = require("scenes.skills")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
 
 local SceneManager = {}
 SceneManager.__index = SceneManager
@@ -44,15 +46,16 @@ end
 
 function SceneManager:toggleInventory(key)
     local top = self:current()
+    local action = InputManager.getActionForKey(key)
 
-    if key == "escape" then
+    if action == InputActions.CLOSE_MODAL then
         if top and top.kind == "inventory" then
             self:pop()
         end
         return
     end
 
-    if key ~= "i" then
+    if action ~= InputActions.TOGGLE_INVENTORY then
         return
     end
 
@@ -75,15 +78,16 @@ end
 
 function SceneManager:toggleSkills(key)
     local top = self:current()
+    local action = InputManager.getActionForKey(key)
 
-    if key == "escape" then
+    if action == InputActions.CLOSE_MODAL then
         if top and top.kind == "skills" then
             self:pop()
         end
         return
     end
 
-    if key ~= "k" then
+    if action ~= InputActions.TOGGLE_SKILLS then
         return
     end
 
@@ -102,6 +106,25 @@ function SceneManager:toggleSkills(key)
             world = world,
         })
     )
+end
+
+function SceneManager:togglePause(key)
+    local top = self:current()
+    local action = InputManager.getActionForKey(key)
+
+    if action == InputActions.CLOSE_MODAL then
+        if top and top.kind == "pause" then
+            self:pop()
+        end
+        return
+    end
+end
+
+function SceneManager:wheelmoved(x, y)
+    local scene = self:current()
+    if scene and scene.wheelmoved then
+        scene:wheelmoved(x, y)
+    end
 end
 
 return SceneManager
