@@ -1,5 +1,7 @@
 local ItemGenerator = require("items.generator")
 local EquipmentHelper = require("systems.helpers.equipment")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
 
 -- Import render systems
 local renderWindowChrome = require("systems.render.window.chrome")
@@ -96,7 +98,8 @@ end
 ---Handle keyboard input
 ---@param key string Key pressed
 function InventoryScene:keypressed(key)
-    if key == "g" then
+    local action = InputManager.getActionForKey(key)
+    if action == InputActions.INVENTORY_TEST_ITEM then
         local item = ItemGenerator.generate()
         local player = self.world:getPlayer()
         if player then

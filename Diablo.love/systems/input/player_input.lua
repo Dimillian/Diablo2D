@@ -1,4 +1,6 @@
 local vector = require("modules.vector")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
 
 local playerInputSystem = {}
 
@@ -9,16 +11,16 @@ function playerInputSystem.update(world, _dt)
         local movement = entity.movement
         local dx, dy = 0, 0
 
-        if love.keyboard.isDown("left", "a", "q") then
+        if InputManager.isActionDown(InputActions.MOVE_LEFT) then
             dx = dx - 1
         end
-        if love.keyboard.isDown("right", "d") then
+        if InputManager.isActionDown(InputActions.MOVE_RIGHT) then
             dx = dx + 1
         end
-        if love.keyboard.isDown("up", "w", "z") then
+        if InputManager.isActionDown(InputActions.MOVE_UP) then
             dy = dy - 1
         end
-        if love.keyboard.isDown("down", "s") then
+        if InputManager.isActionDown(InputActions.MOVE_DOWN) then
             dy = dy + 1
         end
 

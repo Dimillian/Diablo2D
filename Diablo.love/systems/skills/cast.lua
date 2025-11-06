@@ -144,15 +144,25 @@ end
 
 ---Handle key press for skill hotkeys.
 ---@param world table
----@param key string
+---@param action string Action name constant from InputActions
 ---@return boolean handled
-function skillCastSystem.handleKeypress(world, key)
+function skillCastSystem.handleKeypress(world, action)
     if not world then
         return false
     end
 
-    local slotIndex = tonumber(key)
-    if not slotIndex or slotIndex < 1 or slotIndex > 4 then
+    local InputActions = require("modules.input_actions")
+
+    local slotIndex = nil
+    if action == InputActions.SKILL_1 then
+        slotIndex = 1
+    elseif action == InputActions.SKILL_2 then
+        slotIndex = 2
+    elseif action == InputActions.SKILL_3 then
+        slotIndex = 3
+    elseif action == InputActions.SKILL_4 then
+        slotIndex = 4
+    else
         return false
     end
 

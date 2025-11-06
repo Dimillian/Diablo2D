@@ -40,6 +40,8 @@ local manaRegenSystem = require("systems.core.mana_regen")
 local ChunkManager = require("modules.world.chunk_manager")
 local SpawnResolver = require("modules.world.spawn_resolver")
 local ECS = require("modules.ecs")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -378,45 +380,51 @@ function WorldScene:getPlayer()
 end
 
 function WorldScene:keypressed(key)
-    if key == "t" then
+    local action = InputManager.getActionForKey(key)
+
+    if action == InputActions.DEBUG_TOGGLE then
         self.debugMode = not self.debugMode
         return
     end
 
-    if key == "f5" then
+    if action == InputActions.RESET_WORLD then
         self:resetWorld()
         return
     end
 
-    if key == "f7" then
+    if action == InputActions.DEBUG_CHUNKS then
         self.debugChunks = not self.debugChunks
         return
     end
 
-    if key == "m" then
+    if action == InputActions.MINIMAP_TOGGLE then
         self.minimapState = self.minimapState or { visible = true, zoom = 1 }
         self.minimapState.visible = not self.minimapState.visible
         return
     end
 
-    if key == "[" then
+    if action == InputActions.MINIMAP_ZOOM_OUT then
         self.minimapState = self.minimapState or { visible = true, zoom = 1 }
         self.minimapState.zoom = math.max(0.5, (self.minimapState.zoom or 1) - 0.1)
         return
     end
 
-    if key == "]" then
+    if action == InputActions.MINIMAP_ZOOM_IN then
         self.minimapState = self.minimapState or { visible = true, zoom = 1 }
         self.minimapState.zoom = math.min(2.5, (self.minimapState.zoom or 1) + 0.1)
         return
     end
 
     local handledSkill = false
-    if key == "1" or key == "2" or key == "3" or key == "4" then
-        handledSkill = skillCastSystem.handleKeypress(self, key)
+    if action == InputActions.SKILL_1
+        or action == InputActions.SKILL_2
+        or action == InputActions.SKILL_3
+        or action == InputActions.SKILL_4
+    then
+        handledSkill = skillCastSystem.handleKeypress(self, action)
     end
 
-    if key == "5" or key == "6" then
+    if action == InputActions.POTION_HEALTH or action == InputActions.POTION_MANA then
         potionConsumptionSystem.handleKeypress(self, key)
     end
 end

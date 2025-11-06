@@ -106,9 +106,13 @@ function potionConsumptionSystem.update(world, dt)
 end
 
 function potionConsumptionSystem.handleKeypress(world, key)
-    if key == "5" then
+    local InputManager = require("modules.input_manager")
+    local InputActions = require("modules.input_actions")
+
+    local action = InputManager.getActionForKey(key)
+    if action == InputActions.POTION_HEALTH then
         return consume(world, "health")
-    elseif key == "6" then
+    elseif action == InputActions.POTION_MANA then
         return consume(world, "mana")
     end
 

@@ -3,6 +3,8 @@
 
 local WorldScene = require("scenes.world")
 local SceneManager = require("modules.scene_manager")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
 
 local sceneManager = SceneManager.new()
 
@@ -127,6 +129,8 @@ function love.load()
 end
 
 function love.update(dt)
+    InputManager.update()
+
     local scene = sceneManager:current()
     if scene and scene.update then
         scene:update(dt)
@@ -142,18 +146,22 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    if key == "escape" then
+    InputManager.registerPress(key)
+
+    local action = InputManager.getActionForKey(key)
+
+    if action == InputActions.CLOSE_MODAL then
         sceneManager:toggleInventory(key)
         sceneManager:toggleSkills(key)
         return
     end
 
-    if key == "i" then
+    if action == InputActions.TOGGLE_INVENTORY then
         sceneManager:toggleInventory(key)
         return
     end
 
-    if key == "k" then
+    if action == InputActions.TOGGLE_SKILLS then
         sceneManager:toggleSkills(key)
         return
     end
@@ -165,6 +173,8 @@ function love.keypressed(key)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
+    InputManager.registerPress(button)
+
     local scene = sceneManager:current()
     if scene and scene.mousepressed then
         scene:mousepressed(x, y, button, istouch, presses)
@@ -172,6 +182,8 @@ function love.mousepressed(x, y, button, istouch, presses)
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
+    InputManager.registerRelease(button)
+
     local scene = sceneManager:current()
     if scene and scene.mousereleased then
         scene:mousereleased(x, y, button, istouch, presses)

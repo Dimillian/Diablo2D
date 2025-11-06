@@ -1,4 +1,6 @@
 local Spells = require("data.spells")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
 
 local renderWindowChrome = require("systems.render.window.chrome")
 local renderSkillsList = require("systems.render.skills.list")
@@ -103,7 +105,8 @@ function SkillsScene:draw()
 end
 
 function SkillsScene:keypressed(key)
-    if key ~= "k" and key ~= "escape" then
+    local action = InputManager.getActionForKey(key)
+    if action ~= InputActions.TOGGLE_SKILLS and action ~= InputActions.CLOSE_MODAL then
         return
     end
 

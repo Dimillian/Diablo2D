@@ -1,8 +1,11 @@
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
+
 local mouseMovementSystem = {}
 
 function mouseMovementSystem.update(scene, _dt)
     -- Only process if right mouse button is held
-    if not love.mouse.isDown(2) then
+    if not InputManager.isActionDown(InputActions.MOUSE_SECONDARY) then
         return
     end
 
