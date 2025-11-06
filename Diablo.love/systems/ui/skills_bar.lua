@@ -62,6 +62,17 @@ function uiSkillsBarSystem.draw(world)
         local slotX = startX + (slotIndex - 1) * (SLOT_SIZE + SLOT_SPACING)
         local slotY = startY
 
+        -- Draw hotkey number above the slot
+        local font = love.graphics.getFont()
+        local hotkeyText = tostring(slotIndex)
+        local textWidth = font:getWidth(hotkeyText)
+        local textHeight = font:getHeight()
+        local textX = slotX + (SLOT_SIZE - textWidth) / 2
+        local textY = slotY - textHeight - 4
+
+        love.graphics.setColor(0.95, 0.9, 0.7, 1)
+        love.graphics.print(hotkeyText, textX, textY)
+
         drawSlotBackground(slotX, slotY)
         drawSlotBorder(slotX, slotY)
 

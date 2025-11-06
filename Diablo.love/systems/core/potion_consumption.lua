@@ -106,9 +106,9 @@ function potionConsumptionSystem.update(world, dt)
 end
 
 function potionConsumptionSystem.handleKeypress(world, key)
-    if key == "1" then
+    if key == "5" then
         return consume(world, "health")
-    elseif key == "2" then
+    elseif key == "6" then
         return consume(world, "mana")
     end
 

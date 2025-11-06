@@ -192,7 +192,7 @@ function uiBottomBar.draw(world)
         rectField = "bottomBarHealthPotionRect",
         opts = {
             shadow = true,
-            badgeText = "1",
+            badgeText = "5",
             badgeSize = 16,
             iconPadding = 8,
             disabled = healthDisabled,
@@ -208,7 +208,7 @@ function uiBottomBar.draw(world)
         rectField = "bottomBarManaPotionRect",
         opts = {
             shadow = true,
-            badgeText = "2",
+            badgeText = "6",
             badgeSize = 16,
             iconPadding = 8,
             disabled = manaDisabled,

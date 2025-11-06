@@ -416,7 +416,7 @@ function WorldScene:keypressed(key)
         handledSkill = skillCastSystem.handleKeypress(self, key)
     end
 
-    if (key == "1" or key == "2") and not handledSkill then
+    if key == "5" or key == "6" then
         potionConsumptionSystem.handleKeypress(self, key)
     end
 end
