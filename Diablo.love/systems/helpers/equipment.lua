@@ -146,4 +146,39 @@ function EquipmentHelper.computeTotalStats(player)
     return total
 end
 
+---Get equipped items for tooltip comparison based on an item's slot
+---@param player table Player entity
+---@param itemSlot string The slot ID of the item to compare (e.g., "weapon", "ring", "head")
+---@return table Array of equipped items to compare against
+function EquipmentHelper.getEquippedItemsForComparison(player, itemSlot)
+    if not player or not itemSlot then
+        return {}
+    end
+
+    local _, equipment = EquipmentHelper.ensure(player)
+    if not equipment then
+        return {}
+    end
+
+    local equippedItems = {}
+
+    -- Handle ring slots: compare against both ringLeft and ringRight
+    if itemSlot == "ring" then
+        if equipment.ringLeft then
+            equippedItems[#equippedItems + 1] = equipment.ringLeft
+        end
+        if equipment.ringRight then
+            equippedItems[#equippedItems + 1] = equipment.ringRight
+        end
+    else
+        -- For other slots, get the equipped item if it exists
+        local equippedItem = equipment[itemSlot]
+        if equippedItem then
+            equippedItems[#equippedItems + 1] = equippedItem
+        end
+    end
+
+    return equippedItems
+end
+
 return EquipmentHelper

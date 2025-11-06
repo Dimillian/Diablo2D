@@ -37,29 +37,12 @@ function renderInventoryTooltip.draw(scene)
     end
 
     -- Only show comparison for inventory items (not already-equipped items)
-    local equippedItems = {}
     local isEquippedItem = not isInventoryItem
+    local equippedItems = {}
     if isInventoryItem and hovered.slot then
         local player = scene.world:getPlayer()
         if player then
-            local _, equipment = EquipmentHelper.ensure(player)
-            if equipment then
-                -- Handle ring slots: compare against both ringLeft and ringRight
-                if hovered.slot == "ring" then
-                    if equipment.ringLeft then
-                        equippedItems[#equippedItems + 1] = equipment.ringLeft
-                    end
-                    if equipment.ringRight then
-                        equippedItems[#equippedItems + 1] = equipment.ringRight
-                    end
-                else
-                    -- For other slots, get the equipped item if it exists
-                    local equippedItem = equipment[hovered.slot]
-                    if equippedItem then
-                        equippedItems[#equippedItems + 1] = equippedItem
-                    end
-                end
-            end
+            equippedItems = EquipmentHelper.getEquippedItemsForComparison(player, hovered.slot)
         end
     end
 

@@ -1,4 +1,5 @@
 local Tooltips = require("systems.helpers.tooltips")
+local EquipmentHelper = require("systems.helpers.equipment")
 
 local lootTooltipSystem = {}
 
@@ -38,10 +39,19 @@ function lootTooltipSystem.draw(world)
     local lootable = hovered.lootable
 
     if lootable.item then
+        -- Collect equipped items for comparison - only compare against the same slot
+        local player = world:getPlayer()
+        local equippedItems = {}
+        if player and lootable.item.slot then
+            equippedItems = EquipmentHelper.getEquippedItemsForComparison(player, lootable.item.slot)
+        end
+
         Tooltips.drawItemTooltip(lootable.item, pointerX, pointerY, {
             offsetX = 18,
             offsetY = 18,
             clamp = true,
+            equippedItems = equippedItems,
+            isEquippedItem = false,
         })
         return
     end
