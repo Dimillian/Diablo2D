@@ -35,8 +35,9 @@ function renderFoeSystem.draw(world)
             totalFrames = 8
             local attackTime = entity.combat and entity.combat.attackAnimationTime or 0
             local swingDuration = entity.combat and entity.combat.swingDuration or 0.3
-            -- luacheck: ignore
-            local col = spriteRenderer.getAnimationFrame(animationState, walkTime, attackTime, swingDuration, totalFrames)
+            local col = spriteRenderer.getAnimationFrame(
+                animationState, walkTime, attackTime, swingDuration, totalFrames
+            )
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, 8)
 
             if image and quad then
