@@ -45,10 +45,10 @@ function SpawnResolver.new(opts)
     opts = opts or {}
     local resolver = {
         chunkSize = opts.chunkSize,
-        foeChunkSpawnChance = opts.foeChunkSpawnChance or 0.6,
-        groupsPerChunk = opts.groupsPerChunk or { min = 1, max = 2 },
-        foesPerGroup = opts.foesPerGroup or { min = 2, max = 4 },
-        groupSpreadRadius = opts.groupSpreadRadius or 80,
+        foeChunkSpawnChance = opts.foeChunkSpawnChance or 0.45,
+        groupsPerChunk = opts.groupsPerChunk or { min = 0, max = 2 },
+        foesPerGroup = opts.foesPerGroup or { min = 2, max = 3 },
+        groupSpreadRadius = opts.groupSpreadRadius or 120,
         structuresPerChunk = opts.structuresPerChunk or { min = 1, max = 3 },
         propsPerChunk = opts.propsPerChunk or { min = 3, max = 8 },
     }
