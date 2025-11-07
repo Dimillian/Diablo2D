@@ -43,6 +43,8 @@ local potionConsumptionSystem = require("systems.core.potion_consumption")
 local manaRegenSystem = require("systems.core.mana_regen")
 local walkingAnimationSystem = require("systems.core.walking_animation")
 local foeAnimationSystem = require("systems.core.foe_animation")
+local deathAnimationSystem = require("systems.core.death_animation")
+local deathDetectionSystem = require("systems.core.death_detection")
 local physicsSystem = require("systems.core.physics")
 local ChunkManager = require("modules.world.chunk_manager")
 local SpawnResolver = require("modules.world.spawn_resolver")
@@ -113,11 +115,13 @@ function WorldScene.new(opts)
                 foeAttackSystem.update,
                 combatSystem.update,
                 projectileCollisionSystem.update,
+                deathDetectionSystem.update,
                 lootDropSystem.update,
                 lootScatterSystem.update,
                 experienceSystem.update,
                 walkingAnimationSystem.update,
                 foeAnimationSystem.update,
+                deathAnimationSystem.update,
                 movementSystem.update,
                 physicsSystem.update,
                 cameraSystem.update,

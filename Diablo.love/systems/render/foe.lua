@@ -76,7 +76,7 @@ function renderFoeSystem.draw(world)
     love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
-    local entities = world:queryEntities({ "foe", "renderable", "position", "size", "movement" })
+    local entities = world:queryEntities({ "foe", "renderable", "position", "size" })
 
     for _, entity in ipairs(entities) do
         if entity.inactive then
@@ -88,15 +88,44 @@ function renderFoeSystem.draw(world)
             goto continue
         end
 
-        local lookDir = entity.movement.lookDirection or { x = 0, y = 1 }
+        -- Get look direction from movement if available, otherwise use default
+        local lookDir = { x = 0, y = 1 }
+        if entity.movement and entity.movement.lookDirection then
+            lookDir = entity.movement.lookDirection
+        end
         local row = spriteDirection.getSpriteRow(lookDir)
-        local walkTime = entity.movement.walkAnimationTime or 0
+        local walkTime = entity.movement and entity.movement.walkAnimationTime or 0
         local animationState = renderable.animationState or "idle"
 
         local spriteSheetPath
         local totalFrames
 
-        if animationState == "attacking" then
+        if animationState == "dying" then
+            spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "death")
+            local deathAnim = entity.deathAnimation
+            if deathAnim then
+                totalFrames = deathAnim.totalFrames or 8
+
+                -- Calculate frame based on animation progress
+                local timer = deathAnim.timer or 0
+
+                local col
+                if timer >= deathAnim.animationDuration then
+                    -- Hold last frame after animation completes
+                    col = totalFrames - 1
+                else
+                    -- Play through frames during animation phase
+                    local animProgress = timer / deathAnim.animationDuration
+                    col = math.floor(animProgress * totalFrames)
+                    col = math.min(col, totalFrames - 1)
+                end
+
+                local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
+                if image and quad then
+                    drawFoeFrame(entity, image, quad, 1.5)
+                end
+            end
+        elseif animationState == "attacking" then
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "attack")
             totalFrames = 8
             local attackTime = entity.combat and entity.combat.attackAnimationTime or 0

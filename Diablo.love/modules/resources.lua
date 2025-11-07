@@ -137,7 +137,7 @@ end
 
 ---Get foe sprite sheet path from prefix and animation type
 ---@param prefix string Sprite prefix (e.g., "orc1", "orc2", "orc3")
----@param animationType string Animation type ("walk" or "attack")
+---@param animationType string Animation type ("walk", "attack", or "death")
 ---@return string Full path to sprite sheet
 function resources.getFoeSpritePath(prefix, animationType)
     return "resources/foe/" .. prefix .. "_" .. animationType .. ".png"

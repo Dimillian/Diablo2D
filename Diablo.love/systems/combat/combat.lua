@@ -1,8 +1,6 @@
 local vector = require("modules.vector")
-local Targeting = require("systems.helpers.targeting")
 local Aggro = require("systems.helpers.aggro")
 local createRecentlyDamaged = require("components.recently_damaged")
-local createDead = require("components.dead")
 local createKnockback = require("components.knockback")
 
 local combatSystem = {}
@@ -80,71 +78,16 @@ local function markRecentlyDamaged(world, target)
     world:addComponent(target.id, "recentlyDamaged", component)
 end
 
-local function handleDeath(world, target, attacker, position)
-    if not target then
-        return
-    end
-
-    local targetId = target.id
-
-    local componentsToRemove = {}
-    for componentName, component in pairs(target) do
-        if componentName ~= "id" and type(component) == "table" and component.removeOnDeath then
-            componentsToRemove[#componentsToRemove + 1] = componentName
-        end
-    end
-
-    for _, componentName in ipairs(componentsToRemove) do
-        world:removeComponent(targetId, componentName)
-    end
-
-    if not target.dead then
-        local deadComponent = createDead()
-        world:addComponent(targetId, "dead", deadComponent)
-    end
-
-    local foeLevel = target.level or 1
-    local foeTypeId = target.foeTypeId or (target.foe and target.foe.typeId)
-
-    pushCombatEvent(world, {
-        type = "death",
-        targetId = targetId,
-        sourceId = attacker and attacker.id or nil,
-        position = position and { x = position.x, y = position.y } or nil,
-        foeLevel = foeLevel,
-        foeTypeId = foeTypeId,
-        time = world.time or 0,
-    })
-
-    if world.currentTargetId == targetId then
-        Targeting.clear(world)
-    end
-
-    if target.chunkResident then
-        local chunkKey = target.chunkResident.chunkKey
-        local chunk = world.generatedChunks and world.generatedChunks[chunkKey]
-        if chunk then
-            if target.chunkResident.kind == "foe" then
-                chunk.defeatedFoes[target.chunkResident.descriptorId] = true
-            elseif target.chunkResident.kind == "structure" then
-                chunk.lootedStructures[target.chunkResident.descriptorId] = true
-            end
-
-            if chunk.spawnedEntities then
-                chunk.spawnedEntities[target.chunkResident.descriptorId] = nil
-            end
-        end
-    end
-
-    world:removeEntity(targetId)
-end
-
 function combatSystem.update(world, dt)
     ensureEventQueue(world)
 
     local combatants = world:queryEntities({ "combat" })
     for _, entity in ipairs(combatants) do
         local combat = entity.combat
+        if not combat then
+            goto continue
+        end
+
         local queued = combat.queuedAttack
         if not queued then
             goto continue
@@ -216,10 +159,7 @@ function combatSystem.update(world, dt)
             Aggro.ensureAggro(world, target, entity.id, { target = entity })
         end
 
-        if target.health.current <= 0 then
-            handleDeath(world, target, entity, { x = targetX, y = targetY })
-        end
-
+        -- Death is now handled by death detection system
         combat.queuedAttack = nil
 
         ::continue::

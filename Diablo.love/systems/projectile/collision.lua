@@ -2,7 +2,6 @@ local vector = require("modules.vector")
 local coordinates = require("systems.helpers.coordinates")
 local Aggro = require("systems.helpers.aggro")
 local createRecentlyDamaged = require("components.recently_damaged")
-local createDead = require("components.dead")
 local projectileEffects = require("systems.helpers.projectile_effects")
 
 local collisionSystem = {}
@@ -24,47 +23,6 @@ local function markRecentlyDamaged(world, target)
     end
 
     world:addComponent(target.id, "recentlyDamaged", createRecentlyDamaged())
-end
-
-local function handleDeath(world, target, attacker, hitPosition)
-    if not target then
-        return
-    end
-
-    local componentsToRemove = {}
-    for componentName, component in pairs(target) do
-        if componentName ~= "id" and type(component) == "table" and component.removeOnDeath then
-            componentsToRemove[#componentsToRemove + 1] = componentName
-        end
-    end
-
-    for _, componentName in ipairs(componentsToRemove) do
-        world:removeComponent(target.id, componentName)
-    end
-
-    if not target.dead then
-        world:addComponent(target.id, "dead", createDead())
-    end
-
-    local foeLevel = target.level or 1
-    local foeTypeId = target.foeTypeId or (target.foe and target.foe.typeId)
-
-    pushCombatEvent(world, {
-        type = "death",
-        targetId = target.id,
-        sourceId = attacker and attacker.id or nil,
-        position = hitPosition,
-        foeLevel = foeLevel,
-        foeTypeId = foeTypeId,
-        time = world.time or 0,
-    })
-
-    if world.currentTargetId == target.id then
-        world.currentTargetId = nil
-        world.targetDisplayTimer = 0
-    end
-
-    world:removeEntity(target.id)
 end
 
 local function rollDamage(damageRange)
@@ -156,9 +114,7 @@ function collisionSystem.update(world, _dt)
                 Aggro.ensureAggro(world, foe, owner.id, { target = owner })
             end
 
-            if foe.health.current <= 0 then
-                handleDeath(world, foe, owner, { x = foeCenterX, y = foeCenterY })
-            end
+            -- Death is now handled by death detection system
 
             projectileEffects.triggerImpact(world, projectile, {
                 position = { x = projectileCenterX, y = projectileCenterY },

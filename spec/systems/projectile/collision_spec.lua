@@ -5,6 +5,7 @@ package.loaded["systems.helpers.coordinates"] = require("spec.system_helpers.coo
 package.loaded["systems.helpers.projectile_effects"] = require("spec.system_helpers.projectile_effects_stub")
 
 local collisionSystem = require("systems.projectile.collision")
+local deathDetectionSystem = require("systems.core.death_detection")
 local createHealth = require("components.health")
 local createCombat = require("components.combat")
 
@@ -96,8 +97,14 @@ describe("systems.projectile.collision", function()
         addProjectile({ position = { x = 40, y = 0 }, damage = 6 })
 
         collisionSystem.update(world, 0)
+        deathDetectionSystem.update(world, 0)
 
-        assert.is_nil(world:getEntity(foe.id))
+        -- Entity should still exist but be marked as dead with death animation
+        local deadFoe = world:getEntity(foe.id)
+        assert.is_not_nil(deadFoe)
+        assert.is_not_nil(deadFoe.dead)
+        assert.is_not_nil(deadFoe.deathAnimation)
+        assert.equal(0, deadFoe.health.current)
 
         local foundDeath = false
         for _, event in ipairs(world.pendingCombatEvents) do

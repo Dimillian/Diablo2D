@@ -2,6 +2,7 @@ local helper = require("spec.spec_helper")
 local TestWorld = require("spec.support.test_world")
 
 local combatSystem = require("systems.combat.combat")
+local deathDetectionSystem = require("systems.core.death_detection")
 local createCombat = require("components.combat")
 local createHealth = require("components.health")
 
@@ -80,8 +81,14 @@ describe("systems.combat.combat", function()
         queuePlayerAttack(foe, 80)
 
         combatSystem.update(world, 0.016)
+        deathDetectionSystem.update(world, 0.016)
 
-        assert.is_nil(world:getEntity(foe.id))
+        -- Entity should still exist but be marked as dead with death animation
+        local deadFoe = world:getEntity(foe.id)
+        assert.is_not_nil(deadFoe)
+        assert.is_not_nil(deadFoe.dead)
+        assert.is_not_nil(deadFoe.deathAnimation)
+        assert.equal(0, deadFoe.health.current)
 
         local foundDeath = false
         for _, event in ipairs(world.pendingCombatEvents) do
