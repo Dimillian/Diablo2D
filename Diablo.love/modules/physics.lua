@@ -98,11 +98,11 @@ function Physics.initWorld(world)
         function(fixtureA, fixtureB, contact)
             beginContact(world, fixtureA, fixtureB, contact)
         end,
-        function() end,
-        function() end,
         function(fixtureA, fixtureB)
             endContact(world, fixtureA, fixtureB)
-        end
+        end,
+        function() end,
+        function() end
     )
 
     world.physicsWorld = physicsWorld
