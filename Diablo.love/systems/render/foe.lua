@@ -35,10 +35,12 @@ function renderFoeSystem.draw(world)
             totalFrames = 8
             local attackTime = entity.combat and entity.combat.attackAnimationTime or 0
             local swingDuration = entity.combat and entity.combat.swingDuration or 0.3
+            -- luacheck: ignore
             local col = spriteRenderer.getAnimationFrame(animationState, walkTime, attackTime, swingDuration, totalFrames)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, 8)
 
             if image and quad then
+                -- luacheck: no unused
                 local qx, qy, qw, qh = quad:getViewport()
                 local centerX = entity.position.x + (entity.size.w / 2)
                 local centerY = entity.position.y + (entity.size.h / 2)
@@ -75,6 +77,7 @@ function renderFoeSystem.draw(world)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, 6)
 
             if image and quad then
+                -- luacheck: no unused
                 local qx, qy, qw, qh = quad:getViewport()
                 local centerX = entity.position.x + (entity.size.w / 2)
                 local centerY = entity.position.y + (entity.size.h / 2)
