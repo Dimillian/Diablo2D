@@ -4,26 +4,41 @@ local Spells = require("data.spells")
 
 local experienceSystem = {}
 
-local LEVEL_UP_BODY_LINES = {
-    "+5 Health",
-    "+5 Mana",
-    "+1 Min Damage",
-    "+1 Max Damage",
-    "+1 Defense",
-}
-
 local LEVEL_UP_ICON_PATH = "resources/icons/book.png"
 
-local function queueLevelUpNotification(world, newLevel)
+---Returns the level-up bonuses payload containing stat changes and formatted body lines.
+---@return table payload Contains statChanges and bodyLines fields
+local function getLevelUpBonusesPayload()
+    return {
+        statChanges = {
+            health = 5,
+            mana = 5,
+            damageMin = 1,
+            damageMax = 1,
+            defense = 1,
+        },
+        bodyLines = {
+            "+5 Health",
+            "+5 Mana",
+            "+1 Min Damage",
+            "+1 Max Damage",
+            "+1 Defense",
+        },
+    }
+end
+
+local function queueLevelUpNotification(world, newLevel, bonusesPayload)
     if not world then
         return
     end
+
+    bonusesPayload = bonusesPayload or getLevelUpBonusesPayload()
 
     notificationBus.queue(world, {
         category = "level_up",
         priority = 100,
         title = ("Level %d"):format(newLevel),
-        bodyLines = LEVEL_UP_BODY_LINES,
+        bodyLines = bonusesPayload.bodyLines,
         iconPath = LEVEL_UP_ICON_PATH,
     })
 end
@@ -34,17 +49,20 @@ local function applyLevelUpBonuses(world, player)
         return
     end
 
+    local bonusesPayload = getLevelUpBonusesPayload()
+    local statChanges = bonusesPayload.statChanges
+
     while true do
         local totalXPForNextLevel = Leveling.getXPForLevel((exp.level or 1) + 1)
         if exp.currentXP and exp.currentXP >= totalXPForNextLevel then
             exp.level = (exp.level or 1) + 1
 
             if player.baseStats then
-                player.baseStats.damageMin = (player.baseStats.damageMin or 5) + 1
-                player.baseStats.damageMax = (player.baseStats.damageMax or 8) + 1
-                player.baseStats.defense = (player.baseStats.defense or 2) + 1
-                player.baseStats.health = (player.baseStats.health or 50) + 5
-                player.baseStats.mana = (player.baseStats.mana or 25) + 5
+                player.baseStats.damageMin = (player.baseStats.damageMin or 5) + statChanges.damageMin
+                player.baseStats.damageMax = (player.baseStats.damageMax or 8) + statChanges.damageMax
+                player.baseStats.defense = (player.baseStats.defense or 2) + statChanges.defense
+                player.baseStats.health = (player.baseStats.health or 50) + statChanges.health
+                player.baseStats.mana = (player.baseStats.mana or 25) + statChanges.mana
             end
 
             if player.health then
@@ -54,7 +72,7 @@ local function applyLevelUpBonuses(world, player)
                 player.mana.current = player.mana.max
             end
 
-            queueLevelUpNotification(world, exp.level)
+            queueLevelUpNotification(world, exp.level, bonusesPayload)
         else
             break
         end
