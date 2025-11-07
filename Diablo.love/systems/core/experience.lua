@@ -5,21 +5,12 @@ local experienceSystem = {}
 
 local LEVEL_UP_ICON_PATH = "resources/icons/book.png"
 
----Returns the level-up bonuses payload containing stat changes and formatted body lines.
----@return table payload Contains statChanges and bodyLines fields
+---Returns the level-up bonuses payload containing notification about attribute points.
+---@return table payload Contains bodyLines field
 local function getLevelUpBonusesPayload()
     return {
-        statChanges = {
-            strength = 5,
-            dexterity = 5,
-            vitality = 5,
-            intelligence = 5,
-        },
         bodyLines = {
-            "+5 Strength",
-            "+5 Dexterity",
-            "+5 Vitality",
-            "+5 Intelligence",
+            "15 attribute points available",
         },
     }
 end
@@ -47,20 +38,14 @@ local function applyLevelUpBonuses(world, player)
     end
 
     local bonusesPayload = getLevelUpBonusesPayload()
-    local statChanges = bonusesPayload.statChanges
 
     while true do
         local totalXPForNextLevel = Leveling.getXPForLevel((exp.level or 1) + 1)
         if exp.currentXP and exp.currentXP >= totalXPForNextLevel then
             exp.level = (exp.level or 1) + 1
 
-            -- Apply primary attribute bonuses
-            if player.baseStats then
-                player.baseStats.strength = (player.baseStats.strength or 5) + statChanges.strength
-                player.baseStats.dexterity = (player.baseStats.dexterity or 5) + statChanges.dexterity
-                player.baseStats.vitality = (player.baseStats.vitality or 50) + statChanges.vitality
-                player.baseStats.intelligence = (player.baseStats.intelligence or 25) + statChanges.intelligence
-            end
+            -- Grant 15 unallocated attribute points
+            exp.unallocatedPoints = (exp.unallocatedPoints or 0) + 15
 
             -- Restore health and mana to max on level up
             if player.health then
@@ -103,6 +88,7 @@ function experienceSystem.update(world, _dt)
     local exp = player.experience
     exp.level = exp.level or 1
     exp.currentXP = exp.currentXP or 0
+    exp.unallocatedPoints = exp.unallocatedPoints or 0
 
     local events = world.pendingCombatEvents
     if events and #events > 0 then

@@ -8,6 +8,32 @@ local function snap(value)
     return math.floor(value + 0.5)
 end
 
+local BUTTON_SIZE = 14
+local BUTTON_RADIUS = 6
+
+local function drawPlusButton(x, y, isHovered)
+    love.graphics.setLineWidth(2)
+    love.graphics.setColor(0.2, 0.2, 0.2, 0.9)
+    love.graphics.rectangle("fill", x, y, BUTTON_SIZE, BUTTON_SIZE, BUTTON_RADIUS, BUTTON_RADIUS)
+
+    if isHovered then
+        love.graphics.setColor(0.9, 0.3, 0.3, 0.8)
+    else
+        love.graphics.setColor(0.8, 0.75, 0.5, 1)
+    end
+    love.graphics.rectangle("line", x, y, BUTTON_SIZE, BUTTON_SIZE, BUTTON_RADIUS, BUTTON_RADIUS)
+
+    local inset = 4
+    local centerX = x + BUTTON_SIZE / 2
+    local centerY = y + BUTTON_SIZE / 2
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setLineWidth(2)
+    -- Horizontal line
+    love.graphics.line(centerX - inset, centerY, centerX + inset, centerY)
+    -- Vertical line
+    love.graphics.line(centerX, centerY - inset, centerX, centerY + inset)
+end
+
 local attributeDisplayOrder = {
     { key = "strength", label = "Strength", always = true, type = "int" },
     { key = "dexterity", label = "Dexterity", always = true, type = "int" },
@@ -17,6 +43,7 @@ local attributeDisplayOrder = {
 
 local statDisplayOrder = {
     { key = "health", label = "Health", always = true, type = "int" },
+    { key = "mana", label = "Mana", always = true, type = "int" },
     { key = "defense", label = "Defense", type = "int" },
     { key = "critChance", label = "Crit Chance", type = "percent" },
     { key = "attackSpeed", label = "Attack Speed", type = "percent" },
@@ -117,7 +144,8 @@ function renderInventoryStats.draw(scene)
 
     local font = love.graphics.getFont()
     local headerY = statsArea.y + 12
-    local lineHeight = font:getHeight() + 4
+    local attributeLineHeight = font:getHeight() + 10
+    local statLineHeight = font:getHeight() + 4
     local startY = snap(headerY + font:getHeight() + 8)
 
     -- Initialize attribute rects for hover detection
@@ -133,28 +161,71 @@ function renderInventoryStats.draw(scene)
 
     -- Clear previous rects
     scene.attributeRects = {}
+    scene.attributeButtonRects = {}
+
+    local unallocatedPoints = (player.experience and player.experience.unallocatedPoints) or 0
+    local showButtons = unallocatedPoints > 0
 
     for index, line in ipairs(attributeLines) do
-        local y = startY + (index - 1) * lineHeight
-        if y > statsArea.y + statsArea.height - lineHeight then
+        local y = startY + (index - 1) * attributeLineHeight
+        if y > statsArea.y + statsArea.height - attributeLineHeight then
             break
         end
 
-        -- Store rect for hover detection
+        -- Determine text position and draw + button if there are unallocated points
         local attributeEntry = attributeDisplayOrder[index]
+        local textX = leftColumn.x
+
+        if showButtons and attributeEntry then
+            local buttonX = leftColumn.x
+            -- Align button vertically with text center
+            local buttonY = y + font:getHeight() / 2 - BUTTON_SIZE / 2
+
+            local mouseX, mouseY = love.mouse.getPosition()
+            local isHovered = mouseX >= buttonX
+                and mouseX <= buttonX + BUTTON_SIZE
+                and mouseY >= buttonY
+                and mouseY <= buttonY + BUTTON_SIZE
+
+            drawPlusButton(buttonX, buttonY, isHovered)
+
+            -- Store button rect for click detection
+            scene.attributeButtonRects[#scene.attributeButtonRects + 1] = {
+                x = buttonX,
+                y = buttonY,
+                w = BUTTON_SIZE,
+                h = BUTTON_SIZE,
+                attributeKey = attributeEntry.key,
+            }
+
+            -- Move text to the right of the button
+            textX = leftColumn.x + BUTTON_SIZE + 8
+        end
+
+        -- Store rect for hover detection (covers the text area)
         if attributeEntry then
             local textWidth = font:getWidth(line)
             scene.attributeRects[#scene.attributeRects + 1] = {
-                x = leftColumn.x,
+                x = textX,
                 y = y,
                 w = textWidth,
-                h = lineHeight,
+                h = attributeLineHeight,
                 attributeKey = attributeEntry.key,
                 attributeValue = baseStats[attributeEntry.key] or 0,
             }
         end
 
-        love.graphics.print(line, leftColumn.x, y)
+        love.graphics.print(line, textX, y)
+    end
+
+    -- Display points remaining at the bottom of attributes list
+    if unallocatedPoints > 0 then
+        local pointsY = startY + #attributeLines * attributeLineHeight + 8
+        if pointsY <= statsArea.y + statsArea.height - attributeLineHeight then
+            love.graphics.setColor(0.95, 0.9, 0.7, 1)
+            local pointsText = string.format("Points remaining: %d", unallocatedPoints)
+            love.graphics.print(pointsText, leftColumn.x, pointsY)
+        end
     end
 
     -- Right column: Derived Stats
@@ -165,8 +236,8 @@ function renderInventoryStats.draw(scene)
     local statLines = buildSummaryLines(totalStats)
     love.graphics.setColor(1, 1, 1, 1)
     for index, line in ipairs(statLines) do
-        local y = startY + (index - 1) * lineHeight
-        if y > statsArea.y + statsArea.height - lineHeight then
+        local y = startY + (index - 1) * statLineHeight
+        if y > statsArea.y + statsArea.height - statLineHeight then
             break
         end
         love.graphics.print(line, rightColumn.x, y)

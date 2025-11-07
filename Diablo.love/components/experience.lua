@@ -11,6 +11,7 @@ local function createExperienceComponent(opts)
         level = level,
         currentXP = currentXP,
         xpForNextLevel = xpForNextLevel,
+        unallocatedPoints = opts.unallocatedPoints or 0,
     }
 end
 

@@ -71,8 +71,9 @@ describe("systems.core.experience", function()
         assert.is_true(world.pendingCombatEvents[1]._xpAwarded)
     end)
 
-    it("levels up and applies primary attribute bonuses when XP threshold reached", function()
+    it("levels up and grants unallocated attribute points when XP threshold reached", function()
         player.experience.currentXP = 90
+        player.experience.unallocatedPoints = 0
         Leveling.getFoeXP = function()
             return 50
         end
@@ -85,9 +86,11 @@ describe("systems.core.experience", function()
 
         assert.equal(2, player.experience.level)
         assert.is_true(player.experience.currentXP >= 140)
-        -- Check that primary attributes increased (+5 each)
-        assert.equal(originalStrength + 5, player.baseStats.strength)
-        assert.equal(originalVitality + 5, player.baseStats.vitality)
+        -- Check that 15 unallocated points were granted
+        assert.equal(15, player.experience.unallocatedPoints)
+        -- Check that attributes were NOT automatically increased
+        assert.equal(originalStrength, player.baseStats.strength)
+        assert.equal(originalVitality, player.baseStats.vitality)
     end)
 
     it("does nothing when there are no events", function()

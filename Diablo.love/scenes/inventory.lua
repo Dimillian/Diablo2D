@@ -67,6 +67,7 @@ function InventoryScene:enter()
     self.equipmentRects = {}
     self.inventoryGridBottomY = nil
     self.windowRects = {}
+    self.attributeButtonRects = {}
     self.windowLayout = nil
 end
 
@@ -87,6 +88,7 @@ function InventoryScene:draw()
     self.equipmentRects = {}
     self.inventoryGridBottomY = nil
     self.windowRects = {}
+    self.attributeButtonRects = {}
 
     -- Iterate through all render systems
     for _, system in ipairs(self.systems.draw) do
@@ -157,6 +159,21 @@ function InventoryScene:mousepressed(x, y, button)
     for _, rect in ipairs(self.equipmentRects or {}) do
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
             EquipmentHelper.unequip(player, rect.slot)
+            return
+        end
+    end
+
+    -- Attribute + buttons: allocate points
+    for _, rect in ipairs(self.attributeButtonRects or {}) do
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            local exp = player.experience
+            if exp and (exp.unallocatedPoints or 0) > 0 and player.baseStats then
+                local attributeKey = rect.attributeKey
+                if attributeKey then
+                    player.baseStats[attributeKey] = (player.baseStats[attributeKey] or 0) + 1
+                    exp.unallocatedPoints = (exp.unallocatedPoints or 0) - 1
+                end
+            end
             return
         end
     end
