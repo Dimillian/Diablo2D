@@ -121,13 +121,8 @@ function chaseSystem.update(world, _dt)
         local combinedDy = ndy + sepDy
         local combinedNdx, combinedNdy = vector.normalize(combinedDx, combinedDy)
 
-        if entity.movement.lookDirection then
-            entity.movement.lookDirection.x = combinedNdx
-            entity.movement.lookDirection.y = combinedNdy
-        else
-            entity.movement.lookDirection = { x = combinedNdx, y = combinedNdy }
-        end
-
+        entity.movement.lookDirection.x = combinedNdx
+        entity.movement.lookDirection.y = combinedNdy
         entity.movement.vx = combinedNdx
         entity.movement.vy = combinedNdy
         entity.movement.maxDistance = distance - stopDistance

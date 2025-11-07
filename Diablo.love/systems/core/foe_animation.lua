@@ -5,10 +5,6 @@ function foeAnimationSystem.update(world, dt)
 
     for _, entity in ipairs(entities) do
         local movement = entity.movement
-        if not movement then
-            goto continue
-        end
-
         local renderable = entity.renderable
         if not renderable or not renderable.spritePrefix then
             goto continue

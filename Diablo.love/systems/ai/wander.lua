@@ -120,25 +120,13 @@ function wanderSystem.update(world, dt)
         local wander = entity.wander
         local movement = entity.movement
 
-        if not wander.elapsed then
-            wander.elapsed = 0
-        end
-
-        if not wander.interval or wander.interval <= 0 then
-            wander.interval = 3.0
-        end
-
         if not wander.currentInterval then
             local variation = wander.interval * 0.3
             wander.currentInterval = wander.interval + (math.random() * variation * 2 - variation)
 
             movement.vx, movement.vy = randomDirection()
-            if movement.lookDirection then
-                movement.lookDirection.x = movement.vx
-                movement.lookDirection.y = movement.vy
-            else
-                movement.lookDirection = { x = movement.vx, y = movement.vy }
-            end
+            movement.lookDirection.x = movement.vx
+            movement.lookDirection.y = movement.vy
         end
 
         wander.elapsed = wander.elapsed + dt
@@ -156,12 +144,8 @@ function wanderSystem.update(world, dt)
 
             movement.vx = ndx
             movement.vy = ndy
-            if movement.lookDirection then
-                movement.lookDirection.x = ndx
-                movement.lookDirection.y = ndy
-            else
-                movement.lookDirection = { x = ndx, y = ndy }
-            end
+            movement.lookDirection.x = ndx
+            movement.lookDirection.y = ndy
 
             local variation = wander.interval * 0.3
             wander.currentInterval = wander.interval + (math.random() * variation * 2 - variation)
@@ -170,8 +154,8 @@ function wanderSystem.update(world, dt)
             local sepDx, sepDy = calculateSeparation(entity, world)
 
             if cohDx ~= 0 or cohDy ~= 0 or sepDx ~= 0 or sepDy ~= 0 then
-                local currentDx = movement.lookDirection and movement.lookDirection.x or 0
-                local currentDy = movement.lookDirection and movement.lookDirection.y or 0
+                local currentDx = movement.lookDirection.x
+                local currentDy = movement.lookDirection.y
 
                 local combinedDx = currentDx + cohDx * 0.5 + sepDx * 1.2
                 local combinedDy = currentDy + cohDy * 0.5 + sepDy * 1.2
@@ -179,15 +163,11 @@ function wanderSystem.update(world, dt)
 
                 movement.vx = ndx
                 movement.vy = ndy
-                if movement.lookDirection then
-                    movement.lookDirection.x = ndx
-                    movement.lookDirection.y = ndy
-                end
+                movement.lookDirection.x = ndx
+                movement.lookDirection.y = ndy
             else
-                if movement.lookDirection then
-                    movement.vx = movement.lookDirection.x
-                    movement.vy = movement.lookDirection.y
-                end
+                movement.vx = movement.lookDirection.x
+                movement.vy = movement.lookDirection.y
             end
         end
 
