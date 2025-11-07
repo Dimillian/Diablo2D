@@ -2,7 +2,7 @@ local Resources = require("modules.resources")
 
 local renderInventoryBottomBar = {}
 
-local BAR_HEIGHT = 44
+local BAR_HEIGHT = 32
 renderInventoryBottomBar.HEIGHT = BAR_HEIGHT
 
 local function selectGoldIcon(amount)

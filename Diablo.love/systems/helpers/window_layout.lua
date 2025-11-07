@@ -59,7 +59,8 @@ function WindowLayout.calculate(opts)
 
     local footer = nil
     if footerHeight > 0 then
-        local footerY = panelY + panelHeight - footerHeight - padding
+        local footerPadding = opts.footerPadding or padding
+        local footerY = panelY + panelHeight - footerHeight - footerPadding
         footer = {
             x = panelX + padding,
             y = footerY,

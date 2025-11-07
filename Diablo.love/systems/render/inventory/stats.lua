@@ -120,7 +120,7 @@ function renderInventoryStats.draw(scene)
     end
 
     -- Split stats area into two columns
-    local columns = WindowLayout.calculateColumns({ content = statsArea }, { leftRatio = 0.5, spacing = 16 })
+    local columns = WindowLayout.calculateColumns({ content = statsArea }, { leftRatio = 0.4, spacing = 32 })
     local leftColumn = columns.left
     local rightColumn = columns.right
 

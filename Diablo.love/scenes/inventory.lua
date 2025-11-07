@@ -34,6 +34,7 @@ function InventoryScene.new(opts)
             footerHeight = renderInventoryBottomBar.HEIGHT,
             footerSpacing = 20,
             padding = 28,
+            footerPadding = 12,
         },
         systems = {
             draw = {
