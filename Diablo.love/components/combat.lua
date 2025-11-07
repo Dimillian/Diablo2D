@@ -4,7 +4,7 @@ local function createCombatComponent(opts)
     opts = opts or {}
 
     return {
-        attackSpeed = opts.attackSpeed or 1.0,
+        attackSpeed = opts.attackSpeed or ComponentDefaults.BASE_ATTACK_SPEED,
         range = opts.range or ComponentDefaults.DEFAULT_COMBAT_RANGE,
         cooldown = opts.cooldown or 0,
         queuedAttack = opts.queuedAttack or nil,

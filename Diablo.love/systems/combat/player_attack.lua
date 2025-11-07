@@ -1,5 +1,6 @@
 local vector = require("modules.vector")
 local Targeting = require("systems.helpers.targeting")
+local ComponentDefaults = require("data.component_defaults")
 
 local playerAttackSystem = {}
 
@@ -20,7 +21,7 @@ local function getEntityCenter(entity)
 end
 
 local function computeEffectiveAttackSpeed(entity, combat)
-    local base = combat.attackSpeed or 1
+    local base = combat.attackSpeed
     local multiplier = 1
 
     if entity.stats and entity.stats.total and entity.stats.total.attackSpeed then

@@ -22,5 +22,6 @@ ComponentDefaults.PLAYER_COMBAT_RANGE = 100
 -- Combat defaults
 ComponentDefaults.COMBAT_SWING_DURATION = 0.35
 ComponentDefaults.DEFAULT_COMBAT_RANGE = 120
+ComponentDefaults.BASE_ATTACK_SPEED = 1.0
 
 return ComponentDefaults
