@@ -2,6 +2,7 @@ local createPosition = require("components.position")
 local createSize = require("components.size")
 local createRenderable = require("components.renderable")
 local createStructure = require("components.structure")
+local createPhysicsBody = require("components.physics_body")
 
 local StructureFactory = {}
 StructureFactory.__index = StructureFactory
@@ -47,6 +48,11 @@ function StructureFactory.build(opts)
         size = createSize({ w = template.size.w, h = template.size.h }),
         renderable = createRenderable({ kind = template.renderable.kind, color = template.renderable.color }),
         structure = createStructure({ id = opts.id, structureId = opts.structureId, lootable = template.lootable }),
+        physicsBody = createPhysicsBody({
+            bodyType = "static",
+            fixedRotation = true,
+            friction = 0,
+        }),
     }
 
     entity.renderable.shape = template.renderable.shape

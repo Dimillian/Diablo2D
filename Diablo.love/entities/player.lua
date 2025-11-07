@@ -21,6 +21,7 @@ function Player.new(opts)
     local createPotions = require("components.potions")
     local createSkills = require("components.skills")
     local createExperience = require("components.experience")
+    local createPhysicsBody = require("components.physics_body")
 
     local entity = {
         id = opts.id or "player",
@@ -46,6 +47,14 @@ function Player.new(opts)
         experience = createExperience(opts.experience or {
             level = 1,
             currentXP = 0,
+        }),
+        physicsBody = createPhysicsBody({
+            bodyType = "dynamic",
+            fixedRotation = (opts.physicsBody and opts.physicsBody.fixedRotation) ~= false,
+            linearDamping = (opts.physicsBody and opts.physicsBody.linearDamping) or 20,
+            friction = opts.physicsBody and opts.physicsBody.friction,
+            density = opts.physicsBody and opts.physicsBody.density,
+            userData = opts.physicsBody and opts.physicsBody.userData,
         }),
     }
 

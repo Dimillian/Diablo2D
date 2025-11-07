@@ -43,12 +43,14 @@ local potionConsumptionSystem = require("systems.core.potion_consumption")
 local manaRegenSystem = require("systems.core.mana_regen")
 local walkingAnimationSystem = require("systems.core.walking_animation")
 local foeAnimationSystem = require("systems.core.foe_animation")
+local physicsSystem = require("systems.core.physics")
 local ChunkManager = require("modules.world.chunk_manager")
 local SpawnResolver = require("modules.world.spawn_resolver")
 local ECS = require("modules.ecs")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
+local Physics = require("modules.physics")
 
 local WorldScene = {}
 WorldScene.__index = WorldScene
@@ -117,6 +119,7 @@ function WorldScene.new(opts)
                 walkingAnimationSystem.update,
                 foeAnimationSystem.update,
                 movementSystem.update,
+                physicsSystem.update,
                 cameraSystem.update,
             },
             draw = {
@@ -140,6 +143,50 @@ function WorldScene.new(opts)
 
     -- Initialize ECS capabilities on the scene
     ECS.init(scene)
+
+    Physics.initWorld(scene)
+
+    local originalAddEntity = scene.addEntity
+    function scene:addEntity(entity)
+        originalAddEntity(self, entity)
+        if entity and entity.physicsBody then
+            Physics.ensureBody(self, entity)
+        end
+    end
+
+    local originalRemoveEntity = scene.removeEntity
+    function scene:removeEntity(entityId)
+        local entity = self.entities and self.entities[entityId]
+        if entity and entity.physicsBody then
+            Physics.destroyBody(entity)
+        end
+
+        originalRemoveEntity(self, entityId)
+    end
+
+    local originalAddComponent = scene.addComponent
+    function scene:addComponent(entityId, componentName, component)
+        originalAddComponent(self, entityId, componentName, component)
+
+        if componentName == "physicsBody" then
+            local entity = self.entities and self.entities[entityId]
+            if entity then
+                Physics.ensureBody(self, entity)
+            end
+        end
+    end
+
+    local originalRemoveComponent = scene.removeComponent
+    function scene:removeComponent(entityId, componentName)
+        if componentName == "physicsBody" then
+            local entity = self.entities and self.entities[entityId]
+            if entity then
+                Physics.destroyBody(entity)
+            end
+        end
+
+        originalRemoveComponent(self, entityId, componentName)
+    end
 
     -- Set metatable early so methods are available
     setmetatable(scene, WorldScene)
