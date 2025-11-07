@@ -190,13 +190,13 @@ local function calculateStabAnimation(combat)
     local progress = 1 - ratio
 
     -- Stab motion: diagonal upward and forward
-    -- Maximum stab distance (adjust these values to control stab range)
-    local maxStabForward = 15  -- pixels forward
-    local maxStabUpward = -20  -- pixels upward (negative = up)
-    local maxStabRotation = math.pi / 12  -- ~15 degrees tilt forward
+    -- Increased distance and rotation for a stronger looking thrust
+    local maxStabForward = 24  -- pixels forward
+    local maxStabUpward = -26  -- pixels upward (negative = up)
+    local maxStabRotation = math.pi / 9  -- ~20 degrees tilt forward
 
-    -- Use smooth easing for natural stab motion
-    local easedProgress = progress * progress * (3 - 2 * progress) -- smoothstep
+    -- Ease out quickly for snappier start, then smoothly finish
+    local easedProgress = 1 - math.pow(1 - progress, 3) -- cubic ease-out
 
     -- Calculate position offsets
     local stabOffsetX = maxStabForward * easedProgress
