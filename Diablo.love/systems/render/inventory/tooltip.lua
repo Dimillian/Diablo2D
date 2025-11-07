@@ -32,6 +32,38 @@ function renderInventoryTooltip.draw(scene)
         end
     end
 
+    -- Check attribute hovers (only if no item is hovered)
+    local hoveredAttribute = nil
+    if not hovered then
+        for _, rect in ipairs(scene.attributeRects or {}) do
+            if mx >= rect.x and mx <= rect.x + rect.w and my >= rect.y and my <= rect.y + rect.h then
+                hoveredAttribute = rect
+                break
+            end
+        end
+    end
+
+    -- Show attribute tooltip
+    if hoveredAttribute then
+        local attributeName = hoveredAttribute.attributeKey:gsub("^%l", string.upper)
+        local lines = Tooltips.buildAttributeTooltipLines(
+            hoveredAttribute.attributeKey,
+            hoveredAttribute.attributeValue
+        )
+        Tooltips.drawSimpleTooltip(
+            attributeName,
+            lines,
+            mx,
+            my,
+            {
+                offsetX = 16,
+                offsetY = 16,
+                clamp = true,
+            }
+        )
+        return
+    end
+
     if not hovered then
         return
     end

@@ -120,6 +120,9 @@ function renderInventoryStats.draw(scene)
     local lineHeight = font:getHeight() + 4
     local startY = snap(headerY + font:getHeight() + 8)
 
+    -- Initialize attribute rects for hover detection
+    scene.attributeRects = scene.attributeRects or {}
+
     -- Left column: Attributes
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
     love.graphics.print("Attributes", leftColumn.x, headerY)
@@ -127,11 +130,30 @@ function renderInventoryStats.draw(scene)
     local baseStats = player.baseStats or {}
     local attributeLines = buildAttributeLines(baseStats)
     love.graphics.setColor(1, 1, 1, 1)
+
+    -- Clear previous rects
+    scene.attributeRects = {}
+
     for index, line in ipairs(attributeLines) do
         local y = startY + (index - 1) * lineHeight
         if y > statsArea.y + statsArea.height - lineHeight then
             break
         end
+
+        -- Store rect for hover detection
+        local attributeEntry = attributeDisplayOrder[index]
+        if attributeEntry then
+            local textWidth = font:getWidth(line)
+            scene.attributeRects[#scene.attributeRects + 1] = {
+                x = leftColumn.x,
+                y = y,
+                w = textWidth,
+                h = lineHeight,
+                attributeKey = attributeEntry.key,
+                attributeValue = baseStats[attributeEntry.key] or 0,
+            }
+        end
+
         love.graphics.print(line, leftColumn.x, y)
     end
 

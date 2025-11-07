@@ -477,4 +477,104 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     love.graphics.pop()
 end
 
+---Build tooltip lines for an attribute showing how it affects stats
+---@param attributeKey string The attribute key (strength, dexterity, vitality, intelligence)
+---@param attributeValue number The current attribute value
+---@return table lines Array of { text, color } tables
+function Tooltips.buildAttributeTooltipLines(attributeKey, attributeValue)
+    local lines = {}
+    local highlightColor = { 0.3, 0.85, 0.4, 1 } -- Green for derived stats
+    local infoColor = { 0.7, 0.7, 0.7, 1 } -- Gray for formula info
+
+    attributeValue = attributeValue or 0
+
+    if attributeKey == "strength" then
+        local damage = attributeValue * 0.2
+        lines[#lines + 1] = { text = string.format("Damage: %.1f", damage), color = highlightColor }
+        lines[#lines + 1] = { text = "5 Strength = +1 Damage", color = infoColor }
+    elseif attributeKey == "dexterity" then
+        local critChance = attributeValue * 0.0002
+        lines[#lines + 1] = { text = string.format("Crit Chance: %.2f%%", critChance * 100), color = highlightColor }
+        lines[#lines + 1] = { text = "5 Dexterity = +0.1% Crit", color = infoColor }
+    elseif attributeKey == "vitality" then
+        lines[#lines + 1] = { text = string.format("Health: %d", attributeValue), color = highlightColor }
+        lines[#lines + 1] = { text = "1 Vitality = +1 Health", color = infoColor }
+    elseif attributeKey == "intelligence" then
+        lines[#lines + 1] = { text = string.format("Mana: %d", attributeValue), color = highlightColor }
+        lines[#lines + 1] = { text = "1 Intelligence = +1 Mana", color = infoColor }
+    end
+
+    return lines
+end
+
+---Draw a simple text tooltip (no sprite, no rarity border)
+---@param title string Tooltip title
+---@param lines table Array of { text, color } tables
+---@param pointerX number Mouse X position
+---@param pointerY number Mouse Y position
+---@param opts table|nil Options { font, padding, offsetX, offsetY, clamp }
+function Tooltips.drawSimpleTooltip(title, lines, pointerX, pointerY, opts)
+    if not title or not lines then
+        return
+    end
+
+    opts = opts or {}
+    local font = opts.font or love.graphics.getFont()
+    local padding = opts.padding or 10
+    local offsetX = opts.offsetX or 16
+    local offsetY = opts.offsetY or 16
+    local clampToScreen = opts.clamp ~= false
+
+    -- Calculate width
+    local textWidth = font:getWidth(title)
+    for _, lineData in ipairs(lines) do
+        local lineText = lineData.text or lineData
+        textWidth = math.max(textWidth, font:getWidth(lineText))
+    end
+
+    local width = textWidth + padding * 2
+    local lineHeight = font:getHeight()
+    local height = lineHeight * (#lines + 1) + padding * 3
+
+    local tooltipX = snap(pointerX + offsetX)
+    local tooltipY = snap(pointerY + offsetY)
+
+    if clampToScreen then
+        local screenWidth, screenHeight = love.graphics.getDimensions()
+        if tooltipX + width > screenWidth then
+            tooltipX = screenWidth - width - 8
+        end
+        if tooltipY + height > screenHeight then
+            tooltipY = screenHeight - height - 8
+        end
+    end
+
+    love.graphics.push("all")
+
+    -- Draw background
+    love.graphics.setColor(0, 0, 0, 0.8)
+    love.graphics.rectangle("fill", tooltipX, tooltipY, width, height, 6, 6)
+
+    -- Draw border
+    love.graphics.setColor(0.5, 0.5, 0.5, 1)
+    love.graphics.setLineWidth(1)
+    love.graphics.rectangle("line", tooltipX, tooltipY, width, height, 6, 6)
+
+    -- Draw title
+    local titleY = snap(tooltipY + padding)
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print(title, tooltipX + padding, titleY)
+
+    -- Draw lines
+    for index, lineData in ipairs(lines) do
+        local lineY = snap(titleY + lineHeight * (index + 1))
+        local lineText = lineData.text or lineData
+        local lineColor = lineData.color or { 1, 1, 1, 1 }
+        love.graphics.setColor(lineColor)
+        love.graphics.print(lineText, tooltipX + padding, lineY)
+    end
+
+    love.graphics.pop()
+end
+
 return Tooltips
