@@ -193,6 +193,11 @@ function renderSystem.draw(world)
 
         local renderable = entity.renderable
         if renderable.kind == "rect" then
+            -- Skip player-controlled entities (rendered by renderPlayerSystem)
+            if entity.playerControlled then
+                goto continue
+            end
+
             -- Skip rendering base rectangle if entity has armor equipped
             local hasArmor = false
             if entity.equipment then
@@ -207,7 +212,7 @@ function renderSystem.draw(world)
 
             -- Only render base rectangle if no armor is equipped
             if not hasArmor then
-                -- Tint player when recently damaged (visual strike indicator)
+                -- Tint entity when recently damaged (visual strike indicator)
                 local color = renderable.color
                 if entity.recentlyDamaged then
                     -- Flash red tint when damaged

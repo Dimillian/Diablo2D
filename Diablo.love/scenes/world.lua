@@ -10,6 +10,7 @@ local movementSystem = require("systems.core.movement")
 local renderSystem = require("systems.render.render_world")
 local renderLootSystem = require("systems.render.loot")
 local renderEquipmentSystem = require("systems.render.equipment")
+local renderPlayerSystem = require("systems.render.player")
 local renderProjectileSystem = require("systems.render.projectile")
 local renderMouseLookSystem = require("systems.render.mouse_look")
 local renderHealthSystem = require("systems.render.health")
@@ -38,6 +39,7 @@ local uiTargetSystem = require("systems.ui.target")
 local lootTooltipSystem = require("systems.core.loot_tooltip")
 local potionConsumptionSystem = require("systems.core.potion_consumption")
 local manaRegenSystem = require("systems.core.mana_regen")
+local walkingAnimationSystem = require("systems.core.walking_animation")
 local ChunkManager = require("modules.world.chunk_manager")
 local SpawnResolver = require("modules.world.spawn_resolver")
 local ECS = require("modules.ecs")
@@ -109,12 +111,14 @@ function WorldScene.new(opts)
                 lootDropSystem.update,
                 lootScatterSystem.update,
                 experienceSystem.update,
+                walkingAnimationSystem.update,
                 movementSystem.update,
                 cameraSystem.update,
             },
             draw = {
                 renderSystem.draw,
                 renderLootSystem.draw,
+                renderPlayerSystem.draw,
                 renderEquipmentSystem.draw,
                 renderProjectileSystem.draw,
                 renderMouseLookSystem.draw,

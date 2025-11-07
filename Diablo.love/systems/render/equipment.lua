@@ -118,6 +118,25 @@ local function renderFeet(sprite, spriteSize, centerX, centerY, offsets, _flipSc
     )
 end
 
+---Calculate walking wobble rotation for player-controlled entities
+---@param entity table Entity with movement component
+---@return number Rotation angle in radians
+local function calculateWalkWobble(entity)
+    if not entity.movement or not entity.playerControlled then
+        return 0
+    end
+
+    local walkTime = entity.movement.walkAnimationTime or 0
+    if walkTime <= 0 then
+        return 0
+    end
+
+    -- Animation parameters: amplitude 10 degrees (~0.17 radians), frequency 2 Hz (slower wobble)
+    local amplitude = math.rad(10) -- 10 degrees in radians
+    local frequency = 2.0
+    return amplitude * math.sin(frequency * math.pi * 2 * walkTime)
+end
+
 ---Calculate flip direction and smooth transition
 ---@param entity table Entity with movement component
 ---@param dt number Delta time for smooth animation
@@ -308,6 +327,46 @@ local function renderNormalEquipment(sprite, spriteSize, centerX, centerY, offse
     )
 end
 
+---Render equipment for a single entity (helper function for reuse)
+---@param entity table Entity with equipment, position, and size components
+---@param centerX number Entity center X coordinate
+---@param centerY number Entity center Y coordinate
+---@param flipScale number Flip scale multiplier (1.0 or -1.0)
+local function renderEntityEquipment(entity, centerX, centerY, flipScale)
+    if not entity.equipment or not entity.size then
+        return
+    end
+
+    local size = entity.size
+    local offsets = getSlotOffsets(size)
+
+    -- Draw equipped items in order: feet (bottom), chest, gloves, head, weapon (top)
+    local drawOrder = { "feet", "chest", "gloves", "head", "weapon" }
+
+    for _, slotId in ipairs(drawOrder) do
+        local item = entity.equipment[slotId]
+        if item and item.spritePath then
+            local sprite = Resources.loadImageSafe(item.spritePath)
+            if sprite then
+                local spriteSize = math.max(size.w, size.h) * 1.2 -- Slightly larger than entity
+
+                if slotId == "gloves" then
+                    renderGloves(sprite, spriteSize, centerX, centerY, offsets, flipScale)
+                elseif slotId == "feet" then
+                    renderFeet(sprite, spriteSize, centerX, centerY, offsets, flipScale)
+                elseif slotId == "weapon" then
+                    local offset = offsets[slotId] or { x = 1, y = 2 }
+                    renderWeapon(entity, sprite, spriteSize, centerX, centerY, offset, flipScale)
+                else
+                    -- Normal equipment (head, chest)
+                    local offset = offsets[slotId] or { x = 0, y = 0 }
+                    renderNormalEquipment(sprite, spriteSize, centerX, centerY, offset, flipScale)
+                end
+            end
+        end
+    end
+end
+
 ---Render equipped items on entities that have equipment
 function renderEquipmentSystem.draw(world)
     -- Use lastUpdateDt for smooth animation, default to ~60fps if not available
@@ -325,41 +384,33 @@ function renderEquipmentSystem.draw(world)
             goto continue
         end
 
+        -- Skip player-controlled entities (rendered by renderPlayerSystem)
+        if entity.playerControlled then
+            goto continue
+        end
+
         local pos = entity.position
         local size = entity.size
+
+        -- Calculate walking wobble rotation
+        local wobbleRotation = calculateWalkWobble(entity)
+
         local centerX = pos.x + (size.w / 2)
         local centerY = pos.y + (size.h / 2)
 
         -- Calculate flip direction based on look direction
         local flipScale = calculateFlipDirection(entity, dt)
 
-        local offsets = getSlotOffsets(size)
+        -- Apply rotation around entity center for walking wobble
+        love.graphics.push()
+        love.graphics.translate(centerX, centerY)
+        love.graphics.rotate(wobbleRotation)
+        love.graphics.translate(-centerX, -centerY)
 
-        -- Draw equipped items in order: feet (bottom), chest, gloves, head, weapon (top)
-        local drawOrder = { "feet", "chest", "gloves", "head", "weapon" }
+        renderEntityEquipment(entity, centerX, centerY, flipScale)
 
-        for _, slotId in ipairs(drawOrder) do
-            local item = entity.equipment[slotId]
-            if item and item.spritePath then
-                local sprite = Resources.loadImageSafe(item.spritePath)
-                if sprite then
-                    local spriteSize = math.max(size.w, size.h) * 1.2 -- Slightly larger than entity
-
-                    if slotId == "gloves" then
-                        renderGloves(sprite, spriteSize, centerX, centerY, offsets, flipScale)
-                    elseif slotId == "feet" then
-                        renderFeet(sprite, spriteSize, centerX, centerY, offsets, flipScale)
-                    elseif slotId == "weapon" then
-                        local offset = offsets[slotId] or { x = 1, y = 2 }
-                        renderWeapon(entity, sprite, spriteSize, centerX, centerY, offset, flipScale)
-                    else
-                        -- Normal equipment (head, chest)
-                        local offset = offsets[slotId] or { x = 0, y = 0 }
-                        renderNormalEquipment(sprite, spriteSize, centerX, centerY, offset, flipScale)
-                    end
-                end
-            end
-        end
+        -- Pop rotation transform after drawing all equipment for this entity
+        love.graphics.pop()
 
         ::continue::
     end
@@ -367,5 +418,9 @@ function renderEquipmentSystem.draw(world)
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.pop()
 end
+
+-- Export helper functions for reuse by other systems
+renderEquipmentSystem.renderEntityEquipment = renderEntityEquipment
+renderEquipmentSystem.calculateFlipDirection = calculateFlipDirection
 
 return renderEquipmentSystem
