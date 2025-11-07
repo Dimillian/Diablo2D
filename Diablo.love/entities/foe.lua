@@ -39,6 +39,8 @@ function Foe.new(opts)
         renderable = createRenderable({
             kind = "rect",
             color = config.color,
+            spritePrefix = config.spritePrefix,
+            animationState = "idle",
         }),
         wander = createWander({
             interval = config.wanderInterval,

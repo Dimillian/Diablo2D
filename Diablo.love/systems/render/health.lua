@@ -6,15 +6,11 @@ function renderHealthSystem.draw(world)
     love.graphics.push("all")
     love.graphics.translate(-camera.x, -camera.y)
 
-    local entities = world:queryEntities({ "health", "position", "recentlyDamaged" })
+    -- Query foes with health (only show health bars for foes, not player)
+    local entities = world:queryEntities({ "foe", "health", "position" })
 
     for _, entity in ipairs(entities) do
         if entity.inactive or entity.dead then
-            goto continue
-        end
-
-        local recentlyDamaged = entity.recentlyDamaged
-        if not recentlyDamaged or recentlyDamaged.timer <= 0 then
             goto continue
         end
 
@@ -24,12 +20,18 @@ function renderHealthSystem.draw(world)
 
         local maxHealth = health.max or 1
         local current = math.max(0, math.min(health.current or 0, maxHealth))
+
+        -- Only show health bar if foe has lost health
+        if current >= maxHealth then
+            goto continue
+        end
+
         local ratio = maxHealth > 0 and (current / maxHealth) or 0
 
         local barWidth = math.max(size.w, 32)
         local barHeight = 6
         local barX = pos.x + (size.w - barWidth) / 2
-        local barY = pos.y - 12
+        local barY = pos.y - 26
 
         love.graphics.push("all")
 

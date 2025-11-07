@@ -33,8 +33,14 @@ function foeAttackSystem.update(world, dt)
             goto continue
         end
 
-        -- Decrement cooldown each frame (like player_attack.lua does)
+        -- Decrement cooldown and swing timer each frame
         combat.cooldown = math.max((combat.cooldown or 0) - dt, 0)
+        if combat.swingTimer and combat.swingTimer > 0 then
+            combat.swingTimer = math.max(combat.swingTimer - dt, 0)
+            if combat.swingTimer <= 0 then
+                combat.attackAnimationTime = nil
+            end
+        end
 
         -- Skip if already has a queued attack
         if combat.queuedAttack then

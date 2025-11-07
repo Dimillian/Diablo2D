@@ -11,7 +11,7 @@ ComponentDefaults.MAX_MANA_POTION_COUNT = 10
 ComponentDefaults.POTION_COOLDOWN_DURATION = 0.5
 
 -- Visual feedback defaults
-ComponentDefaults.DAMAGE_FLASH_DURATION = 1.5
+ComponentDefaults.DAMAGE_FLASH_DURATION = 0.4
 
 -- Player starting values
 ComponentDefaults.PLAYER_STARTING_HEALTH = 50
@@ -22,5 +22,6 @@ ComponentDefaults.PLAYER_COMBAT_RANGE = 100
 -- Combat defaults
 ComponentDefaults.COMBAT_SWING_DURATION = 0.35
 ComponentDefaults.DEFAULT_COMBAT_RANGE = 120
+ComponentDefaults.BASE_ATTACK_SPEED = 1.0
 
 return ComponentDefaults
