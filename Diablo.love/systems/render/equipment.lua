@@ -189,20 +189,30 @@ local function calculateStabAnimation(combat)
     local ratio = math.max(0, math.min(combat.swingTimer / swingDuration, 1))
     local progress = 1 - ratio
 
-    -- Stab motion: diagonal upward and forward
-    -- Maximum stab distance (adjust these values to control stab range)
-    local maxStabForward = 15  -- pixels forward
-    local maxStabUpward = -20  -- pixels upward (negative = up)
-    local maxStabRotation = math.pi / 12  -- ~15 degrees tilt forward
+    -- Reduced distances for more controlled animation
+    local maxStabForward = 12  -- pixels forward (reduced from 24)
+    local maxStabUpward = -14  -- pixels upward (reduced from -26)
+    local maxStabRotation = math.pi / 12  -- ~15 degrees tilt forward (reduced from ~20)
 
-    -- Use smooth easing for natural stab motion
-    local easedProgress = progress * progress * (3 - 2 * progress) -- smoothstep
+    -- Two-phase animation: forward (0-0.5) then back (0.5-1.0)
+    local phaseProgress
+    if progress < 0.5 then
+        -- Forward phase: 0 to 0.5 maps to 0 to 1
+        phaseProgress = progress * 2
+        -- Ease out for snappy forward motion
+        phaseProgress = 1 - math.pow(1 - phaseProgress, 2)
+    else
+        -- Return phase: 0.5 to 1.0 maps to 1 to 0
+        phaseProgress = (1 - progress) * 2
+        -- Ease in for smooth return
+        phaseProgress = math.pow(phaseProgress, 2)
+    end
 
-    -- Calculate position offsets
-    local stabOffsetX = maxStabForward * easedProgress
-    local stabOffsetY = maxStabUpward * easedProgress
-    -- Slight rotation forward for dynamic feel
-    local stabRotation = maxStabRotation * easedProgress
+    -- Calculate position offsets (forward then back)
+    local stabOffsetX = maxStabForward * phaseProgress
+    local stabOffsetY = maxStabUpward * phaseProgress
+    -- Rotation follows the same pattern
+    local stabRotation = maxStabRotation * phaseProgress
 
     return stabOffsetX, stabOffsetY, stabRotation
 end
