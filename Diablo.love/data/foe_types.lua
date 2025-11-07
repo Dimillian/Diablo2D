@@ -4,11 +4,11 @@ local foeTypes = {}
 foeTypes.types = {
     slow = {
         id = "slow",
-        name = "Slow Foe",
-        speed = 60,
+        name = "Green Orc",
+        speed = 30,
         detectionRange = 100,
-        color = { 0.8, 0.2, 0.2, 1 }, -- Red
-        wanderInterval = 0.01,
+        color = { 0.8, 0.2, 0.2, 1 },
+        wanderInterval = 3.0,
         health = 40,
         damageMin = 2,
         damageMax = 4,
@@ -18,14 +18,15 @@ foeTypes.types = {
         packAggro = false,
         goldRange = { min = 3, max = 8 },
         goldChance = 0.6,
+        spriteSheetPath = "resources/foe/orc1.png",
     },
     medium = {
         id = "medium",
-        name = "Medium Foe",
-        speed = 100,
+        name = "Blue Orc",
+        speed = 50,
         detectionRange = 180,
-        color = { 1, 0.5, 0, 1 }, -- Orange
-        wanderInterval = 0.01,
+        color = { 1, 0.5, 0, 1 },
+        wanderInterval = 2.5,
         health = 55,
         damageMin = 2,
         damageMax = 5,
@@ -35,14 +36,15 @@ foeTypes.types = {
         packAggro = false,
         goldRange = { min = 5, max = 12 },
         goldChance = 0.7,
+        spriteSheetPath = "resources/foe/orc2.png",
     },
     aggressive = {
         id = "aggressive",
-        name = "Aggressive Foe",
-        speed = 150,
+        name = "Red Orc",
+        speed = 75,
         detectionRange = 250,
-        color = { 0.8, 0.1, 0.8, 1 }, -- Purple/magenta
-        wanderInterval = 0.01,
+        color = { 0.8, 0.1, 0.8, 1 },
+        wanderInterval = 2.0,
         health = 65,
         damageMin = 5,
         damageMax = 7,
@@ -52,6 +54,7 @@ foeTypes.types = {
         packAggro = true,
         goldRange = { min = 8, max = 18 },
         goldChance = 0.75,
+        spriteSheetPath = "resources/foe/orc3.png",
     },
 }
 

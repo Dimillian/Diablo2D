@@ -192,12 +192,15 @@ function renderSystem.draw(world)
         end
 
         local renderable = entity.renderable
-        if renderable.kind == "rect" then
-            -- Skip player-controlled entities (rendered by renderPlayerSystem)
-            if entity.playerControlled then
-                goto continue
-            end
+        if entity.playerControlled then
+            goto continue
+        end
 
+        if entity.foe then
+            goto continue
+        end
+
+        if renderable.kind == "rect" then
             -- Skip rendering base rectangle if entity has armor equipped
             local hasArmor = false
             if entity.equipment then

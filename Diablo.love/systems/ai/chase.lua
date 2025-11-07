@@ -121,7 +121,13 @@ function chaseSystem.update(world, _dt)
         local combinedDy = ndy + sepDy
         local combinedNdx, combinedNdy = vector.normalize(combinedDx, combinedDy)
 
-        -- Instruct movement to advance only up to the separation threshold
+        if entity.movement.lookDirection then
+            entity.movement.lookDirection.x = combinedNdx
+            entity.movement.lookDirection.y = combinedNdy
+        else
+            entity.movement.lookDirection = { x = combinedNdx, y = combinedNdy }
+        end
+
         entity.movement.vx = combinedNdx
         entity.movement.vy = combinedNdy
         entity.movement.maxDistance = distance - stopDistance
