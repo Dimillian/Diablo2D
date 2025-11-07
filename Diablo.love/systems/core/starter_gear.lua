@@ -16,8 +16,6 @@ function starterGearSystem.update(world, _dt)
         return
     end
 
-    EquipmentHelper.ensure(player)
-
     if not player.skills then
         local createSkills = require("components.skills")
         player.skills = createSkills()

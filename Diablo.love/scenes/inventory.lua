@@ -139,11 +139,6 @@ function InventoryScene:mousepressed(x, y, button)
         return
     end
 
-    local inventory, equipment = EquipmentHelper.ensure(player)
-    if not inventory or not equipment then
-        return
-    end
-
     -- Inventory items: equip on click (only if item exists)
     for _, rect in ipairs(self.itemRects or {}) do
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then

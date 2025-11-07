@@ -25,7 +25,8 @@ local function transferItemToPlayer(world, player, lootEntity)
         return false
     end
 
-    local inventory, equipment = EquipmentHelper.ensure(player)
+    local inventory = player.inventory
+    local equipment = player.equipment
 
     if lootable.gold and lootable.gold > 0 then
         if inventory then

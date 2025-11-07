@@ -134,16 +134,6 @@ describe("EquipmentHelper.getEquippedItemsForComparison", function()
 
         assert.same({}, result)
     end)
-
-    it("handles player without equipment table initialized", function()
-        player.equipment = nil
-        EquipmentHelper.ensure(player) -- This initializes equipment
-
-        local result = EquipmentHelper.getEquippedItemsForComparison(player, "weapon")
-
-        assert.same({}, result)
-        assert.is_not_nil(player.equipment) -- ensure() should have initialized it
-    end)
 end)
 
 describe("EquipmentHelper.computeTotalStats", function()

@@ -18,34 +18,14 @@ function EquipmentHelper.slots()
     return equipmentSlots
 end
 
-function EquipmentHelper.ensure(player)
-    if not player then
-        return nil, nil
-    end
-
-    player.inventory = player.inventory or { items = {} }
-    player.inventory.items = player.inventory.items or {}
-    player.inventory.gold = player.inventory.gold or 0
-
-    player.equipment = player.equipment or {}
-    for _, slot in ipairs(equipmentSlots) do
-        if player.equipment[slot.id] == nil then
-            player.equipment[slot.id] = nil
-        end
-    end
-
-    player.baseStats = player.baseStats or Stats.newRecord()
-
-    return player.inventory, player.equipment
-end
-
 function EquipmentHelper.equip(player, item)
     if not player or not item or not item.slot then
         return
     end
 
-    local inventory, equipment = EquipmentHelper.ensure(player)
-    local inventoryItems = inventory and inventory.items or nil
+    local inventory = player.inventory
+    local equipment = player.equipment
+    local inventoryItems = inventory.items
 
     local slotId = item.slot
 
@@ -86,7 +66,7 @@ function EquipmentHelper.unequip(player, slotId)
         return
     end
 
-    local _, equipment = EquipmentHelper.ensure(player)
+    local equipment = player.equipment
     local item = equipment[slotId]
     if item then
         EquipmentHelper.addToInventory(player, item)
@@ -99,8 +79,8 @@ function EquipmentHelper.removeFromInventory(player, index)
         return
     end
 
-    local inventory = EquipmentHelper.ensure(player)
-    if not inventory or not inventory.items then
+    local inventory = player.inventory
+    if not inventory.items then
         return
     end
 
@@ -110,18 +90,18 @@ end
 ---Add item to inventory at the beginning, trimming excess items if over limit
 ---@param player table Player entity
 ---@param item table Item to add
----@param maxSlots number|nil Maximum inventory slots (default: 48)
+---@param maxSlots number|nil Maximum inventory slots (uses inventory.capacity if not provided)
 function EquipmentHelper.addToInventory(player, item, maxSlots)
     if not player or not item then
         return
     end
 
-    local inventory = EquipmentHelper.ensure(player)
-    if not inventory or not inventory.items then
+    local inventory = player.inventory
+    if not inventory.items then
         return
     end
 
-    maxSlots = maxSlots or 48 -- Default: 8 cols * 6 rows
+    maxSlots = maxSlots or inventory.capacity
 
     -- Insert at beginning (position 1)
     table.insert(inventory.items, 1, item)
@@ -133,8 +113,6 @@ function EquipmentHelper.addToInventory(player, item, maxSlots)
 end
 
 function EquipmentHelper.computeTotalStats(player)
-    EquipmentHelper.ensure(player)
-
     -- Step 1: Derive base stats from primary attributes
     local derivedStats = StatsDerivation.deriveStatsFromAttributes(player.baseStats)
 
@@ -175,11 +153,7 @@ function EquipmentHelper.getEquippedItemsForComparison(player, itemSlot)
         return {}
     end
 
-    local _, equipment = EquipmentHelper.ensure(player)
-    if not equipment then
-        return {}
-    end
-
+    local equipment = player.equipment
     local equippedItems = {}
 
     -- Handle ring slots: compare against both ringLeft and ringRight

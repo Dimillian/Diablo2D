@@ -1,6 +1,5 @@
 ---Render system for inventory grid
 local Resources = require("modules.resources")
-local EquipmentHelper = require("systems.helpers.equipment")
 local Tooltips = require("systems.helpers.tooltips")
 local WindowLayout = require("systems.helpers.window_layout")
 
@@ -10,7 +9,6 @@ local function snap(value)
     return math.floor(value + 0.5)
 end
 
-local MAX_SLOTS = 48
 local GRID_COLUMNS = 8
 local SLOT_SIZE = 40
 local SLOT_SPACING = 6
@@ -71,8 +69,8 @@ function renderInventoryGrid.draw(scene)
         return
     end
 
-    local inventory = EquipmentHelper.ensure(player)
-    local items = inventory and inventory.items or {}
+    local inventory = player.inventory
+    local items = inventory.items
 
     local layout = scene.windowLayout
     if not layout then
@@ -105,7 +103,8 @@ function renderInventoryGrid.draw(scene)
     local footerTop = layout.footer and layout.footer.y - padding or (rightColumn.y + rightColumn.height)
     local bottomLimit = footerTop - padding
 
-    for slotIndex = 1, MAX_SLOTS do
+    local maxSlots = inventory.capacity
+    for slotIndex = 1, maxSlots do
         local col = (slotIndex - 1) % cols
         local row = math.floor((slotIndex - 1) / cols)
 

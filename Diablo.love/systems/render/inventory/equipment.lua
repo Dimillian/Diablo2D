@@ -81,10 +81,7 @@ function renderInventoryEquipment.draw(scene)
         return
     end
 
-    local inventory, equipment = EquipmentHelper.ensure(player)
-    if not inventory or not equipment then
-        return
-    end
+    local equipment = player.equipment
 
     local layout = scene.windowLayout
     if not layout then
