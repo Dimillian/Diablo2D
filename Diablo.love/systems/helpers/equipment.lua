@@ -1,4 +1,5 @@
 local Stats = require("modules.stats")
+local StatsDerivation = require("modules.stats_derivation")
 
 local equipmentSlots = {
     { id = "weapon", label = "Weapon" },
@@ -134,8 +135,27 @@ end
 function EquipmentHelper.computeTotalStats(player)
     EquipmentHelper.ensure(player)
 
-    local total = Stats.clone(player.baseStats)
+    -- Step 1: Derive base stats from primary attributes
+    local derivedStats = StatsDerivation.deriveStatsFromAttributes(player.baseStats)
 
+    -- Step 2: Start with derived stats as base
+    local total = Stats.clone(derivedStats)
+
+    -- Step 3: Add direct stats from baseStats (defense, moveSpeed, etc.)
+    if player.baseStats then
+        Stats.add(total, {
+            defense = player.baseStats.defense,
+            moveSpeed = player.baseStats.moveSpeed,
+            dodgeChance = player.baseStats.dodgeChance,
+            goldFind = player.baseStats.goldFind,
+            lifeSteal = player.baseStats.lifeSteal,
+            attackSpeed = player.baseStats.attackSpeed,
+            resistAll = player.baseStats.resistAll,
+            manaRegen = player.baseStats.manaRegen,
+        })
+    end
+
+    -- Step 4: Add equipment bonuses on top of derived stats
     for _, slot in ipairs(equipmentSlots) do
         local item = player.equipment[slot.id]
         if item and item.stats then

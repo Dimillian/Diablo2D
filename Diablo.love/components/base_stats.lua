@@ -1,10 +1,11 @@
 local defaultStats = {
-    damageMin = 5,
-    damageMax = 8,
+    -- Primary attributes
+    strength = 5,
+    dexterity = 5,
+    vitality = 50,
+    intelligence = 25,
+    -- Direct stats (not derived from attributes)
     defense = 2,
-    health = 50,
-    mana = 25,
-    critChance = 0.05,
     moveSpeed = 0,
     dodgeChance = 0,
     goldFind = 0,

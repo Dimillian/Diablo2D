@@ -1,10 +1,17 @@
 local statKeys = {
+    -- Primary attributes
+    "strength",
+    "dexterity",
+    "vitality",
+    "intelligence",
+    -- Derived stats (computed from attributes)
     "damageMin",
     "damageMax",
-    "defense",
     "health",
     "mana",
     "critChance",
+    -- Direct stats (not derived from attributes)
+    "defense",
     "moveSpeed",
     "dodgeChance",
     "goldFind",

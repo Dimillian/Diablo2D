@@ -27,13 +27,8 @@ function applyStatsSystem.update(world, _dt)
 
     -- Apply health max: update max health based on stats
     if player.health then
-        local baseMaxHealth = 50 -- Default base health
-        if player.baseStats and player.baseStats.health then
-            baseMaxHealth = player.baseStats.health
-        end
-
-        -- Total stats already includes base + equipment
-        local newMaxHealth = totalStats.health or baseMaxHealth
+        -- Total stats already includes derived health from vitality + equipment bonuses
+        local newMaxHealth = totalStats.health or 50
 
         -- Update max health
         local oldMaxHealth = player.health.max
@@ -53,13 +48,8 @@ function applyStatsSystem.update(world, _dt)
 
     -- Apply mana max: update max mana based on stats
     if player.mana then
-        local baseMaxMana = 25 -- Default base mana
-        if player.baseStats and player.baseStats.mana then
-            baseMaxMana = player.baseStats.mana
-        end
-
-        -- Total stats already includes base + equipment
-        local newMaxMana = totalStats.mana or baseMaxMana
+        -- Total stats already includes derived mana from intelligence + equipment bonuses
+        local newMaxMana = totalStats.mana or 25
 
         -- Update max mana
         local oldMaxMana = player.mana.max

@@ -1,11 +1,19 @@
 ---Render system for inventory stats section
 local EquipmentHelper = require("systems.helpers.equipment")
+local WindowLayout = require("systems.helpers.window_layout")
 
 local renderInventoryStats = {}
 
 local function snap(value)
     return math.floor(value + 0.5)
 end
+
+local attributeDisplayOrder = {
+    { key = "strength", label = "Strength", always = true, type = "int" },
+    { key = "dexterity", label = "Dexterity", always = true, type = "int" },
+    { key = "vitality", label = "Vitality", always = true, type = "int" },
+    { key = "intelligence", label = "Intelligence", always = true, type = "int" },
+}
 
 local statDisplayOrder = {
     { key = "health", label = "Health", always = true, type = "int" },
@@ -18,6 +26,23 @@ local statDisplayOrder = {
     { key = "goldFind", label = "Gold Find", type = "percent" },
     { key = "resistAll", label = "All Resist", type = "percent" },
 }
+
+local function buildAttributeLines(baseStats)
+    local lines = {}
+
+    if not baseStats then
+        return lines
+    end
+
+    for _, entry in ipairs(attributeDisplayOrder) do
+        local value = baseStats[entry.key] or 0
+        if value ~= 0 or entry.always then
+            lines[#lines + 1] = string.format("%s: %d", entry.label, math.floor(value + 0.5))
+        end
+    end
+
+    return lines
+end
 
 local function buildSummaryLines(total)
     local lines = {}
@@ -67,6 +92,12 @@ function renderInventoryStats.draw(scene)
         return
     end
 
+    -- Split stats area into two columns
+    local columns = WindowLayout.calculateColumns({ content = statsArea }, { leftRatio = 0.5, spacing = 16 })
+    local leftColumn = columns.left
+    local rightColumn = columns.right
+
+    -- Draw divider line
     love.graphics.setColor(0.35, 0.32, 0.28, 1)
     love.graphics.setLineWidth(1)
     love.graphics.line(
@@ -76,23 +107,47 @@ function renderInventoryStats.draw(scene)
         statsArea.y
     )
 
+    -- Draw vertical divider between columns
+    love.graphics.line(
+        columns.dividerX,
+        statsArea.y,
+        columns.dividerX,
+        statsArea.y + statsArea.height
+    )
+
     local font = love.graphics.getFont()
     local headerY = statsArea.y + 12
-    love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Stats", statsArea.x, headerY)
-
-    local totalStats = EquipmentHelper.computeTotalStats(player)
-    local statLines = buildSummaryLines(totalStats)
     local lineHeight = font:getHeight() + 4
     local startY = snap(headerY + font:getHeight() + 8)
 
+    -- Left column: Attributes
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print("Attributes", leftColumn.x, headerY)
+
+    local baseStats = player.baseStats or {}
+    local attributeLines = buildAttributeLines(baseStats)
+    love.graphics.setColor(1, 1, 1, 1)
+    for index, line in ipairs(attributeLines) do
+        local y = startY + (index - 1) * lineHeight
+        if y > statsArea.y + statsArea.height - lineHeight then
+            break
+        end
+        love.graphics.print(line, leftColumn.x, y)
+    end
+
+    -- Right column: Derived Stats
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
+    love.graphics.print("Stats", rightColumn.x, headerY)
+
+    local totalStats = EquipmentHelper.computeTotalStats(player)
+    local statLines = buildSummaryLines(totalStats)
     love.graphics.setColor(1, 1, 1, 1)
     for index, line in ipairs(statLines) do
         local y = startY + (index - 1) * lineHeight
         if y > statsArea.y + statsArea.height - lineHeight then
             break
         end
-        love.graphics.print(line, statsArea.x, y)
+        love.graphics.print(line, rightColumn.x, y)
     end
 end
 

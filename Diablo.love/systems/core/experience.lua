@@ -1,6 +1,5 @@
 local Leveling = require("modules.leveling")
 local notificationBus = require("modules.notification_bus")
-local Spells = require("data.spells")
 
 local experienceSystem = {}
 
@@ -11,18 +10,16 @@ local LEVEL_UP_ICON_PATH = "resources/icons/book.png"
 local function getLevelUpBonusesPayload()
     return {
         statChanges = {
-            health = 5,
-            mana = 5,
-            damageMin = 1,
-            damageMax = 1,
-            defense = 1,
+            strength = 5,
+            dexterity = 5,
+            vitality = 5,
+            intelligence = 5,
         },
         bodyLines = {
-            "+5 Health",
-            "+5 Mana",
-            "+1 Min Damage",
-            "+1 Max Damage",
-            "+1 Defense",
+            "+5 Strength",
+            "+5 Dexterity",
+            "+5 Vitality",
+            "+5 Intelligence",
         },
     }
 end
@@ -57,14 +54,15 @@ local function applyLevelUpBonuses(world, player)
         if exp.currentXP and exp.currentXP >= totalXPForNextLevel then
             exp.level = (exp.level or 1) + 1
 
+            -- Apply primary attribute bonuses
             if player.baseStats then
-                player.baseStats.damageMin = (player.baseStats.damageMin or 5) + statChanges.damageMin
-                player.baseStats.damageMax = (player.baseStats.damageMax or 8) + statChanges.damageMax
-                player.baseStats.defense = (player.baseStats.defense or 2) + statChanges.defense
-                player.baseStats.health = (player.baseStats.health or 50) + statChanges.health
-                player.baseStats.mana = (player.baseStats.mana or 25) + statChanges.mana
+                player.baseStats.strength = (player.baseStats.strength or 5) + statChanges.strength
+                player.baseStats.dexterity = (player.baseStats.dexterity or 5) + statChanges.dexterity
+                player.baseStats.vitality = (player.baseStats.vitality or 50) + statChanges.vitality
+                player.baseStats.intelligence = (player.baseStats.intelligence or 25) + statChanges.intelligence
             end
 
+            -- Restore health and mana to max on level up
             if player.health then
                 player.health.current = player.health.max
             end

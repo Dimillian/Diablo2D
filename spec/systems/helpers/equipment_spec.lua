@@ -145,3 +145,82 @@ describe("EquipmentHelper.getEquippedItemsForComparison", function()
         assert.is_not_nil(player.equipment) -- ensure() should have initialized it
     end)
 end)
+
+describe("EquipmentHelper.computeTotalStats", function()
+    local player
+
+    before_each(function()
+        player = helper.buildEntity({
+            id = "player_1",
+            equipment = {},
+            inventory = { items = {}, gold = 0 },
+            baseStats = {
+                strength = 10,
+                dexterity = 20,
+                vitality = 50,
+                intelligence = 25,
+                defense = 2,
+                moveSpeed = 0,
+            },
+        })
+    end)
+
+    it("derives stats from primary attributes", function()
+        local total = EquipmentHelper.computeTotalStats(player)
+
+        -- 10 strength = 2 damage (10 * 0.2)
+        assert.equal(2, total.damageMin)
+        assert.equal(2, total.damageMax)
+        -- 20 dexterity = 0.004 crit chance (20 * 0.0002)
+        assert.equal(0.004, total.critChance)
+        -- 50 vitality = 50 health
+        assert.equal(50, total.health)
+        -- 25 intelligence = 25 mana
+        assert.equal(25, total.mana)
+        -- Direct stats preserved
+        assert.equal(2, total.defense)
+    end)
+
+    it("adds equipment bonuses to derived stats", function()
+        player.equipment.weapon = {
+            slot = "weapon",
+            stats = {
+                damageMin = 5,
+                damageMax = 8,
+            },
+        }
+
+        local total = EquipmentHelper.computeTotalStats(player)
+
+        -- Base damage (2) + equipment (5-8) = 7-10
+        assert.equal(7, total.damageMin)
+        assert.equal(10, total.damageMax)
+    end)
+
+    it("combines multiple equipment pieces", function()
+        player.equipment.weapon = {
+            slot = "weapon",
+            stats = {
+                damageMin = 3,
+                damageMax = 5,
+            },
+        }
+        player.equipment.head = {
+            slot = "head",
+            stats = {
+                health = 20,
+                defense = 5,
+            },
+        }
+
+        local total = EquipmentHelper.computeTotalStats(player)
+
+        -- Base damage (2) + weapon (3-5) = 5-7
+        assert.equal(5, total.damageMin)
+        assert.equal(7, total.damageMax)
+        -- Base health (50) + helmet (20) = 70
+        assert.equal(70, total.health)
+        -- Base defense (2) + helmet (5) = 7
+        assert.equal(7, total.defense)
+    end)
+end)

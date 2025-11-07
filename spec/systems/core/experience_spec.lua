@@ -22,10 +22,11 @@ describe("systems.core.experience", function()
                 currentXP = 0,
             },
             baseStats = {
-                damageMin = 5,
-                damageMax = 8,
+                strength = 5,
+                dexterity = 5,
+                vitality = 50,
+                intelligence = 25,
                 defense = 2,
-                health = 50,
             },
         })
 
@@ -70,19 +71,23 @@ describe("systems.core.experience", function()
         assert.is_true(world.pendingCombatEvents[1]._xpAwarded)
     end)
 
-    it("levels up and applies stat bonuses when XP threshold reached", function()
+    it("levels up and applies primary attribute bonuses when XP threshold reached", function()
         player.experience.currentXP = 90
         Leveling.getFoeXP = function()
             return 50
         end
         pushDeathEvent()
 
+        local originalStrength = player.baseStats.strength or 5
+        local originalVitality = player.baseStats.vitality or 50
+
         experienceSystem.update(world, 0)
 
         assert.equal(2, player.experience.level)
         assert.is_true(player.experience.currentXP >= 140)
-        assert.is_true(player.baseStats.damageMin > 5)
-        assert.is_true(player.baseStats.health > 50)
+        -- Check that primary attributes increased (+5 each)
+        assert.equal(originalStrength + 5, player.baseStats.strength)
+        assert.equal(originalVitality + 5, player.baseStats.vitality)
     end)
 
     it("does nothing when there are no events", function()
