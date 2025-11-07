@@ -61,6 +61,17 @@ end
 
 **Component Mutations**: Use `world:addComponent(entityId, componentName, component)` and `world:removeComponent(entityId, componentName)` for runtime changes (e.g., AI adding/removing `chase` component).
 
+**Resource Management**: Centralized in `modules/resources.lua`. All image loading goes through the resource manager for caching and error handling:
+- `resources.loadImage(path)` - Load standalone images (cached)
+- `resources.loadImageSafe(path)` - Safe loading with nil return on error (use for optional assets)
+- `resources.loadAtlas(imagePath, metadataPath, spriteSize)` - Load sprite sheets with quads (supports metadata files or uniform grid)
+- `resources.getAtlasSprite(atlasPath, spriteName)` - Get a quad from a loaded atlas
+- `resources.loadUIIcon(iconName)` - Load UI icons from `resources/icons/` directory (e.g., "bag", "health_potion")
+- `resources.getFoeSpritePath(prefix, animationType)` - Get foe sprite sheet paths (e.g., "orc1", "walk" → "resources/foe/orc1_walk.png")
+- `resources.clearCache()` - Clear all cached resources (useful for testing/reloading)
+
+Always use `loadImageSafe()` for optional assets that may not exist. Use `loadImage()` for required assets. All resources are cached automatically.
+
 ## Critical System Interactions
 
 - **Combat**: `systems/combat.lua` processes queued attacks, computes damage using `player.stats.total`, raises events. `systems/player_attack.lua` queues attacks; `systems/foe_attack.lua` handles enemy offense.
