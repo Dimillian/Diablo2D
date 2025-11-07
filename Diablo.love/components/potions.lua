@@ -1,10 +1,12 @@
+local ComponentDefaults = require("data.component_defaults")
+
 local function createPotionsComponent()
     return {
-        healthPotionCount = 3,
-        maxHealthPotionCount = 10,
-        manaPotionCount = 2,
-        maxManaPotionCount = 10,
-        cooldownDuration = 0.5,
+        healthPotionCount = ComponentDefaults.HEALTH_POTION_STARTING_COUNT,
+        maxHealthPotionCount = ComponentDefaults.MAX_HEALTH_POTION_COUNT,
+        manaPotionCount = ComponentDefaults.MANA_POTION_STARTING_COUNT,
+        maxManaPotionCount = ComponentDefaults.MAX_MANA_POTION_COUNT,
+        cooldownDuration = ComponentDefaults.POTION_COOLDOWN_DURATION,
         cooldownRemaining = 0,
     }
 end

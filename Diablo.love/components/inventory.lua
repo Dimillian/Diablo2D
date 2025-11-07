@@ -1,7 +1,9 @@
+local ComponentDefaults = require("data.component_defaults")
+
 local function createInventoryComponent()
     return {
         items = {},
-        capacity = 80,
+        capacity = ComponentDefaults.INVENTORY_CAPACITY,
         gold = 0,
     }
 end

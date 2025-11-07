@@ -1,4 +1,5 @@
 local EquipmentHelper = require("systems.helpers.equipment")
+local ComponentDefaults = require("data.component_defaults")
 
 local applyStatsSystem = {}
 
@@ -18,7 +19,7 @@ function applyStatsSystem.update(world, _dt)
 
     -- Apply movement speed: base speed * (1 + moveSpeed percentage bonuses)
     if player.movement then
-        local baseSpeed = 140 -- Default base movement speed in pixels/second
+        local baseSpeed = ComponentDefaults.BASE_MOVEMENT_SPEED
 
         -- Apply moveSpeed bonuses from stats (both base and equipment)
         local speedMultiplier = 1 + (totalStats.moveSpeed or 0)
@@ -28,7 +29,7 @@ function applyStatsSystem.update(world, _dt)
     -- Apply health max: update max health based on stats
     if player.health then
         -- Total stats already includes derived health from vitality + equipment bonuses
-        local newMaxHealth = totalStats.health or 50
+        local newMaxHealth = totalStats.health or ComponentDefaults.PLAYER_STARTING_HEALTH
 
         -- Update max health
         local oldMaxHealth = player.health.max
@@ -49,7 +50,7 @@ function applyStatsSystem.update(world, _dt)
     -- Apply mana max: update max mana based on stats
     if player.mana then
         -- Total stats already includes derived mana from intelligence + equipment bonuses
-        local newMaxMana = totalStats.mana or 25
+        local newMaxMana = totalStats.mana or ComponentDefaults.PLAYER_STARTING_MANA
 
         -- Update max mana
         local oldMaxMana = player.mana.max

@@ -1,4 +1,5 @@
 local Player = require("entities.player")
+local ComponentDefaults = require("data.component_defaults")
 local mouseInputSystem = require("systems.input.mouse_input")
 local playerInputSystem = require("systems.input.player_input")
 local mouseLookSystem = require("systems.input.mouse_look")
@@ -154,11 +155,11 @@ function WorldScene.new(opts)
         },
         playerControlled = opts.playerControlled,
         health = {
-            max = opts.playerMaxHealth or 50,
-            current = opts.playerHealth or opts.playerMaxHealth or 50,
+            max = opts.playerMaxHealth or ComponentDefaults.PLAYER_STARTING_HEALTH,
+            current = opts.playerHealth or opts.playerMaxHealth or ComponentDefaults.PLAYER_STARTING_HEALTH,
         },
         combat = {
-            range = 100, -- Extended range for player (longer than foes)
+            range = ComponentDefaults.PLAYER_COMBAT_RANGE, -- Extended range for player (longer than foes)
         },
     })
 
