@@ -1,11 +1,9 @@
 local equipmentSlots = { "weapon", "head", "chest", "feet", "gloves", "ringLeft", "ringRight", "amulet" }
 
-local function createEquipmentComponent(opts)
-    opts = opts or {}
-
+local function createEquipmentComponent()
     local equipment = {}
     for _, slot in ipairs(equipmentSlots) do
-        equipment[slot] = opts[slot] or nil
+        equipment[slot] = nil
     end
 
     return equipment

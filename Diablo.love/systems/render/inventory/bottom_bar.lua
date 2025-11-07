@@ -84,8 +84,8 @@ function renderInventoryBottomBar.draw(scene)
         return
     end
 
-    local inventory = player.inventory or {}
-    local potions = player.potions or {}
+    local inventory = player.inventory
+    local potions = player.potions
 
     local goldAmount = inventory.gold or 0
     local healthCount = potions.healthPotionCount or 0

@@ -1,8 +1,6 @@
-local function createPlayerControlledComponent(opts)
-    opts = opts or {}
-
+local function createPlayerControlledComponent()
     return {
-        inputScheme = opts.inputScheme or "keyboard",
+        inputScheme = "keyboard",
     }
 end
 

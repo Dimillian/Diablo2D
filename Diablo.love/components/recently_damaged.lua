@@ -1,11 +1,7 @@
-local function createRecentlyDamagedComponent(opts)
-    opts = opts or {}
-
-    local maxTimer = opts.maxTimer or 1.5
-
+local function createRecentlyDamagedComponent()
     return {
-        timer = opts.timer or maxTimer,
-        maxTimer = maxTimer,
+        timer = 1.5,
+        maxTimer = 1.5,
     }
 end
 

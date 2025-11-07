@@ -1,13 +1,11 @@
-local function createPotionsComponent(opts)
-    opts = opts or {}
-
+local function createPotionsComponent()
     return {
-        healthPotionCount = opts.healthPotionCount or 3,
-        maxHealthPotionCount = opts.maxHealthPotionCount or 10,
-        manaPotionCount = opts.manaPotionCount or 2,
-        maxManaPotionCount = opts.maxManaPotionCount or 10,
-        cooldownDuration = opts.cooldownDuration or 0.5,
-        cooldownRemaining = opts.cooldownRemaining or 0,
+        healthPotionCount = 3,
+        maxHealthPotionCount = 10,
+        manaPotionCount = 2,
+        maxManaPotionCount = 10,
+        cooldownDuration = 0.5,
+        cooldownRemaining = 0,
     }
 end
 

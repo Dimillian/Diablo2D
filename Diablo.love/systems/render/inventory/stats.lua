@@ -155,7 +155,7 @@ function renderInventoryStats.draw(scene)
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
     love.graphics.print("Attributes", leftColumn.x, headerY)
 
-    local baseStats = player.baseStats or {}
+    local baseStats = player.baseStats
     local attributeLines = buildAttributeLines(baseStats)
     love.graphics.setColor(1, 1, 1, 1)
 

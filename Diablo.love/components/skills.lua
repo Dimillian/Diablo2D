@@ -1,10 +1,8 @@
-local function createSkillsComponent(opts)
-    opts = opts or {}
+local function createSkillsComponent()
     local equipped = {}
-    local source = opts.equipped or {}
 
     for index = 1, 4 do
-        equipped[index] = source[index]
+        equipped[index] = nil
     end
 
     return {
