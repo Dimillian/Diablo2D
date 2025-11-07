@@ -135,6 +135,22 @@ function resources.loadUIIcon(iconName)
     return resources.loadImageSafe(path)
 end
 
+---Get foe sprite sheet path from prefix and animation type
+---@param prefix string Sprite prefix (e.g., "orc1", "orc2", "orc3")
+---@param animationType string Animation type ("walk" or "attack")
+---@return string|nil Full path to sprite sheet, or nil if invalid
+function resources.getFoeSpritePath(prefix, animationType)
+    if not prefix or not animationType then
+        return nil
+    end
+
+    if animationType ~= "walk" and animationType ~= "attack" then
+        return nil
+    end
+
+    return "resources/foe/" .. prefix .. "_" .. animationType .. ".png"
+end
+
 ---Clear all cached resources (useful for testing/reloading)
 function resources.clearCache()
     cache.images = {}

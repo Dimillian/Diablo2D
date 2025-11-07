@@ -18,7 +18,7 @@ foeTypes.types = {
         packAggro = false,
         goldRange = { min = 3, max = 8 },
         goldChance = 0.6,
-        spriteSheetPath = "resources/foe/orc1.png",
+        spritePrefix = "orc1",
     },
     medium = {
         id = "medium",
@@ -36,7 +36,7 @@ foeTypes.types = {
         packAggro = false,
         goldRange = { min = 5, max = 12 },
         goldChance = 0.7,
-        spriteSheetPath = "resources/foe/orc2.png",
+        spritePrefix = "orc2",
     },
     aggressive = {
         id = "aggressive",
@@ -54,7 +54,7 @@ foeTypes.types = {
         packAggro = true,
         goldRange = { min = 8, max = 18 },
         goldChance = 0.75,
-        spriteSheetPath = "resources/foe/orc3.png",
+        spritePrefix = "orc3",
     },
 }
 

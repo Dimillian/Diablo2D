@@ -8,6 +8,7 @@ local function createRenderableComponent(opts)
         coreColor = opts.coreColor,
         sparkleSeed = opts.sparkleSeed,
         spriteSheetPath = opts.spriteSheetPath,
+        spritePrefix = opts.spritePrefix,
         animationState = opts.animationState or "idle",
     }
 end

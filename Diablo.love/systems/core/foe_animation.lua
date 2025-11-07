@@ -10,7 +10,7 @@ function foeAnimationSystem.update(world, dt)
         end
 
         local renderable = entity.renderable
-        if not renderable or not renderable.spriteSheetPath then
+        if not renderable or not renderable.spritePrefix then
             goto continue
         end
 

@@ -39,7 +39,7 @@ function Foe.new(opts)
         renderable = createRenderable({
             kind = "rect",
             color = config.color,
-            spriteSheetPath = config.spriteSheetPath,
+            spritePrefix = config.spritePrefix,
             animationState = "idle",
         }),
         wander = createWander({
