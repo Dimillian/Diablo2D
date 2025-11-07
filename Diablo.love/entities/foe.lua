@@ -21,6 +21,7 @@ function Foe.new(opts)
     local createDetection = require("components.detection")
     local createFoeTag = require("components.foe")
     local createCombat = require("components.combat")
+    local createPhysicsBody = require("components.physics_body")
 
     local entity = {
         id = opts.id or ("foe_" .. math.random(10000, 99999)),
@@ -66,6 +67,12 @@ function Foe.new(opts)
             baseDamageMax = config.damageMax,
         }),
         foeTypeId = typeId,
+        physicsBody = createPhysicsBody({
+            bodyType = "dynamic",
+            fixedRotation = true,
+            linearDamping = (config and config.physicsLinearDamping) or 16,
+            friction = 0,
+        }),
     }
 
     return setmetatable(entity, Foe)
