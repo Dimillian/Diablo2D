@@ -1,6 +1,5 @@
 local vector = require("modules.vector")
 local Targeting = require("systems.helpers.targeting")
-local ComponentDefaults = require("data.component_defaults")
 
 local playerAttackSystem = {}
 
