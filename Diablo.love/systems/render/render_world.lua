@@ -3,6 +3,147 @@ local biomes = require("data.biomes")
 
 local renderSystem = {}
 
+local function clamp01(value)
+    if value < 0 then
+        return 0
+    end
+    if value > 1 then
+        return 1
+    end
+    return value
+end
+
+local function mixColor(color, brighten)
+    if not color then
+        return { 0.2, 0.2, 0.2 }
+    end
+
+    brighten = brighten or 0
+    local r = clamp01(color[1] + brighten)
+    local g = clamp01(color[2] + brighten)
+    local b = clamp01(color[3] + brighten)
+    return { r, g, b }
+end
+
+local function drawForestGround(bounds, colors, rng)
+    if not colors then
+        return
+    end
+
+    local accent = colors.accent or colors.secondary or colors.primary
+    local secondary = colors.secondary or colors.primary
+
+    love.graphics.setLineWidth(1)
+
+    for i = 1, 70 do
+        local baseX = bounds.x + rng:random() * bounds.w
+        local baseY = bounds.y + rng:random() * bounds.h
+        local height = 8 + rng:random() * 14
+        local sway = (rng:random() - 0.5) * 6
+        local alpha = 0.25 + rng:random() * 0.3
+        local color = mixColor(accent, rng:random() * 0.05)
+        love.graphics.setColor(color[1], color[2], color[3], alpha)
+        love.graphics.line(baseX, baseY, baseX + sway, baseY - height)
+        love.graphics.line(baseX, baseY, baseX - sway * 0.6, baseY - height * 0.7)
+    end
+
+    for i = 1, 45 do
+        local x = bounds.x + rng:random() * bounds.w
+        local y = bounds.y + rng:random() * bounds.h
+        local radius = 2 + rng:random() * 2
+        local alpha = 0.08 + rng:random() * 0.12
+        local color = mixColor(secondary, rng:random() * 0.04)
+        love.graphics.setColor(color[1], color[2], color[3], alpha)
+        love.graphics.circle("fill", x, y, radius)
+    end
+
+    love.graphics.setLineWidth(1)
+end
+
+local function drawDesertGround(bounds, colors, rng)
+    if not colors then
+        return
+    end
+
+    local accent = colors.accent or colors.secondary or colors.primary
+    local secondary = colors.secondary or colors.primary
+    local stripeCount = 10
+    local segmentCount = 7
+
+    for i = 1, stripeCount do
+        local y = bounds.y + (i / (stripeCount + 1)) * bounds.h
+        local amplitude = 2 + rng:random() * 6
+        local points = {}
+        for segment = 0, segmentCount - 1 do
+            local progress = segment / (segmentCount - 1)
+            local px = bounds.x + progress * bounds.w
+            local wave = math.sin((progress * math.pi * 2) + rng:random() * math.pi) * amplitude
+            local py = y + wave
+            points[#points + 1] = px
+            points[#points + 1] = py
+        end
+
+        local alpha = 0.18 + rng:random() * 0.15
+        local color = mixColor(accent, rng:random() * 0.08)
+        love.graphics.setColor(color[1], color[2], color[3], alpha)
+        love.graphics.setLineWidth(2)
+        love.graphics.line(points)
+    end
+
+    love.graphics.setLineWidth(1)
+
+    for i = 1, 55 do
+        local x = bounds.x + rng:random() * bounds.w
+        local y = bounds.y + rng:random() * bounds.h
+        local radius = 1 + rng:random() * 2.5
+        local alpha = 0.1 + rng:random() * 0.1
+        local color = mixColor(secondary, rng:random() * 0.05)
+        love.graphics.setColor(color[1], color[2], color[3], alpha)
+        love.graphics.circle("fill", x, y, radius)
+    end
+end
+
+local function drawTundraGround(bounds, colors, rng)
+    if not colors then
+        return
+    end
+
+    local accent = colors.accent or colors.secondary or colors.primary
+    local secondary = colors.secondary or colors.primary
+
+    for i = 1, 80 do
+        local x = bounds.x + rng:random() * bounds.w
+        local y = bounds.y + rng:random() * bounds.h
+        local radius = 1.5 + rng:random() * 2.5
+        local alpha = 0.12 + rng:random() * 0.15
+        local color = mixColor(secondary, rng:random() * 0.08)
+        love.graphics.setColor(color[1], color[2], color[3], alpha)
+        love.graphics.circle("fill", x, y, radius)
+    end
+
+    for i = 1, 24 do
+        local x = bounds.x + rng:random() * bounds.w
+        local y = bounds.y + rng:random() * bounds.h
+        local length = 12 + rng:random() * 18
+        local angle = (rng:random() - 0.5) * 0.8
+        local dx = math.cos(angle) * (length / 2)
+        local dy = math.sin(angle) * (length / 2)
+        local alpha = 0.22 + rng:random() * 0.15
+        local color = mixColor(accent, rng:random() * 0.05)
+        love.graphics.setColor(color[1], color[2], color[3], alpha)
+        love.graphics.setLineWidth(2)
+        love.graphics.line(x - dx, y - dy, x + dx, y + dy)
+    end
+
+    love.graphics.setLineWidth(1)
+end
+
+local BIOME_GROUND_RENDERERS = {
+    forest = drawForestGround,
+    desert = drawDesertGround,
+    tundra = drawTundraGround,
+}
+
 local PROP_STYLES = {
     shrub = { color = { 0.18, 0.45, 0.22, 0.8 }, kind = "circle" },
     stone = { color = { 0.4, 0.4, 0.42, 0.8 }, kind = "rect" },
@@ -24,6 +165,14 @@ local function drawChunkBase(world, chunk)
 
     love.graphics.setColor((colors and colors.primary) or { 0.15, 0.15, 0.15, 1 })
     love.graphics.rectangle("fill", bounds.x, bounds.y, bounds.w, bounds.h)
+
+    if colors then
+        local renderer = BIOME_GROUND_RENDERERS[chunk.biomeId]
+        if renderer then
+            local rng = love.math.newRandomGenerator(chunk.seed or 0)
+            renderer(bounds, colors, rng)
+        end
+    end
 
     if chunk.transition and chunk.transition.transitionStrength and colors and colors.secondary then
         local alpha = math.min(0.7, chunk.transition.transitionStrength + 0.1)
