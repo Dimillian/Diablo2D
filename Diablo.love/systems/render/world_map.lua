@@ -16,6 +16,9 @@ local MAP_CONFIG = {
     instructionColor = { 0.85, 0.8, 0.6, 0.9 },
 }
 
+local ZONE_HASH_X = 73856093
+local ZONE_HASH_Y = 19349663
+
 local function computeChunkBounds(chunks)
     local minX, maxX = math.huge, -math.huge
     local minY, maxY = math.huge, -math.huge
@@ -121,6 +124,8 @@ local function drawChunkRectangles(scene, layout)
         love.graphics.line(originX, y, originX + drawWidth, y)
     end
 
+    local regions = {}
+
     for _, chunk in pairs(chunks) do
         local col = chunk.chunkX - bounds.minX
         local row = chunk.chunkY - bounds.minY
@@ -138,27 +143,57 @@ local function drawChunkRectangles(scene, layout)
 
         love.graphics.setColor(accent[1], accent[2], accent[3], alpha * 0.85 + 0.1)
         love.graphics.rectangle("line", rectX, rectY, cellSize, cellSize)
+
+        local name = chunk.zoneName or chunk.biomeLabel or chunk.biomeId or "?"
+        local zoneSeed = chunk.zoneSeed or chunk.seed or (chunk.chunkX * ZONE_HASH_X + chunk.chunkY * ZONE_HASH_Y)
+        local regionKey = tostring(zoneSeed) .. "|" .. (chunk.biomeId or "?")
+        local region = regions[regionKey]
+        if not region then
+            region = {
+                name = name,
+                biomeId = chunk.biomeId,
+                minCol = col,
+                maxCol = col,
+                minRow = row,
+                maxRow = row,
+                sumX = 0,
+                sumY = 0,
+                count = 0,
+                visitedCount = 0,
+            }
+            regions[regionKey] = region
+        else
+            region.minCol = math.min(region.minCol, col)
+            region.maxCol = math.max(region.maxCol, col)
+            region.minRow = math.min(region.minRow, row)
+            region.maxRow = math.max(region.maxRow, row)
+        end
+
+        local centerX = originX + (col + 0.5) * cellSize
+        local centerY = originY + (row + 0.5) * cellSize
+        region.sumX = region.sumX + centerX
+        region.sumY = region.sumY + centerY
+        region.count = region.count + 1
+        if visited then
+            region.visitedCount = region.visitedCount + 1
+        end
     end
 
     local font = scene.zoneNameFont or love.graphics.getFont()
     love.graphics.setFont(font)
 
-    for _, chunk in pairs(chunks) do
-        if chunk.chunkX and chunk.chunkY then
-            local name = chunk.zoneName or chunk.biomeLabel or chunk.biomeId or "?"
-            local visited = world.visitedChunks and world.visitedChunks[chunk.key]
-            local opacity = visited and 1 or 0.5
-
-            local col = chunk.chunkX - bounds.minX
-            local row = chunk.chunkY - bounds.minY
-            local centerX = originX + (col + 0.5) * cellSize
-            local centerY = originY + (row + 0.5) * cellSize - font:getHeight() / 2
+    for _, region in pairs(regions) do
+        if region.count > 0 and region.name and region.name ~= "" then
+            local centerX = region.sumX / region.count
+            local centerY = region.sumY / region.count - font:getHeight() / 2
+            local width = math.max(cellSize, (region.maxCol - region.minCol + 1) * cellSize)
+            local opacity = region.visitedCount > 0 and 1 or 0.5
 
             love.graphics.setColor(0, 0, 0, opacity * 0.5)
-            love.graphics.printf(name, centerX - cellSize * 0.48 + 2, centerY + 2, cellSize * 0.96, "center")
+            love.graphics.printf(region.name, centerX - width / 2 + 2, centerY + 2, width, "center")
 
             love.graphics.setColor(0.95, 0.9, 0.7, opacity)
-            love.graphics.printf(name, centerX - cellSize * 0.48, centerY, cellSize * 0.96, "center")
+            love.graphics.printf(region.name, centerX - width / 2, centerY, width, "center")
         end
     end
 

@@ -51,20 +51,88 @@ local function applyStartBiome(manager, chunk)
     chunk.transition.neighbors = chunk.transition.neighbors or {}
 end
 
-local function ensureZoneName(manager, chunk)
+local NEIGHBOR_OFFSETS = {
+    { dx = -1, dy = 0 },
+    { dx = 1, dy = 0 },
+    { dx = 0, dy = -1 },
+    { dx = 0, dy = 1 },
+}
+
+local function mergeZone(world, biomeId, targetName, targetSeed, sourceName, sourceSeed)
+    if not world or not world.generatedChunks then
+        return
+    end
+
+    for _, other in pairs(world.generatedChunks) do
+        if other.biomeId == biomeId then
+            local matches = false
+            if sourceName and sourceName ~= "" and other.zoneName == sourceName then
+                matches = true
+            end
+            if not matches and sourceSeed and other.zoneSeed == sourceSeed then
+                matches = true
+            end
+
+            if matches then
+                other.zoneName = targetName
+                other.zoneSeed = targetSeed
+            end
+        end
+    end
+end
+
+local function ensureZoneName(manager, world, chunk)
+    chunk.seed = chunk.seed or ChunkManager.hashSeed(manager, chunk.chunkX, chunk.chunkY)
+    chunk.zoneSeed = chunk.zoneSeed or chunk.seed
+
+    local generatedChunks = world and world.generatedChunks or {}
+    local matchingNeighbors = {}
+
+    for _, offset in ipairs(NEIGHBOR_OFFSETS) do
+        local neighborKey = buildKey(chunk.chunkX + offset.dx, chunk.chunkY + offset.dy)
+        local neighbor = generatedChunks[neighborKey]
+        if neighbor and neighbor.biomeId == chunk.biomeId and neighbor.zoneName and neighbor.zoneName ~= "" then
+            matchingNeighbors[#matchingNeighbors + 1] = neighbor
+        end
+    end
+
+    if #matchingNeighbors > 0 then
+        table.sort(matchingNeighbors, function(a, b)
+            local nameA = a.zoneName or ""
+            local nameB = b.zoneName or ""
+            if nameA == nameB then
+                local seedA = a.zoneSeed or a.seed or 0
+                local seedB = b.zoneSeed or b.seed or 0
+                return seedA < seedB
+            end
+            return nameA < nameB
+        end)
+
+        local primary = matchingNeighbors[1]
+        local chosenName = primary.zoneName
+        local chosenSeed = primary.zoneSeed or primary.seed or chunk.zoneSeed
+
+        chunk.zoneName = chosenName
+        chunk.zoneSeed = chosenSeed
+
+        for index = 2, #matchingNeighbors do
+            local neighbor = matchingNeighbors[index]
+            if neighbor.zoneName ~= chosenName or (neighbor.zoneSeed or neighbor.seed) ~= chosenSeed then
+                mergeZone(world, chunk.biomeId, chosenName, chosenSeed, neighbor.zoneName, neighbor.zoneSeed or neighbor.seed)
+            end
+        end
+
+        return
+    end
+
     if chunk.zoneName and chunk.zoneName ~= "" then
         return
     end
 
-    local seed = chunk.seed
-    if not seed then
-        seed = ChunkManager.hashSeed(manager, chunk.chunkX, chunk.chunkY)
-        chunk.seed = seed
-    end
-
+    chunk.zoneSeed = chunk.zoneSeed or chunk.seed
     chunk.zoneName = BiomeNameGenerator.generate({
         biomeId = chunk.biomeId,
-        seed = seed,
+        seed = chunk.zoneSeed,
     })
 end
 
@@ -110,7 +178,7 @@ function ChunkManager.ensureChunkLoaded(manager, world, chunkX, chunkY)
         chunk.props = chunk.props or {}
         chunk.seed = chunk.seed or ChunkManager.hashSeed(manager, chunkX, chunkY)
         applyStartBiome(manager, chunk)
-        ensureZoneName(manager, chunk)
+        ensureZoneName(manager, world, chunk)
         return chunk
     end
 
@@ -135,7 +203,7 @@ function ChunkManager.ensureChunkLoaded(manager, world, chunkX, chunkY)
     }
 
     applyStartBiome(manager, chunk)
-    ensureZoneName(manager, chunk)
+    ensureZoneName(manager, world, chunk)
 
     if manager.spawnResolver then
         manager.spawnResolver:populateChunk(world, chunk)
