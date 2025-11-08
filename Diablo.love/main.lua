@@ -6,8 +6,10 @@ local SceneManager = require("modules.scene_manager")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
+local CRTShader = require("modules.crt_shader")
 
 local sceneManager = SceneManager.new()
+local crtShader
 
 local SAVE_FILE = "world_state.json"
 
@@ -127,10 +129,29 @@ function love.load()
     end
 
     sceneManager:push(WorldScene.new(opts))
+
+    local shaderSuccess, shaderResult = pcall(CRTShader.new, {
+        scanlineIntensity = 0.45,
+        scanlineDensity = 1.15,
+        vignetteIntensity = 0.3,
+        curvature = 0.12,
+        noiseStrength = 0.02,
+    })
+
+    if shaderSuccess then
+        crtShader = shaderResult
+    else
+        crtShader = nil
+        print(string.format("Failed to initialize CRT shader: %s", shaderResult))
+    end
 end
 
 function love.update(dt)
     InputManager.update()
+
+    if crtShader then
+        crtShader:update(dt)
+    end
 
     local scene = sceneManager:current()
     if scene and scene.update then
@@ -139,9 +160,29 @@ function love.update(dt)
 end
 
 function love.draw()
+    if crtShader then
+        crtShader:beginDraw()
+    end
+
     for _, scene in sceneManager:each() do
         if scene.draw then
             scene:draw()
+        end
+    end
+
+    if crtShader then
+        crtShader:endDraw()
+    end
+end
+
+function love.resize(width, height)
+    if crtShader then
+        crtShader:resize(width, height)
+    end
+
+    for _, scene in sceneManager:each() do
+        if scene.resize then
+            scene:resize(width, height)
         end
     end
 end
