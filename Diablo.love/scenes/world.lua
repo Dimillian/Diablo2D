@@ -253,12 +253,6 @@ function WorldScene.new(opts)
         }
     end
 
-    for _, chunk in pairs(scene.generatedChunks) do
-        chunk.spawnedEntities = {}
-        chunk.defeatedFoes = chunk.defeatedFoes or {}
-        chunk.lootedStructures = chunk.lootedStructures or {}
-    end
-
     scene.spawnResolver = SpawnResolver.new({
         chunkSize = scene.chunkConfig.chunkSize,
     })
@@ -273,6 +267,13 @@ function WorldScene.new(opts)
         startBiomeRadius = scene.startBiomeRadius,
         forceStartBiome = scene.forceStartBiome,
     })
+
+    for _, chunk in pairs(scene.generatedChunks) do
+        chunk.spawnedEntities = {}
+        chunk.defeatedFoes = chunk.defeatedFoes or {}
+        chunk.lootedStructures = chunk.lootedStructures or {}
+        ChunkManager.ensureChunkLoaded(scene.chunkManager, scene, chunk.chunkX, chunk.chunkY)
+    end
 
     local chunkX = currentChunkX
     local chunkY = currentChunkY
@@ -414,6 +415,7 @@ function WorldScene:serializeState()
             chunkY = chunk.chunkY,
             biomeId = chunk.biomeId,
             biomeLabel = chunk.biomeLabel,
+            zoneName = chunk.zoneName,
             transition = transitionCopy,
             descriptors = {
                 foes = copyDescriptorList(chunk.descriptors and chunk.descriptors.foes or {}),

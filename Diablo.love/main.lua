@@ -74,6 +74,7 @@ local function normalizeChunks(persisted)
             chunkY = chunk.chunkY,
             biomeId = chunk.biomeId,
             biomeLabel = chunk.biomeLabel,
+            zoneName = chunk.zoneName,
             transition = transition,
             descriptors = {
                 foes = copyList(chunk.descriptors and chunk.descriptors.foes or {}),
@@ -173,6 +174,7 @@ function love.keypressed(key)
             if scene.kind == SceneKinds.INVENTORY
                 or scene.kind == SceneKinds.SKILLS
                 or scene.kind == SceneKinds.CONTROLS
+                or scene.kind == SceneKinds.WORLD_MAP
             then
                 hasOtherWindows = true
                 break
@@ -193,6 +195,7 @@ function love.keypressed(key)
         -- Otherwise, close inventory/skills windows
         sceneManager:toggleInventory(key)
         sceneManager:toggleSkills(key)
+        sceneManager:toggleWorldMap(key)
         return
     end
 
@@ -203,6 +206,11 @@ function love.keypressed(key)
 
     if action == InputActions.TOGGLE_SKILLS then
         sceneManager:toggleSkills(key)
+        return
+    end
+
+    if action == InputActions.TOGGLE_WORLD_MAP then
+        sceneManager:toggleWorldMap(key)
         return
     end
 

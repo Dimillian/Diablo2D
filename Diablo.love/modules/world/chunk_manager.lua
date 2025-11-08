@@ -1,6 +1,7 @@
 local vector = require("modules.vector")
 local biomes = require("data.biomes")
 local BiomeResolver = require("modules.world.biome_resolver")
+local BiomeNameGenerator = require("modules.world.biome_name_generator")
 
 local ChunkManager = {}
 ChunkManager.__index = ChunkManager
@@ -50,6 +51,23 @@ local function applyStartBiome(manager, chunk)
     chunk.transition.neighbors = chunk.transition.neighbors or {}
 end
 
+local function ensureZoneName(manager, chunk)
+    if chunk.zoneName and chunk.zoneName ~= "" then
+        return
+    end
+
+    local seed = chunk.seed
+    if not seed then
+        seed = ChunkManager.hashSeed(manager, chunk.chunkX, chunk.chunkY)
+        chunk.seed = seed
+    end
+
+    chunk.zoneName = BiomeNameGenerator.generate({
+        biomeId = chunk.biomeId,
+        seed = seed,
+    })
+end
+
 function ChunkManager.new(opts)
     opts = opts or {}
 
@@ -90,7 +108,9 @@ function ChunkManager.ensureChunkLoaded(manager, world, chunkX, chunkY)
         chunk.defeatedFoes = chunk.defeatedFoes or {}
         chunk.lootedStructures = chunk.lootedStructures or {}
         chunk.props = chunk.props or {}
+        chunk.seed = chunk.seed or ChunkManager.hashSeed(manager, chunkX, chunkY)
         applyStartBiome(manager, chunk)
+        ensureZoneName(manager, chunk)
         return chunk
     end
 
@@ -115,6 +135,7 @@ function ChunkManager.ensureChunkLoaded(manager, world, chunkX, chunkY)
     }
 
     applyStartBiome(manager, chunk)
+    ensureZoneName(manager, chunk)
 
     if manager.spawnResolver then
         manager.spawnResolver:populateChunk(world, chunk)

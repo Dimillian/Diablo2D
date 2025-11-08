@@ -1,0 +1,199 @@
+local biomes = require("data.biomes")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
+
+local worldMapRenderer = {}
+
+local MAP_CONFIG = {
+    padding = 28,
+    backgroundColor = { 0.05, 0.05, 0.05, 0.92 },
+    borderColor = { 0.4, 0.35, 0.25, 0.9 },
+    unexploredAlpha = 0.35,
+    exploredAlpha = 0.9,
+    gridColor = { 0.2, 0.2, 0.2, 0.65 },
+    playerFill = { 0.18, 0.82, 0.28, 1 },
+    playerOutline = { 0.05, 0.28, 0.05, 1 },
+    instructionColor = { 0.85, 0.8, 0.6, 0.9 },
+}
+
+local function computeChunkBounds(chunks)
+    local minX, maxX = math.huge, -math.huge
+    local minY, maxY = math.huge, -math.huge
+
+    for _, chunk in pairs(chunks or {}) do
+        if chunk.chunkX and chunk.chunkY then
+            if chunk.chunkX < minX then
+                minX = chunk.chunkX
+            end
+            if chunk.chunkX > maxX then
+                maxX = chunk.chunkX
+            end
+            if chunk.chunkY < minY then
+                minY = chunk.chunkY
+            end
+            if chunk.chunkY > maxY then
+                maxY = chunk.chunkY
+            end
+        end
+    end
+
+    if minX == math.huge then
+        return nil
+    end
+
+    return {
+        minX = minX,
+        maxX = maxX,
+        minY = minY,
+        maxY = maxY,
+        width = maxX - minX + 1,
+        height = maxY - minY + 1,
+    }
+end
+
+local function drawInstructions(scene, layout)
+    local key = InputManager.getActionKey(InputActions.TOGGLE_WORLD_MAP)
+    local keyLabel = "M"
+    if type(key) == "string" and #key > 0 then
+        keyLabel = string.upper(key)
+    elseif type(key) == "number" and key == 1 then
+        keyLabel = "LMB"
+    elseif type(key) == "number" then
+        keyLabel = tostring(key)
+    end
+
+    local message = string.format("Press %s or Esc to close", keyLabel)
+    local font = scene.detailFont or love.graphics.getFont()
+    love.graphics.setFont(font)
+    love.graphics.setColor(MAP_CONFIG.instructionColor)
+    local textY = layout.content.y + layout.content.height - font:getHeight() - 4
+    love.graphics.printf(message, layout.content.x, textY, layout.content.width, "center")
+end
+
+local function drawChunkRectangles(scene, layout)
+    local world = scene.world
+    local chunks = world and world.generatedChunks or {}
+    local bounds = computeChunkBounds(chunks)
+    if not bounds then
+        love.graphics.setColor(MAP_CONFIG.instructionColor)
+        love.graphics.printf(
+            "No map data yet. Explore to reveal the world!",
+            layout.content.x,
+            layout.content.y + layout.content.height / 2 - 12,
+            layout.content.width,
+            "center"
+        )
+        return
+    end
+
+    local padding = MAP_CONFIG.padding
+    local mapX = layout.content.x + padding
+    local mapY = layout.content.y + padding
+    local mapWidth = layout.content.width - padding * 2
+    local instructionFont = scene.detailFont or love.graphics.getFont()
+    local reservedForInstructions = instructionFont:getHeight() + 16
+    local mapHeight = layout.content.height - padding * 2 - reservedForInstructions
+    if mapWidth <= 0 or mapHeight <= 0 then
+        return
+    end
+
+    love.graphics.setColor(MAP_CONFIG.backgroundColor)
+    love.graphics.rectangle("fill", mapX, mapY, mapWidth, mapHeight, 16, 16)
+    love.graphics.setColor(MAP_CONFIG.borderColor)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", mapX, mapY, mapWidth, mapHeight, 16, 16)
+
+    local cellSize = math.min(mapWidth / bounds.width, mapHeight / bounds.height)
+    local drawWidth = cellSize * bounds.width
+    local drawHeight = cellSize * bounds.height
+    local originX = mapX + (mapWidth - drawWidth) / 2
+    local originY = mapY + (mapHeight - drawHeight) / 2
+
+    -- Draw grid lines
+    love.graphics.setColor(MAP_CONFIG.gridColor)
+    love.graphics.setLineWidth(1)
+    for column = 0, bounds.width do
+        local x = originX + column * cellSize
+        love.graphics.line(x, originY, x, originY + drawHeight)
+    end
+    for row = 0, bounds.height do
+        local y = originY + row * cellSize
+        love.graphics.line(originX, y, originX + drawWidth, y)
+    end
+
+    for _, chunk in pairs(chunks) do
+        local col = chunk.chunkX - bounds.minX
+        local row = chunk.chunkY - bounds.minY
+        local rectX = originX + col * cellSize
+        local rectY = originY + row * cellSize
+
+        local biome = biomes.getById(chunk.biomeId)
+        local baseColor = biome and biome.tileColors.primary or { 0.35, 0.35, 0.35, 1 }
+        local accent = biome and biome.tileColors.accent or { 0.7, 0.7, 0.7, 1 }
+        local visited = world.visitedChunks and world.visitedChunks[chunk.key]
+        local alpha = visited and MAP_CONFIG.exploredAlpha or MAP_CONFIG.unexploredAlpha
+
+        love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], alpha)
+        love.graphics.rectangle("fill", rectX, rectY, cellSize, cellSize)
+
+        love.graphics.setColor(accent[1], accent[2], accent[3], alpha * 0.85 + 0.1)
+        love.graphics.rectangle("line", rectX, rectY, cellSize, cellSize)
+    end
+
+    local font = scene.zoneNameFont or love.graphics.getFont()
+    love.graphics.setFont(font)
+
+    for _, chunk in pairs(chunks) do
+        if chunk.chunkX and chunk.chunkY then
+            local name = chunk.zoneName or chunk.biomeLabel or chunk.biomeId or "?"
+            local visited = world.visitedChunks and world.visitedChunks[chunk.key]
+            local opacity = visited and 1 or 0.5
+
+            local col = chunk.chunkX - bounds.minX
+            local row = chunk.chunkY - bounds.minY
+            local centerX = originX + (col + 0.5) * cellSize
+            local centerY = originY + (row + 0.5) * cellSize - font:getHeight() / 2
+
+            love.graphics.setColor(0, 0, 0, opacity * 0.5)
+            love.graphics.printf(name, centerX - cellSize * 0.48 + 2, centerY + 2, cellSize * 0.96, "center")
+
+            love.graphics.setColor(0.95, 0.9, 0.7, opacity)
+            love.graphics.printf(name, centerX - cellSize * 0.48, centerY, cellSize * 0.96, "center")
+        end
+    end
+
+    local player = world:getPlayer()
+    if player and player.position then
+        local chunkSize = world.chunkManager and world.chunkManager.chunkSize or 1
+        local chunkX = math.floor(player.position.x / chunkSize)
+        local chunkY = math.floor(player.position.y / chunkSize)
+
+        local col = chunkX - bounds.minX
+        local row = chunkY - bounds.minY
+        local centerX = originX + (col + 0.5) * cellSize
+        local centerY = originY + (row + 0.5) * cellSize
+        local radius = math.max(4, cellSize * 0.08)
+
+        love.graphics.setColor(MAP_CONFIG.playerFill)
+        love.graphics.circle("fill", centerX, centerY, radius)
+        love.graphics.setColor(MAP_CONFIG.playerOutline)
+        love.graphics.setLineWidth(2)
+        love.graphics.circle("line", centerX, centerY, radius + 2)
+    end
+end
+
+function worldMapRenderer.draw(scene)
+    if not scene or not scene.world then
+        return
+    end
+
+    local layout = scene.windowLayout
+    if not layout then
+        return
+    end
+
+    drawChunkRectangles(scene, layout)
+    drawInstructions(scene, layout)
+end
+
+return worldMapRenderer

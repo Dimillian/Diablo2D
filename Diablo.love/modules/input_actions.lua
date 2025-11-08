@@ -21,6 +21,7 @@ InputActions.POTION_MANA = "potion_mana"
 -- UI actions (press events)
 InputActions.TOGGLE_INVENTORY = "toggle_inventory"
 InputActions.TOGGLE_SKILLS = "toggle_skills"
+InputActions.TOGGLE_WORLD_MAP = "toggle_world_map"
 InputActions.CLOSE_MODAL = "close_modal"
 
 -- Debug actions (press events)
