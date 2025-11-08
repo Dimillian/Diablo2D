@@ -2,12 +2,10 @@ local helper = require("spec.spec_helper")
 local TestWorld = require("spec.support.test_world")
 
 local experienceSystem = require("systems.core.experience")
-local Leveling = require("modules.leveling")
 
 describe("systems.core.experience", function()
     local world
     local player
-    local originalGetFoeXP
 
     before_each(function()
         world = TestWorld.new()
@@ -35,11 +33,6 @@ describe("systems.core.experience", function()
         end
 
         world:addEntity(player)
-        originalGetFoeXP = Leveling.getFoeXP
-    end)
-
-    after_each(function()
-        Leveling.getFoeXP = originalGetFoeXP
     end)
 
     local function pushDeathEvent(opts)
@@ -49,6 +42,7 @@ describe("systems.core.experience", function()
             sourceId = opts.sourceId or player.id,
             targetId = opts.targetId or "foe_1",
             foeLevel = opts.foeLevel or 1,
+            foeExperience = opts.foeExperience or 25,
         }
     end
 
@@ -74,10 +68,7 @@ describe("systems.core.experience", function()
     it("levels up and grants unallocated attribute points when XP threshold reached", function()
         player.experience.currentXP = 90
         player.experience.unallocatedPoints = 0
-        Leveling.getFoeXP = function()
-            return 50
-        end
-        pushDeathEvent()
+        pushDeathEvent({ foeExperience = 50 })
 
         local originalStrength = player.baseStats.strength or 5
         local originalVitality = player.baseStats.vitality or 50

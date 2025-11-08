@@ -1,9 +1,30 @@
 local foeTypes = {}
 
--- Define 3 foe types with different characteristics
+-- Define foe types with different characteristics
+-- Tier order: goblin1 < orc1 < goblin2 < orc2 < goblin3 < orc3
 foeTypes.types = {
-    slow = {
-        id = "slow",
+    goblin1 = {
+        id = "goblin1",
+        name = "Goblin Scout",
+        speed = 45,
+        detectionRange = 85,
+        color = { 0.3, 0.6, 0.3, 1 },
+        wanderInterval = 3.2,
+        health = 30,
+        damageMin = 1,
+        damageMax = 3,
+        attackSpeed = 0.4,
+        range = 45,
+        leashExtension = 350,
+        packAggro = false,
+        goldRange = { min = 2, max = 6 },
+        goldChance = 0.5,
+        spritePrefix = "goblin1",
+        spriteColumns = { attack = 5, death = 6, walk = 6 },
+        experience = 15,
+    },
+    orc1 = {
+        id = "orc1",
         name = "Orc Soldier",
         speed = 50,
         detectionRange = 100,
@@ -19,9 +40,31 @@ foeTypes.types = {
         goldRange = { min = 3, max = 8 },
         goldChance = 0.6,
         spritePrefix = "orc1",
+        spriteColumns = { attack = 8, death = 8, walk = 6 },
+        experience = 25,
     },
-    medium = {
-        id = "medium",
+    goblin2 = {
+        id = "goblin2",
+        name = "Goblin Warrior",
+        speed = 60,
+        detectionRange = 135,
+        color = { 0.4, 0.7, 0.4, 1 },
+        wanderInterval = 2.7,
+        health = 48,
+        damageMin = 2,
+        damageMax = 4,
+        attackSpeed = 0.65,
+        range = 48,
+        leashExtension = 350,
+        packAggro = false,
+        goldRange = { min = 4, max = 10 },
+        goldChance = 0.65,
+        spritePrefix = "goblin2",
+        spriteColumns = { attack = 5, death = 6, walk = 6 },
+        experience = 30,
+    },
+    orc2 = {
+        id = "orc2",
         name = "Orc Lieutenant",
         speed = 70,
         detectionRange = 180,
@@ -37,9 +80,31 @@ foeTypes.types = {
         goldRange = { min = 5, max = 12 },
         goldChance = 0.7,
         spritePrefix = "orc2",
+        spriteColumns = { attack = 8, death = 8, walk = 6 },
+        experience = 40,
     },
-    aggressive = {
-        id = "aggressive",
+    goblin3 = {
+        id = "goblin3",
+        name = "Goblin Champion",
+        speed = 85,
+        detectionRange = 210,
+        color = { 0.5, 0.8, 0.5, 1 },
+        wanderInterval = 2.2,
+        health = 60,
+        damageMin = 3,
+        damageMax = 6,
+        attackSpeed = 0.9,
+        range = 48,
+        leashExtension = 350,
+        packAggro = true,
+        goldRange = { min = 7, max = 15 },
+        goldChance = 0.72,
+        spritePrefix = "goblin3",
+        spriteColumns = { attack = 5, death = 6, walk = 6 },
+        experience = 45,
+    },
+    orc3 = {
+        id = "orc3",
         name = "Orc Captain",
         speed = 100,
         detectionRange = 250,
@@ -55,18 +120,20 @@ foeTypes.types = {
         goldRange = { min = 8, max = 18 },
         goldChance = 0.75,
         spritePrefix = "orc3",
+        spriteColumns = { attack = 8, death = 8, walk = 6 },
+        experience = 60,
     },
 }
 
 -- Get a random foe type
 function foeTypes.getRandomType()
-    local keys = { "slow", "medium", "aggressive" }
+    local keys = { "goblin1", "orc1", "goblin2", "orc2", "goblin3", "orc3" }
     return keys[math.random(#keys)]
 end
 
 -- Get foe type configuration
 function foeTypes.getConfig(typeName)
-    return foeTypes.types[typeName] or foeTypes.types.slow
+    return foeTypes.types[typeName] or foeTypes.types.orc1
 end
 
 return foeTypes

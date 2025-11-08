@@ -75,7 +75,6 @@ function SpawnResolver.populateChunk(self, world, chunk)
     end
 
     for groupIndex = 1, groupCount do
-        local foeTypeId = weightedChoice(rng, biome and biome.foeWeights or nil) or foeTypes.getRandomType()
         local centerX, centerY = randomInChunk(rng, chunk.chunkX, chunk.chunkY, self.chunkSize, 96)
         local packId = chunk.key .. ":pack:" .. groupIndex
 
@@ -84,6 +83,8 @@ function SpawnResolver.populateChunk(self, world, chunk)
         local groupSize = rng:random(minGroupSize, maxGroupSize)
 
         for memberIndex = 1, groupSize do
+            -- Select foe type per individual foe for better diversity
+            local foeTypeId = weightedChoice(rng, biome and biome.foeWeights or nil) or foeTypes.getRandomType()
             local angle = (memberIndex / groupSize) * math.pi * 2 + rng:random() * 0.35
             local spread = rng:random() * self.groupSpreadRadius
             local x = centerX + math.cos(angle) * spread

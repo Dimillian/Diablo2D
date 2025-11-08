@@ -27,9 +27,4 @@ function Leveling.getXPRequiredForNextLevel(currentLevel)
     return math.floor(baseXP * (multiplier ^ (currentLevel - 1)))
 end
 
-function Leveling.getFoeXP(_foeLevel, _playerLevel)
-    local baseXP = 25
-    return baseXP
-end
-
 return Leveling

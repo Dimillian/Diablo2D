@@ -70,7 +70,7 @@ local function awardExperience(world, player, event)
     end
 
     local exp = player.experience
-    local xpGain = Leveling.getFoeXP(event.foeLevel or 1, exp.level or 1)
+    local xpGain = event.foeExperience or 0
     if xpGain <= 0 then
         return
     end

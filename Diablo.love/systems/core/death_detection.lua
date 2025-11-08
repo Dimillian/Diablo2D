@@ -1,4 +1,5 @@
 local DeathHelper = require("systems.helpers.death")
+local foeTypes = require("data.foe_types")
 
 local deathDetectionSystem = {}
 
@@ -55,6 +56,13 @@ function deathDetectionSystem.update(world, dt) -- luacheck: ignore 212/dt
             -- Push death event
             local foeLevel = entity.level or 1
             local foeTypeId = entity.foeTypeId or (entity.foe and entity.foe.typeId)
+            local foeExperience = 0
+            if foeTypeId then
+                local config = foeTypes.getConfig(foeTypeId)
+                if config and config.experience then
+                    foeExperience = config.experience
+                end
+            end
 
             pushCombatEvent(world, {
                 type = "death",
@@ -63,6 +71,7 @@ function deathDetectionSystem.update(world, dt) -- luacheck: ignore 212/dt
                 position = deathPosition,
                 foeLevel = foeLevel,
                 foeTypeId = foeTypeId,
+                foeExperience = foeExperience,
                 time = world.time or 0,
             })
         end

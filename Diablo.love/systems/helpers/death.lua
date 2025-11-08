@@ -1,6 +1,7 @@
 local createDead = require("components.dead")
 local createDeathAnimation = require("components.death_animation")
 local Targeting = require("systems.helpers.targeting")
+local foeTypes = require("data.foe_types")
 
 local DeathHelper = {}
 
@@ -45,11 +46,20 @@ function DeathHelper.handleDeath(world, target, attacker, position) -- luacheck:
     end
 
     -- Add death animation component
+    -- Get death frame count from foe type config if available
+    local totalFrames = 8 -- Default for backward compatibility
+    if target.foe and target.foe.typeId then
+        local config = foeTypes.getConfig(target.foe.typeId)
+        if config and config.spriteColumns and config.spriteColumns.death then
+            totalFrames = config.spriteColumns.death
+        end
+    end
+
     local deathAnimation = createDeathAnimation({
         timer = 0,
         animationDuration = 0.5,
         holdDuration = 20.0, -- Hold last frame for 20 seconds
-        totalFrames = 8, -- Death sprites have 8 columns
+        totalFrames = totalFrames,
         started = true,
     })
     world:addComponent(targetId, "deathAnimation", deathAnimation)

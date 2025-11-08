@@ -19,8 +19,8 @@ local biomeList = {
             { id = "forest_hut", weight = 0.6 },
         },
         foeWeights = {
-            { id = "slow", weight = 3 },
-            { id = "medium", weight = 2 },
+            { id = "goblin1", weight = 3 },
+            { id = "orc1", weight = 3 },
         },
     },
     {
@@ -41,8 +41,8 @@ local biomeList = {
             { id = "ruined_obelisk", weight = 0.8 },
         },
         foeWeights = {
-            { id = "medium", weight = 2 },
-            { id = "aggressive", weight = 3 },
+            { id = "goblin2", weight = 2 },
+            { id = "orc2", weight = 2 },
         },
     },
     {
@@ -63,8 +63,8 @@ local biomeList = {
             { id = "frozen_ruin", weight = 0.4 },
         },
         foeWeights = {
-            { id = "slow", weight = 1 },
-            { id = "aggressive", weight = 2 },
+            { id = "goblin3", weight = 2 },
+            { id = "orc3", weight = 2 },
         },
     },
 }

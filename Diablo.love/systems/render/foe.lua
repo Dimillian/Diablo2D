@@ -1,6 +1,7 @@
 local spriteDirection = require("systems.helpers.sprite_direction")
 local spriteRenderer = require("systems.helpers.sprite_renderer")
 local Resources = require("modules.resources")
+local foeTypes = require("data.foe_types")
 
 local renderFoeSystem = {}
 
@@ -17,6 +18,26 @@ local function getDamageFlashProgress(entity)
 
     local timer = math.max(0, marker.timer or 0)
     return math.max(0, math.min(timer / maxTimer, 1))
+end
+
+local function getSpriteColumnCount(entity, animationType)
+    -- Default column counts for backward compatibility
+    local defaults = {
+        attack = 8,
+        death = 8,
+        walk = 6,
+    }
+
+    if not entity.foe or not entity.foe.typeId then
+        return defaults[animationType] or 8
+    end
+
+    local config = foeTypes.getConfig(entity.foe.typeId)
+    if config and config.spriteColumns and config.spriteColumns[animationType] then
+        return config.spriteColumns[animationType]
+    end
+
+    return defaults[animationType] or 8
 end
 
 local function drawFoeFrame(entity, image, quad, baseScale)
@@ -104,7 +125,7 @@ function renderFoeSystem.draw(world)
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "death")
             local deathAnim = entity.deathAnimation
             if deathAnim then
-                totalFrames = deathAnim.totalFrames or 8
+                totalFrames = deathAnim.totalFrames or getSpriteColumnCount(entity, "death")
 
                 -- Calculate frame based on animation progress
                 local timer = deathAnim.timer or 0
@@ -127,22 +148,22 @@ function renderFoeSystem.draw(world)
             end
         elseif animationState == "attacking" then
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "attack")
-            totalFrames = 8
+            totalFrames = getSpriteColumnCount(entity, "attack")
             local attackTime = entity.combat and entity.combat.attackAnimationTime or 0
             local swingDuration = entity.combat and entity.combat.swingDuration or 0.3
             local col = spriteRenderer.getAnimationFrame(
                 animationState, walkTime, attackTime, swingDuration, totalFrames
             )
-            local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, 8)
+            local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
                 drawFoeFrame(entity, image, quad, 1.5)
             end
         else
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "walk")
-            totalFrames = 6
+            totalFrames = getSpriteColumnCount(entity, "walk")
             local col = spriteRenderer.getAnimationFrame(animationState, walkTime, 0, 0, totalFrames)
-            local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, 6)
+            local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
                 drawFoeFrame(entity, image, quad, 1.5)
