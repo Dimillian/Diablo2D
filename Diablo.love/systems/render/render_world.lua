@@ -12,6 +12,92 @@ local PROP_STYLES = {
     ice_rock = { color = { 0.74, 0.82, 0.92, 0.7 }, kind = "rect" },
 }
 
+local DEFAULT_TILE_COLOR = { 0.15, 0.15, 0.15, 1 }
+
+local function lerp(a, b, t)
+    return a + (b - a) * t
+end
+
+local function mixColors(colorA, colorB, t)
+    colorA = colorA or DEFAULT_TILE_COLOR
+    colorB = colorB or DEFAULT_TILE_COLOR
+    local alphaA = colorA[4] or 1
+    local alphaB = colorB[4] or 1
+
+    return {
+        lerp(colorA[1], colorB[1], t),
+        lerp(colorA[2], colorB[2], t),
+        lerp(colorA[3], colorB[3], t),
+        lerp(alphaA, alphaB, t),
+    }
+end
+
+local function drawTransitionBands(chunk, colors, bounds)
+    local transition = chunk.transition
+    if not transition or not colors or not transition.neighbors then
+        return
+    end
+
+    local intensity = transition.transitionStrength or 0
+    if intensity <= 0.01 then
+        return
+    end
+
+    local baseColor = colors.primary or DEFAULT_TILE_COLOR
+    local layers = 5
+
+    for _, neighbor in ipairs(transition.neighbors) do
+        if neighbor.biome ~= chunk.biomeId then
+            local neighborBiome = biomes.getById(neighbor.biome)
+            local neighborColors = neighborBiome and neighborBiome.tileColors or nil
+            if neighborColors then
+                local neighborPrimary = neighborColors.primary or DEFAULT_TILE_COLOR
+                local accentColor = neighborColors.accent or neighborPrimary
+
+                local horizontal = neighbor.dx ~= 0
+                local maxThickness = (horizontal and bounds.w or bounds.h) * 0.35 * intensity
+                if maxThickness > 1 then
+                    local layerThickness = maxThickness / layers
+
+                    for layer = 1, layers do
+                        local t = layer / layers
+                        local blendStrength = intensity * (1 - (layer - 1) / layers)
+                        local mixed = mixColors(baseColor, neighborPrimary, t * 0.85)
+                        mixed = mixColors(mixed, accentColor, 0.25 * t)
+                        local alpha = 0.25 + 0.55 * blendStrength
+
+                        if horizontal then
+                            local rectY = bounds.y
+                            local rectH = bounds.h
+                            local offset = (layer - 1) * layerThickness
+                            local rectX
+                            if neighbor.dx > 0 then
+                                rectX = bounds.x + bounds.w - layerThickness - offset
+                            else
+                                rectX = bounds.x + offset
+                            end
+                            love.graphics.setColor(mixed[1], mixed[2], mixed[3], alpha)
+                            love.graphics.rectangle("fill", rectX, rectY, layerThickness, rectH)
+                        else
+                            local rectX = bounds.x
+                            local rectW = bounds.w
+                            local offset = (layer - 1) * layerThickness
+                            local rectY
+                            if neighbor.dy > 0 then
+                                rectY = bounds.y + bounds.h - layerThickness - offset
+                            else
+                                rectY = bounds.y + offset
+                            end
+                            love.graphics.setColor(mixed[1], mixed[2], mixed[3], alpha)
+                            love.graphics.rectangle("fill", rectX, rectY, rectW, layerThickness)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 local function drawChunkBase(world, chunk)
     local manager = world.chunkManager
     if not manager then
@@ -22,7 +108,7 @@ local function drawChunkBase(world, chunk)
     local colors = biome and biome.tileColors or nil
     local bounds = ChunkManager.computeChunkBounds(manager, chunk.chunkX, chunk.chunkY)
 
-    love.graphics.setColor((colors and colors.primary) or { 0.15, 0.15, 0.15, 1 })
+    love.graphics.setColor((colors and colors.primary) or DEFAULT_TILE_COLOR)
     love.graphics.rectangle("fill", bounds.x, bounds.y, bounds.w, bounds.h)
 
     if chunk.transition and chunk.transition.transitionStrength and colors and colors.secondary then
@@ -30,6 +116,8 @@ local function drawChunkBase(world, chunk)
         love.graphics.setColor(colors.secondary[1], colors.secondary[2], colors.secondary[3], alpha)
         love.graphics.rectangle("fill", bounds.x, bounds.y, bounds.w, bounds.h)
     end
+
+    drawTransitionBands(chunk, colors, bounds)
 end
 
 local function drawChunkProps(world, chunk)
