@@ -118,7 +118,14 @@ local function ensureZoneName(manager, world, chunk)
         for index = 2, #matchingNeighbors do
             local neighbor = matchingNeighbors[index]
             if neighbor.zoneName ~= chosenName or (neighbor.zoneSeed or neighbor.seed) ~= chosenSeed then
-                mergeZone(world, chunk.biomeId, chosenName, chosenSeed, neighbor.zoneName, neighbor.zoneSeed or neighbor.seed)
+                mergeZone(
+                    world,
+                    chunk.biomeId,
+                    chosenName,
+                    chosenSeed,
+                    neighbor.zoneName,
+                    neighbor.zoneSeed or neighbor.seed
+                )
             end
         end
 
