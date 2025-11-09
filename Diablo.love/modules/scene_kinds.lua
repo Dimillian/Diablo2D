@@ -7,5 +7,6 @@ SceneKinds.INVENTORY = "inventory"
 SceneKinds.SKILLS = "skills"
 SceneKinds.PAUSE = "pause"
 SceneKinds.CONTROLS = "controls"
+SceneKinds.WORLD_MAP = "world_map"
 
 return SceneKinds

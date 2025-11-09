@@ -32,6 +32,8 @@ local function getActionDisplayName(action)
         return "Toggle Inventory"
     elseif action == InputActions.TOGGLE_SKILLS then
         return "Toggle Skills"
+    elseif action == InputActions.TOGGLE_WORLD_MAP then
+        return "Toggle World Map"
     elseif action == InputActions.CLOSE_MODAL then
         return "Close Modal"
     -- Debug
@@ -88,16 +90,17 @@ local function getActionCategory(action)
         or action == InputActions.CLOSE_MODAL
     then
         return "UI"
+    elseif action == InputActions.TOGGLE_WORLD_MAP
+        or action == InputActions.MINIMAP_TOGGLE
+        or action == InputActions.MINIMAP_ZOOM_IN
+        or action == InputActions.MINIMAP_ZOOM_OUT
+    then
+        return "Map"
     elseif action == InputActions.DEBUG_TOGGLE
         or action == InputActions.DEBUG_CHUNKS
         or action == InputActions.RESET_WORLD
     then
         return "Debug"
-    elseif action == InputActions.MINIMAP_TOGGLE
-        or action == InputActions.MINIMAP_ZOOM_IN
-        or action == InputActions.MINIMAP_ZOOM_OUT
-    then
-        return "Minimap"
     elseif action == InputActions.MOUSE_PRIMARY
         or action == InputActions.MOUSE_SECONDARY
     then

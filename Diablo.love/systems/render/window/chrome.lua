@@ -76,8 +76,9 @@ function renderWindowChrome.draw(scene, opts)
         10
     )
 
-    -- Header divider
-    local borderInset = math.max(2, math.floor((layout.padding or 16) * 0.125))
+    -- Header divider (uses 16px header padding, not content padding)
+    local headerPadding = 16
+    local borderInset = math.max(2, math.floor(headerPadding * 0.125))
 
     love.graphics.setLineWidth(1.5)
     love.graphics.setColor(0.4, 0.35, 0.25, 1)

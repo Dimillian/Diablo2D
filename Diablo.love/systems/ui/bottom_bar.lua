@@ -125,6 +125,7 @@ function uiBottomBar.draw(world)
     world.bottomBarManaPotionRect = nil
     world.bottomBarBookRect = nil
     world.bottomBarBagRect = nil
+    world.bottomBarWorldMapRect = nil
 
     -- Bottom bar positioning - next to health and mana bars
     local healthBarWidth = UIConfig.getHealthBarWidth(screenWidth)
@@ -133,12 +134,13 @@ function uiBottomBar.draw(world)
     local positions = UIConfig.getBottomBarPositions(screenHeight)
     local buttonY = positions.buttonY
 
-    -- Layout icons horizontally: health/mana bars | health potion | mana potion | bag
+    -- Layout icons horizontally: health/mana bars | health potion | mana potion | book | bag | world map
     local buttonSpacing = UIConfig.buttonSpacing
     local healthPotionX = healthBarX + healthBarWidth + buttonSpacing
     local manaPotionX = healthPotionX + buttonSize + buttonSpacing
     local bookX = manaPotionX + buttonSize + buttonSpacing
     local bagX = bookX + buttonSize + buttonSpacing
+    local worldMapX = bagX + buttonSize + buttonSpacing
 
     love.graphics.push("all")
 
@@ -164,6 +166,19 @@ function uiBottomBar.draw(world)
         opts = {
             shadow = true,
             badgeText = "I",
+            iconPadding = 8,
+        },
+    })
+
+    drawIconButton(world, {
+        x = worldMapX,
+        y = buttonY,
+        size = buttonSize,
+        iconName = "scroll",
+        rectField = "bottomBarWorldMapRect",
+        opts = {
+            shadow = true,
+            badgeText = "M",
             iconPadding = 8,
         },
     })

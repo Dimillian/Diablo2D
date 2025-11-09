@@ -2,6 +2,7 @@
 ---Handles scene lifecycle (enter/exit) and provides utilities for finding scenes by kind.
 local InventoryScene = require("scenes.inventory")
 local SkillsScene = require("scenes.skills")
+local WorldMapScene = require("scenes.world_map")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
@@ -119,6 +120,38 @@ function SceneManager:togglePause(key)
         end
         return
     end
+end
+
+function SceneManager:toggleWorldMap(key)
+    local top = self:current()
+    local action = InputManager.getActionForKey(key)
+
+    if action == InputActions.CLOSE_MODAL then
+        if top and top.kind == SceneKinds.WORLD_MAP then
+            self:pop()
+        end
+        return
+    end
+
+    if action ~= InputActions.TOGGLE_WORLD_MAP then
+        return
+    end
+
+    if top and top.kind == SceneKinds.WORLD_MAP then
+        self:pop()
+        return
+    end
+
+    local world = self:findByKind(SceneKinds.WORLD)
+    if not world then
+        return
+    end
+
+    self:push(
+        WorldMapScene.new({
+            world = world,
+        })
+    )
 end
 
 function SceneManager:wheelmoved(x, y)

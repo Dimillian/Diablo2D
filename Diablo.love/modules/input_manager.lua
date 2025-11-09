@@ -25,6 +25,7 @@ local defaultBindings = {
     -- UI
     [InputActions.TOGGLE_INVENTORY] = { "i" },
     [InputActions.TOGGLE_SKILLS] = { "k" },
+    [InputActions.TOGGLE_WORLD_MAP] = { "m" },
     [InputActions.CLOSE_MODAL] = { "escape" },
 
     -- Debug
@@ -33,7 +34,7 @@ local defaultBindings = {
     [InputActions.RESET_WORLD] = { "f5" },
 
     -- Minimap
-    [InputActions.MINIMAP_TOGGLE] = { "m" },
+    [InputActions.MINIMAP_TOGGLE] = {},
     [InputActions.MINIMAP_ZOOM_IN] = { "]" },
     [InputActions.MINIMAP_ZOOM_OUT] = { "[" },
 
