@@ -25,26 +25,43 @@ local function mixColor(color, brighten)
     return { r, g, b }
 end
 
-local function drawForestGround(bounds, colors, rng)
+local function drawForestGround(bounds, colors, rng, worldTime)
     if not colors then
         return
     end
 
+    worldTime = worldTime or 0
     local accent = colors.accent or colors.secondary or colors.primary
     local secondary = colors.secondary or colors.primary
 
     love.graphics.setLineWidth(1)
 
-    for _ = 1, 70 do
+    for i = 1, 70 do
         local baseX = bounds.x + rng:random() * bounds.w
         local baseY = bounds.y + rng:random() * bounds.h
         local height = 8 + rng:random() * 14
-        local sway = (rng:random() - 0.5) * 6
+
+        -- Create wind animation using sine waves
+        -- Each blade has a unique phase based on its position and index
+        local phase = (baseX * 0.01) + (baseY * 0.005) + (i * 0.1)
+        local windSpeed = 1.2 -- Wind animation speed
+        local windStrength = 2.5 -- How much the grass sways
+        local windWave = math.sin(worldTime * windSpeed + phase) * windStrength
+
+        -- Base sway plus wind effect
+        local baseSway = (rng:random() - 0.5) * 3
+        local sway = baseSway + windWave
+
         local alpha = 0.25 + rng:random() * 0.3
         local color = mixColor(accent, rng:random() * 0.05)
         love.graphics.setColor(color[1], color[2], color[3], alpha)
+
+        -- Main grass blade with wind animation
         love.graphics.line(baseX, baseY, baseX + sway, baseY - height)
-        love.graphics.line(baseX, baseY, baseX - sway * 0.6, baseY - height * 0.7)
+        -- Secondary blade with slightly different wind phase
+        local secondaryPhase = phase + 0.5
+        local secondaryWindWave = math.sin(worldTime * windSpeed + secondaryPhase) * windStrength * 0.7
+        love.graphics.line(baseX, baseY, baseX - (baseSway * 0.6 + secondaryWindWave), baseY - height * 0.7)
     end
 
     for _ = 1, 45 do
@@ -60,7 +77,8 @@ local function drawForestGround(bounds, colors, rng)
     love.graphics.setLineWidth(1)
 end
 
-local function drawDesertGround(bounds, colors, rng)
+-- luacheck: ignore 212/worldTime
+local function drawDesertGround(bounds, colors, rng, worldTime)
     if not colors then
         return
     end
@@ -103,7 +121,8 @@ local function drawDesertGround(bounds, colors, rng)
     end
 end
 
-local function drawTundraGround(bounds, colors, rng)
+-- luacheck: ignore 212/worldTime
+local function drawTundraGround(bounds, colors, rng, worldTime)
     if not colors then
         return
     end
@@ -170,7 +189,9 @@ local function drawChunkBase(world, chunk)
         local renderer = BIOME_GROUND_RENDERERS[chunk.biomeId]
         if renderer then
             local rng = love.math.newRandomGenerator(chunk.seed or 0)
-            renderer(bounds, colors, rng)
+            local worldTime = world.time or 0
+            -- luacheck: ignore 191
+            renderer(bounds, colors, rng, worldTime)
         end
     end
 
