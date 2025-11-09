@@ -1,11 +1,9 @@
 local biomes = require("data.biomes")
-local InputManager = require("modules.input_manager")
-local InputActions = require("modules.input_actions")
 
 local worldMapRenderer = {}
 
 local MAP_CONFIG = {
-    padding = 28,
+    padding = 0,
     backgroundColor = { 0.05, 0.05, 0.05, 0.92 },
     borderColor = { 0.4, 0.35, 0.25, 0.9 },
     unexploredAlpha = 0.35,
@@ -13,7 +11,6 @@ local MAP_CONFIG = {
     gridColor = { 0.2, 0.2, 0.2, 0.65 },
     playerFill = { 0.18, 0.82, 0.28, 1 },
     playerOutline = { 0.05, 0.28, 0.05, 1 },
-    instructionColor = { 0.85, 0.8, 0.6, 0.9 },
 }
 
 local ZONE_HASH_X = 73856093
@@ -54,25 +51,6 @@ local function computeChunkBounds(chunks)
     }
 end
 
-local function drawInstructions(scene, layout)
-    local key = InputManager.getActionKey(InputActions.TOGGLE_WORLD_MAP)
-    local keyLabel = "M"
-    if type(key) == "string" and #key > 0 then
-        keyLabel = string.upper(key)
-    elseif type(key) == "number" and key == 1 then
-        keyLabel = "LMB"
-    elseif type(key) == "number" then
-        keyLabel = tostring(key)
-    end
-
-    local message = string.format("Press %s or Esc to close", keyLabel)
-    local font = scene.detailFont or love.graphics.getFont()
-    love.graphics.setFont(font)
-    love.graphics.setColor(MAP_CONFIG.instructionColor)
-    local textY = layout.content.y + layout.content.height - font:getHeight() - 4
-    love.graphics.printf(message, layout.content.x, textY, layout.content.width, "center")
-end
-
 local function drawChunkRectangles(scene, layout)
     local world = scene.world
     local chunks = world and world.generatedChunks or {}
@@ -90,21 +68,16 @@ local function drawChunkRectangles(scene, layout)
     end
 
     local padding = MAP_CONFIG.padding
-    local mapX = layout.content.x + padding
+    local mapX = layout.content.x
     local mapY = layout.content.y + padding
-    local mapWidth = layout.content.width - padding * 2
-    local instructionFont = scene.detailFont or love.graphics.getFont()
-    local reservedForInstructions = instructionFont:getHeight() + 16
-    local mapHeight = layout.content.height - padding * 2 - reservedForInstructions
+    local mapWidth = layout.content.width
+    local mapHeight = layout.content.height - padding - 4 -- Top padding + small bottom padding for border
     if mapWidth <= 0 or mapHeight <= 0 then
         return
     end
 
     love.graphics.setColor(MAP_CONFIG.backgroundColor)
-    love.graphics.rectangle("fill", mapX, mapY, mapWidth, mapHeight, 16, 16)
-    love.graphics.setColor(MAP_CONFIG.borderColor)
-    love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", mapX, mapY, mapWidth, mapHeight, 16, 16)
+    love.graphics.rectangle("fill", mapX, mapY, mapWidth, mapHeight, 0, 0)
 
     local cellSize = math.min(mapWidth / bounds.width, mapHeight / bounds.height)
     local drawWidth = cellSize * bounds.width
@@ -227,8 +200,20 @@ function worldMapRenderer.draw(scene)
         return
     end
 
+    -- Override content area to be edge-to-edge for width (with small border padding)
+    local borderPadding = 4 -- Account for the 3px border width
+    local originalContent = layout.content
+    layout.content = {
+        x = layout.panelX + borderPadding,
+        y = originalContent.y,
+        width = layout.panelWidth - borderPadding * 2,
+        height = originalContent.height,
+    }
+
     drawChunkRectangles(scene, layout)
-    drawInstructions(scene, layout)
+
+    -- Restore original content area
+    layout.content = originalContent
 end
 
 return worldMapRenderer

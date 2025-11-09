@@ -12,6 +12,9 @@ local DEFAULTS = {
     closeButtonSize = 28,
 }
 
+-- Header elements always use 16px padding from edges, regardless of content padding
+local HEADER_PADDING = 16
+
 local function snap(value)
     return math.floor(value + 0.5)
 end
@@ -45,13 +48,13 @@ function WindowLayout.calculate(opts)
     end
 
     local headerY = panelY
-    local headerIconSize = math.min(iconSize, headerHeight - padding)
+    local headerIconSize = math.min(iconSize, headerHeight - HEADER_PADDING)
     local iconY = headerY + (headerHeight - headerIconSize) / 2
-    local iconX = panelX + padding
+    local iconX = panelX + HEADER_PADDING
     local titleX = iconX + headerIconSize + 12
     local titleY = headerY + headerHeight / 2
 
-    local closeX = panelX + panelWidth - padding - closeButtonSize
+    local closeX = panelX + panelWidth - HEADER_PADDING - closeButtonSize
     local closeY = headerY + (headerHeight - closeButtonSize) / 2
 
     local contentX = panelX + padding

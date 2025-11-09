@@ -17,10 +17,10 @@ function WorldMapScene.new(opts)
         kind = SceneKinds.WORLD_MAP,
         title = opts.title or "World Map",
         windowLayoutOptions = {
-            widthRatio = 0.9,
-            heightRatio = 0.9,
+            widthRatio = 0.8,
+            heightRatio = 0.8,
             headerHeight = 80,
-            padding = 32,
+            padding = 0,
         },
         systems = {
             draw = {
