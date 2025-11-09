@@ -534,6 +534,13 @@ function WorldScene:mousepressed(x, y, button, _istouch, _presses)
             end
         end
 
+        if pointInRect(self.bottomBarWorldMapRect) then
+            if self.sceneManager then
+                self.sceneManager:toggleWorldMap("m")
+            end
+            return
+        end
+
         mouseInputSystem.queuePress(self)
     end
 end

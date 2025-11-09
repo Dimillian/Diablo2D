@@ -41,7 +41,7 @@ function uiSkillsBarSystem.draw(world)
     end
 
     local startX
-    local baseRect = world.bottomBarBagRect or world.bottomBarManaPotionRect
+    local baseRect = world.bottomBarWorldMapRect or world.bottomBarBagRect or world.bottomBarManaPotionRect
     if baseRect then
         startX = baseRect.x + baseRect.w + 12
     else
@@ -50,8 +50,9 @@ function uiSkillsBarSystem.draw(world)
     end
 
     local startY
-    if world.bottomBarBagRect then
-        startY = world.bottomBarBagRect.y + (world.bottomBarBagRect.h - SLOT_SIZE) / 2
+    local yBaseRect = world.bottomBarWorldMapRect or world.bottomBarBagRect
+    if yBaseRect then
+        startY = yBaseRect.y + (yBaseRect.h - SLOT_SIZE) / 2
     else
         startY = love.graphics.getHeight() - SLOT_SIZE - 32
     end
