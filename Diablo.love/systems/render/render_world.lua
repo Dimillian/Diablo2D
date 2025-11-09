@@ -35,7 +35,7 @@ local function drawForestGround(bounds, colors, rng)
 
     love.graphics.setLineWidth(1)
 
-    for i = 1, 70 do
+    for _ = 1, 70 do
         local baseX = bounds.x + rng:random() * bounds.w
         local baseY = bounds.y + rng:random() * bounds.h
         local height = 8 + rng:random() * 14
@@ -47,7 +47,7 @@ local function drawForestGround(bounds, colors, rng)
         love.graphics.line(baseX, baseY, baseX - sway * 0.6, baseY - height * 0.7)
     end
 
-    for i = 1, 45 do
+    for _ = 1, 45 do
         local x = bounds.x + rng:random() * bounds.w
         local y = bounds.y + rng:random() * bounds.h
         local radius = 2 + rng:random() * 2
@@ -92,7 +92,7 @@ local function drawDesertGround(bounds, colors, rng)
 
     love.graphics.setLineWidth(1)
 
-    for i = 1, 55 do
+    for _ = 1, 55 do
         local x = bounds.x + rng:random() * bounds.w
         local y = bounds.y + rng:random() * bounds.h
         local radius = 1 + rng:random() * 2.5
@@ -111,7 +111,7 @@ local function drawTundraGround(bounds, colors, rng)
     local accent = colors.accent or colors.secondary or colors.primary
     local secondary = colors.secondary or colors.primary
 
-    for i = 1, 80 do
+    for _ = 1, 80 do
         local x = bounds.x + rng:random() * bounds.w
         local y = bounds.y + rng:random() * bounds.h
         local radius = 1.5 + rng:random() * 2.5
@@ -121,7 +121,7 @@ local function drawTundraGround(bounds, colors, rng)
         love.graphics.circle("fill", x, y, radius)
     end
 
-    for i = 1, 24 do
+    for _ = 1, 24 do
         local x = bounds.x + rng:random() * bounds.w
         local y = bounds.y + rng:random() * bounds.h
         local length = 12 + rng:random() * 18
