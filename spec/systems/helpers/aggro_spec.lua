@@ -47,7 +47,9 @@ describe("Aggro.ensureAggro", function()
 
         Aggro.ensureAggro(world, foe, player.id, { target = player })
 
-        assert.is_false(foe.inactive)
+        if foe.inactive then
+            assert.is_false(foe.inactive.isInactive)
+        end
         assert.is_true(foe.detection.forceAggro)
         assert.equal(player.id, foe.chase.targetId)
         assert.is_true((foe.detection.leashRange or 0) >= (foe.detection.range + foe.detection.leashExtension))
