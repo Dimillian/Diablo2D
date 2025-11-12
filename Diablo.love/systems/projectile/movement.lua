@@ -24,7 +24,7 @@ function projectileMovementSystem.update(world, dt)
             goto continue
         end
 
-        if projectile.inactive then
+        if projectile.inactive and projectile.inactive.isInactive then
             goto continue
         end
 

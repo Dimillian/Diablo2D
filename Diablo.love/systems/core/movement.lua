@@ -7,7 +7,7 @@ function movementSystem.update(world, dt)
 
     for _, entity in ipairs(entities) do
         -- Skip inactive entities (too far from player)
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             if entity.physicsBody and entity.physicsBody.body then
                 entity.physicsBody.body:setLinearVelocity(0, 0)
             end

@@ -80,7 +80,7 @@ describe("systems.ai.chase", function()
 
     it("ignores inactive foes", function()
         local foe = addFoe({ position = { x = 0, y = 0 } })
-        foe.inactive = true
+        foe.inactive = { isInactive = true }
 
         chaseSystem.update(world, 0.016)
 

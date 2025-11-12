@@ -89,7 +89,7 @@ describe("systems.core.movement", function()
             vx = 1,
             vy = 0,
         })
-        entity.inactive = true
+        entity.inactive = { isInactive = true }
 
         movementSystem.update(world, 0.5)
 

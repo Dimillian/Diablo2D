@@ -22,6 +22,8 @@ function Player.new(opts)
     local createSkills = require("components.skills")
     local createExperience = require("components.experience")
     local createPhysicsBody = require("components.physics_body")
+    local createInactive = require("components.inactive")
+    local createTargeting = require("components.targeting")
 
     local entity = {
         id = opts.id or "player",
@@ -56,6 +58,8 @@ function Player.new(opts)
             density = opts.physicsBody and opts.physicsBody.density,
             userData = opts.physicsBody and opts.physicsBody.userData,
         }),
+        inactive = createInactive(),
+        targeting = createTargeting(),
     }
 
     return setmetatable(entity, Player)

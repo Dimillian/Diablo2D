@@ -17,34 +17,45 @@ local function drawIconBox(x, y, size, iconName, opts)
     opts = opts or {}
     local shadow = opts.shadow or false
     local badgeText = opts.badgeText
-    local badgeSize = opts.badgeSize or 14
-    local iconPadding = opts.iconPadding or (size >= 40 and 8 or 3)
+    local badgeSize = opts.badgeSize or UIConfig.defaultBadgeSize
+    local iconPadding = opts.iconPadding or (size >= 40 and UIConfig.iconPadding.large or UIConfig.iconPadding.small)
     local disabled = opts.disabled
     local cooldownRatio = opts.cooldownRatio or 0
     local highlightColor = opts.highlightColor
 
+    local boxConfig = UIConfig.iconBox
+    local cornerRadius = size >= 40 and boxConfig.largeCornerRadius or boxConfig.smallCornerRadius
+    local shadowOffset = boxConfig.shadowOffset or 0
+
     -- Draw shadow if requested
     if shadow then
-        love.graphics.setColor(0, 0, 0, 0.5)
-        love.graphics.rectangle("fill", x - 2, y - 2, size + 4, size + 4, 6, 6)
+        love.graphics.setColor(boxConfig.shadowColor)
+        love.graphics.rectangle(
+            "fill",
+            x - shadowOffset,
+            y - shadowOffset,
+            size + shadowOffset * 2,
+            size + shadowOffset * 2,
+            cornerRadius,
+            cornerRadius
+        )
     end
 
     -- Draw background
-    love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
-    local cornerRadius = size >= 40 and 4 or 3
+    love.graphics.setColor(boxConfig.backgroundColor)
     love.graphics.rectangle("fill", x, y, size, size, cornerRadius, cornerRadius)
 
     -- Draw badge background if needed (before border)
     if badgeText then
         local letterBoxX = x + size - badgeSize
         local letterBoxY = y
-        love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
+        love.graphics.setColor(boxConfig.badgeBackgroundColor)
         love.graphics.rectangle("fill", letterBoxX, letterBoxY, badgeSize, badgeSize, 0, 0)
     end
 
     -- Draw border
-    love.graphics.setColor(0.9, 0.85, 0.65, 1)
-    love.graphics.setLineWidth(2)
+    love.graphics.setColor(boxConfig.borderColor)
+    love.graphics.setLineWidth(boxConfig.borderLineWidth)
     love.graphics.rectangle("line", x, y, size, size, cornerRadius, cornerRadius)
 
     -- Draw icon inside
@@ -66,13 +77,13 @@ local function drawIconBox(x, y, size, iconName, opts)
         local letterBoxY = y
 
         -- Draw badge borders (left and bottom only, merge with main border)
-        love.graphics.setColor(0.9, 0.85, 0.65, 1)
-        love.graphics.setLineWidth(2)
+        love.graphics.setColor(boxConfig.borderColor)
+        love.graphics.setLineWidth(boxConfig.borderLineWidth)
         love.graphics.line(letterBoxX, letterBoxY, letterBoxX, letterBoxY + badgeSize)
         love.graphics.line(letterBoxX, letterBoxY + badgeSize, letterBoxX + badgeSize, letterBoxY + badgeSize)
 
         -- Draw badge text
-        love.graphics.setColor(0.95, 0.9, 0.7, 1)
+        love.graphics.setColor(boxConfig.badgeTextColor)
         local font = love.graphics.getFont()
         local textWidth = font:getWidth(badgeText)
         local textHeight = font:getHeight()
@@ -82,20 +93,20 @@ local function drawIconBox(x, y, size, iconName, opts)
     end
 
     if disabled then
-        love.graphics.setColor(0, 0, 0, 0.55)
+        love.graphics.setColor(boxConfig.disabledOverlayColor)
         love.graphics.rectangle("fill", x, y, size, size, cornerRadius, cornerRadius)
     end
 
     if cooldownRatio > 0 then
         cooldownRatio = math.min(1, math.max(0, cooldownRatio))
         local overlayHeight = size * cooldownRatio
-        love.graphics.setColor(0, 0, 0, 0.45)
+        love.graphics.setColor(boxConfig.cooldownOverlayColor)
         love.graphics.rectangle("fill", x, y, size, overlayHeight, cornerRadius, cornerRadius)
     end
 
     if highlightColor then
         love.graphics.setColor(highlightColor)
-        love.graphics.setLineWidth(2)
+        love.graphics.setLineWidth(boxConfig.highlightLineWidth)
         love.graphics.rectangle("line", x - 2, y - 2, size + 4, size + 4, cornerRadius + 1, cornerRadius + 1)
     end
 end
@@ -137,51 +148,8 @@ function uiBottomBar.draw(world)
     -- Layout icons horizontally: health/mana bars | health potion | mana potion | book | bag | world map
     local buttonSpacing = UIConfig.buttonSpacing
     local healthPotionX = healthBarX + healthBarWidth + buttonSpacing
-    local manaPotionX = healthPotionX + buttonSize + buttonSpacing
-    local bookX = manaPotionX + buttonSize + buttonSpacing
-    local bagX = bookX + buttonSize + buttonSpacing
-    local worldMapX = bagX + buttonSize + buttonSpacing
 
     love.graphics.push("all")
-
-    drawIconButton(world, {
-        x = bookX,
-        y = buttonY,
-        size = buttonSize,
-        iconName = "book",
-        rectField = "bottomBarBookRect",
-        opts = {
-            shadow = true,
-            badgeText = "K",
-            iconPadding = 8,
-        },
-    })
-
-    drawIconButton(world, {
-        x = bagX,
-        y = buttonY,
-        size = buttonSize,
-        iconName = "bag",
-        rectField = "bottomBarBagRect",
-        opts = {
-            shadow = true,
-            badgeText = "I",
-            iconPadding = 8,
-        },
-    })
-
-    drawIconButton(world, {
-        x = worldMapX,
-        y = buttonY,
-        size = buttonSize,
-        iconName = "scroll",
-        rectField = "bottomBarWorldMapRect",
-        opts = {
-            shadow = true,
-            badgeText = "M",
-            iconPadding = 8,
-        },
-    })
 
     local player = world:getPlayer()
     local potions = player and player.potions
@@ -198,38 +166,84 @@ function uiBottomBar.draw(world)
     local manaCount = potions and potions.manaPotionCount or 0
     local healthDisabled = healthCount <= 0
     local manaDisabled = manaCount <= 0
-
-    drawIconButton(world, {
-        x = healthPotionX,
-        y = buttonY,
-        size = buttonSize,
-        iconName = "health_potion",
-        rectField = "bottomBarHealthPotionRect",
-        opts = {
-            shadow = true,
+    local buttonDescriptors = {
+        {
+            rectField = "bottomBarHealthPotionRect",
+            iconName = "health_potion",
             badgeText = "5",
-            badgeSize = 16,
-            iconPadding = 8,
-            disabled = healthDisabled,
-            cooldownRatio = cooldownRatio,
+            badgeSize = UIConfig.potionBadgeSize,
+            dynamicOpts = function()
+                return {
+                    disabled = healthDisabled,
+                    cooldownRatio = cooldownRatio,
+                }
+            end,
         },
-    })
-
-    drawIconButton(world, {
-        x = manaPotionX,
-        y = buttonY,
-        size = buttonSize,
-        iconName = "mana_potion",
-        rectField = "bottomBarManaPotionRect",
-        opts = {
-            shadow = true,
+        {
+            rectField = "bottomBarManaPotionRect",
+            iconName = "mana_potion",
             badgeText = "6",
-            badgeSize = 16,
-            iconPadding = 8,
-            disabled = manaDisabled,
-            cooldownRatio = cooldownRatio,
+            badgeSize = UIConfig.potionBadgeSize,
+            dynamicOpts = function()
+                return {
+                    disabled = manaDisabled,
+                    cooldownRatio = cooldownRatio,
+                }
+            end,
         },
-    })
+        {
+            rectField = "bottomBarBookRect",
+            iconName = "book",
+            badgeText = "K",
+        },
+        {
+            rectField = "bottomBarBagRect",
+            iconName = "bag",
+            badgeText = "I",
+        },
+        {
+            rectField = "bottomBarWorldMapRect",
+            iconName = "scroll",
+            badgeText = "M",
+        },
+    }
+
+    local currentX = healthPotionX
+
+    for _, descriptor in ipairs(buttonDescriptors) do
+        local opts = {
+            shadow = true,
+            iconPadding = UIConfig.iconPadding.large,
+        }
+
+        if descriptor.badgeText then
+            opts.badgeText = descriptor.badgeText
+        end
+
+        if descriptor.badgeSize then
+            opts.badgeSize = descriptor.badgeSize
+        end
+
+        if descriptor.dynamicOpts then
+            local dynamicValues = descriptor.dynamicOpts()
+            if dynamicValues then
+                for key, value in pairs(dynamicValues) do
+                    opts[key] = value
+                end
+            end
+        end
+
+        drawIconButton(world, {
+            x = currentX,
+            y = buttonY,
+            size = buttonSize,
+            iconName = descriptor.iconName,
+            rectField = descriptor.rectField,
+            opts = opts,
+        })
+
+        currentX = currentX + buttonSize + buttonSpacing
+    end
 
     love.graphics.pop()
 end

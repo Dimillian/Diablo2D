@@ -97,7 +97,7 @@ describe("systems.ai.detection", function()
 
     it("ignores inactive foes", function()
         local foe = addFoe({ position = { x = 70, y = 70 }, range = 120 })
-        foe.inactive = true
+        foe.inactive = { isInactive = true }
 
         detectionSystem.update(world, 0)
 

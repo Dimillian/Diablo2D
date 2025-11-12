@@ -34,7 +34,11 @@ local function calculateFoeSeparation(entity, world, myCenterX, myCenterY)
 
     for _, other in ipairs(otherEntities) do
         -- Skip self and inactive entities
-        if other.id == entity.id or other.inactive then
+        if other.id == entity.id then
+            goto continue
+        end
+
+        if other.inactive and other.inactive.isInactive then
             goto continue
         end
 
@@ -76,7 +80,7 @@ function chaseSystem.update(world, _dt)
 
     for _, entity in ipairs(entities) do
         -- Skip inactive entities (too far from player)
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 

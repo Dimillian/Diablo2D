@@ -54,7 +54,9 @@ function Aggro.ensureAggro(world, foe, targetId, opts)
         return
     end
 
-    foe.inactive = false
+    if foe.inactive then
+        foe.inactive.isInactive = false
+    end
     addChaseComponent(world, foe, target.id)
     updateDetectionForAggro(foe, target)
 

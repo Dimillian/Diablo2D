@@ -1,79 +1,106 @@
 local vector = require("modules.vector")
+local coordinates = require("systems.helpers.coordinates")
+local ComponentDefaults = require("data.component_defaults")
 
-local Targeting = {
-    keepAlive = 1.5,
-}
+local Targeting = {}
 
-local function getEntityCenter(entity)
-    if not entity or not entity.position then
+local function getPlayerTargeting(world)
+    if not world or not world.getPlayer then
         return nil, nil
     end
 
-    local x = entity.position.x
-    local y = entity.position.y
-
-    if entity.size then
-        x = x + (entity.size.w or 0) / 2
-        y = y + (entity.size.h or 0) / 2
+    local player = world:getPlayer()
+    if not player then
+        return nil, nil
     end
 
-    return x, y
+    return player.targeting, player
 end
 
-local function ensureSceneTargetState(scene)
-    if scene.currentTargetId == nil then
+local function getKeepAliveDuration(targeting)
+    if not targeting then
+        return ComponentDefaults.TARGET_KEEP_ALIVE
+    end
+
+    return targeting.keepAlive or ComponentDefaults.TARGET_KEEP_ALIVE
+end
+
+local function ensureCurrentTarget(world, targeting)
+    if not targeting or not targeting.currentTargetId then
         return
     end
 
-    if not scene:getEntity(scene.currentTargetId) then
-        scene.currentTargetId = nil
-        scene.targetDisplayTimer = 0
+    local target = world:getEntity(targeting.currentTargetId)
+    if target and target.health and target.health.current > 0 then
+        return
     end
+
+    targeting.currentTargetId = nil
+    targeting.displayTimer = 0
 end
 
-function Targeting.resolveMouseTarget(scene, opts)
+local function isEntityAttackable(entity)
+    if not entity or not entity.health then
+        return false
+    end
+
+    if entity.dead then
+        return false
+    end
+
+    if entity.health.current <= 0 then
+        return false
+    end
+
+    if entity.inactive and entity.inactive.isInactive then
+        return false
+    end
+
+    return true
+end
+
+function Targeting.resolveMouseTarget(world, opts)
     opts = opts or {}
     local checkPlayerRange = opts.checkPlayerRange ~= false
     local clearOnNoTarget = opts.clearOnNoTarget == true
 
-    local player = scene:getPlayer()
-    if not player then
+    local targeting, player = getPlayerTargeting(world)
+    if not targeting or not player then
         return nil
     end
 
-    local camera = scene.camera or { x = 0, y = 0 }
-    local coordsHelper = scene.systemHelpers and scene.systemHelpers.coordinates
+    local coordsHelper = (world.systemHelpers and world.systemHelpers.coordinates) or coordinates
     if not coordsHelper or not coordsHelper.toWorldFromScreen then
         return nil
     end
 
     local combat = player.combat
-    local range = opts.range or (combat and combat.range) or 120
+    local range = opts.range or (combat and combat.range) or ComponentDefaults.DEFAULT_COMBAT_RANGE
 
     local mouseX, mouseY = love.mouse.getPosition()
-    local worldX, worldY = coordsHelper.toWorldFromScreen(camera, mouseX, mouseY)
+    local worldX, worldY = coordsHelper.toWorldFromScreen(world.camera or { x = 0, y = 0 }, mouseX, mouseY)
 
-    local foes = scene:queryEntities({ "foe", "position" })
-    local bestEntity = nil
-    local bestDistance = nil
+    local foes = world:queryEntities({ "foe", "position" })
+    local bestEntity
+    local bestDistance
 
-    local playerX, playerY = getEntityCenter(player)
+    local playerX, playerY = coordinates.getEntityCenter(player)
 
     for _, foe in ipairs(foes) do
-        if foe.health and (not foe.dead) and foe.health.current > 0 then
-            local foeX, foeY = getEntityCenter(foe)
+        if isEntityAttackable(foe) then
+            local foeX, foeY = coordinates.getEntityCenter(foe)
             if foeX and foeY then
                 local distanceToMouse = vector.distance(worldX, worldY, foeX, foeY)
+                if range <= 0 or distanceToMouse <= range * 1.25 then
+                    local inRange = true
+                    if checkPlayerRange and playerX then
+                        local distanceToPlayer = vector.distance(playerX, playerY, foeX, foeY)
+                        inRange = distanceToPlayer <= range
+                    end
 
-                if distanceToMouse and (range <= 0 or distanceToMouse <= range * 1.25) then
-                    local distanceToPlayer = playerX and vector.distance(playerX, playerY, foeX, foeY) or math.huge
-                    local inRange = not checkPlayerRange or distanceToPlayer <= range
-
-                    if inRange then
-                        if not bestDistance or distanceToMouse < bestDistance then
-                            bestDistance = distanceToMouse
-                            bestEntity = foe
-                        end
+                    if inRange and (not bestDistance or distanceToMouse < bestDistance) then
+                        bestDistance = distanceToMouse
+                        bestEntity = foe
                     end
                 end
             end
@@ -81,44 +108,71 @@ function Targeting.resolveMouseTarget(scene, opts)
     end
 
     if bestEntity then
-        scene.currentTargetId = bestEntity.id
-        scene.targetDisplayTimer = Targeting.keepAlive
+        targeting.currentTargetId = bestEntity.id
+        targeting.displayTimer = getKeepAliveDuration(targeting)
         return bestEntity
     end
 
     if clearOnNoTarget then
-        Targeting.clear(scene)
+        Targeting.clear(world)
     else
-        ensureSceneTargetState(scene)
+        ensureCurrentTarget(world, targeting)
     end
+
     return nil
 end
 
-function Targeting.getCurrentTarget(scene)
-    if not scene.currentTargetId then
+function Targeting.getCurrentTarget(world)
+    local targeting = getPlayerTargeting(world)
+    if not targeting then
         return nil
     end
 
-    local target = scene:getEntity(scene.currentTargetId)
-    if target and target.health and target.health.current > 0 then
-        return target
+    ensureCurrentTarget(world, targeting)
+
+    if not targeting.currentTargetId then
+        return nil
     end
 
-    scene.currentTargetId = nil
-    scene.targetDisplayTimer = 0
-    return nil
+    return world:getEntity(targeting.currentTargetId)
 end
 
-function Targeting.clear(scene)
-    scene.currentTargetId = nil
-    scene.targetDisplayTimer = 0
+function Targeting.clear(world)
+    local targeting = getPlayerTargeting(world)
+    if not targeting then
+        return
+    end
+
+    targeting.currentTargetId = nil
+    targeting.displayTimer = 0
 end
 
-function Targeting.tick(scene, dt)
-    if scene.targetDisplayTimer then
-        scene.targetDisplayTimer = math.max((scene.targetDisplayTimer or 0) - dt, 0)
-        if scene.targetDisplayTimer <= 0 then
-            Targeting.clear(scene)
+function Targeting.clearIfMatches(world, entityId)
+    if not entityId then
+        return
+    end
+
+    local targeting = getPlayerTargeting(world)
+    if not targeting then
+        return
+    end
+
+    if targeting.currentTargetId == entityId then
+        targeting.currentTargetId = nil
+        targeting.displayTimer = 0
+    end
+end
+
+function Targeting.tick(world, dt)
+    local targeting = getPlayerTargeting(world)
+    if not targeting then
+        return
+    end
+
+    if targeting.displayTimer then
+        targeting.displayTimer = math.max((targeting.displayTimer or 0) - dt, 0)
+        if targeting.displayTimer <= 0 then
+            Targeting.clear(world)
         end
     end
 end

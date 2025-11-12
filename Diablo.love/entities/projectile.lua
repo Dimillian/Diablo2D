@@ -12,6 +12,7 @@ function Projectile.new(opts)
     local createMovement = require("components.movement")
     local createRenderable = require("components.renderable")
     local createProjectile = require("components.projectile")
+    local createInactive = require("components.inactive")
 
     local size = opts.size or 12
 
@@ -55,6 +56,7 @@ function Projectile.new(opts)
             directionX = opts.vx or 0,
             directionY = opts.vy or 0,
         }),
+        inactive = createInactive(),
     }
 
     return setmetatable(entity, Projectile)

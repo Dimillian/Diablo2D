@@ -191,7 +191,7 @@ function renderProjectileSystem.draw(world)
         end
 
         local state = projectileComponent.state or "flying"
-        if projectile.inactive and state ~= "impact" then
+        if projectile.inactive and projectile.inactive.isInactive and state ~= "impact" then
             goto continue
         end
         local seed = renderable.sparkleSeed or 0

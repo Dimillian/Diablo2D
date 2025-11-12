@@ -317,7 +317,7 @@ function renderSystem.draw(world)
         local entitiesWithDetection = world:queryEntities({ "detection", "position" })
         for _, entity in ipairs(entitiesWithDetection) do
             -- Skip inactive entities
-            if entity.inactive then
+            if entity.inactive and entity.inactive.isInactive then
                 goto continue
             end
 
@@ -357,7 +357,7 @@ function renderSystem.draw(world)
         end
 
         -- Skip inactive entities (too far from player)
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 

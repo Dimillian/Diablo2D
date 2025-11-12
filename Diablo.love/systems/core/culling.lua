@@ -1,4 +1,21 @@
 local vector = require("modules.vector")
+local createInactive = require("components.inactive")
+
+local function setInactiveState(world, entity, isInactive)
+    if not entity then
+        return
+    end
+
+    if not entity.inactive then
+        if not entity.id then
+            return
+        end
+        world:addComponent(entity.id, "inactive", createInactive({ isInactive = isInactive }))
+        return
+    end
+
+    entity.inactive.isInactive = isInactive
+end
 
 local cullingSystem = {}
 
@@ -55,9 +72,9 @@ function cullingSystem.update(world, dt)
 
         if entity.chunkResident then
             if distSquared > INACTIVE_DISTANCE_SQUARED then
-                entity.inactive = true
+                setInactiveState(world, entity, true)
             else
-                entity.inactive = false
+                setInactiveState(world, entity, false)
             end
             goto continue
         end
@@ -70,9 +87,9 @@ function cullingSystem.update(world, dt)
 
         -- Mark entities as active/inactive based on distance
         if distSquared > INACTIVE_DISTANCE_SQUARED then
-            entity.inactive = true
+            setInactiveState(world, entity, true)
         else
-            entity.inactive = false
+            setInactiveState(world, entity, false)
         end
 
         ::continue::

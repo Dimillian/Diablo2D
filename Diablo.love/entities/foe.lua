@@ -22,6 +22,7 @@ function Foe.new(opts)
     local createFoeTag = require("components.foe")
     local createCombat = require("components.combat")
     local createPhysicsBody = require("components.physics_body")
+    local createInactive = require("components.inactive")
 
     local entity = {
         id = opts.id or ("foe_" .. math.random(10000, 99999)),
@@ -73,6 +74,7 @@ function Foe.new(opts)
             linearDamping = (config and config.physicsLinearDamping) or 16,
             friction = 0,
         }),
+        inactive = createInactive(),
     }
 
     return setmetatable(entity, Foe)

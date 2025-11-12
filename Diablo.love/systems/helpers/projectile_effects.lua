@@ -47,7 +47,9 @@ function projectileEffects.triggerImpact(world, projectile, opts)
     projectileComponent.lastDirectionX = directionX or 0
     projectileComponent.lastDirectionY = directionY or 0
 
-    projectile.inactive = true
+    if projectile.inactive then
+        projectile.inactive.isInactive = true
+    end
 
     if projectile.position and projectile.size then
         local radius = (projectile.size.w or projectile.size.h or 0) / 2

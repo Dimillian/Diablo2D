@@ -17,7 +17,7 @@ function lootTooltipSystem.draw(world)
     local hovered = nil
 
     for _, loot in ipairs(loots) do
-        if loot.inactive then
+        if loot.inactive and loot.inactive.isInactive then
             goto continue
         end
 

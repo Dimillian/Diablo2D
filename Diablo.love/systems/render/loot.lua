@@ -11,7 +11,7 @@ function renderLootSystem.draw(world)
     local entities = world:queryEntities({ "renderable", "lootable", "position", "size" })
 
     for _, entity in ipairs(entities) do
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 

@@ -7,7 +7,7 @@ function deathAnimationSystem.update(world, dt)
     local dyingEntities = world:queryEntities({ "deathAnimation", "dead" })
 
     for _, entity in ipairs(dyingEntities) do
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 

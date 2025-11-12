@@ -55,7 +55,7 @@ function collisionSystem.update(world, _dt)
     end
 
     for _, projectile in ipairs(projectiles) do
-        if projectile.inactive then
+        if projectile.inactive and projectile.inactive.isInactive then
             goto continue_projectile
         end
 
