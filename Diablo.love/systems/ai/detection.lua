@@ -22,7 +22,7 @@ function detectionSystem.update(world, _dt)
 
     for _, foe in ipairs(foes) do
         -- Skip inactive entities (too far from player)
-        if foe.inactive then
+        if foe.inactive and foe.inactive.isInactive then
             goto continue
         end
 

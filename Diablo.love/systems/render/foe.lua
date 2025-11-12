@@ -100,7 +100,7 @@ function renderFoeSystem.draw(world)
     local entities = world:queryEntities({ "foe", "renderable", "position", "size" })
 
     for _, entity in ipairs(entities) do
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 

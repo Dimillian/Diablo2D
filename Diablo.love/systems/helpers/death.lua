@@ -73,15 +73,7 @@ function DeathHelper.handleDeath(world, target, attacker, position) -- luacheck:
     -- This is handled by the calling system
 
     -- Clear targeting if this was the current target
-    if world.currentTargetId == targetId then
-        if Targeting.clear then
-            Targeting.clear(world)
-        else
-            -- Fallback for systems that don't use Targeting helper
-            world.currentTargetId = nil
-            world.targetDisplayTimer = 0
-        end
-    end
+    Targeting.clearIfMatches(world, targetId)
 
     -- Update chunk state
     if target.chunkResident then

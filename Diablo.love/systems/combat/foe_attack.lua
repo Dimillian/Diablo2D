@@ -1,22 +1,8 @@
 local vector = require("modules.vector")
+local coordinates = require("systems.helpers.coordinates")
+local combatTiming = require("systems.helpers.combat_timing")
 
 local foeAttackSystem = {}
-
-local function getEntityCenter(entity)
-    if not entity or not entity.position then
-        return nil, nil
-    end
-
-    local x = entity.position.x
-    local y = entity.position.y
-
-    if entity.size then
-        x = x + (entity.size.w or 0) / 2
-        y = y + (entity.size.h or 0) / 2
-    end
-
-    return x, y
-end
 
 function foeAttackSystem.update(world, dt)
     -- Query entities with foe, chase, combat, position, and health components
@@ -24,7 +10,7 @@ function foeAttackSystem.update(world, dt)
 
     for _, foe in ipairs(entities) do
         -- Skip inactive entities
-        if foe.inactive then
+        if foe.inactive and foe.inactive.isInactive then
             goto continue
         end
 
@@ -34,13 +20,7 @@ function foeAttackSystem.update(world, dt)
         end
 
         -- Decrement cooldown and swing timer each frame
-        combat.cooldown = math.max((combat.cooldown or 0) - dt, 0)
-        if combat.swingTimer and combat.swingTimer > 0 then
-            combat.swingTimer = math.max(combat.swingTimer - dt, 0)
-            if combat.swingTimer <= 0 then
-                combat.attackAnimationTime = nil
-            end
-        end
+        combatTiming.updateTimers(combat, dt, { clearAttackAnimationTime = true })
 
         -- Skip if already has a queued attack
         if combat.queuedAttack then
@@ -59,14 +39,14 @@ function foeAttackSystem.update(world, dt)
         end
 
         -- Calculate distance between foe center and player center
-        local foeX, foeY = getEntityCenter(foe)
-        local playerX, playerY = getEntityCenter(player)
+        local foeX, foeY = coordinates.getEntityCenter(foe)
+        local playerX, playerY = coordinates.getEntityCenter(player)
         if not foeX or not playerX then
             goto continue
         end
 
         local distance = vector.distance(foeX, foeY, playerX, playerY)
-        local attackRange = combat.range or 80
+        local attackRange = combatTiming.getRange(combat)
 
         -- Check if foe is within attack range
         if distance <= attackRange then
@@ -74,14 +54,10 @@ function foeAttackSystem.update(world, dt)
             combat.queuedAttack = {
                 targetId = player.id,
                 range = attackRange,
+                time = world.time or 0,
             }
 
-            -- Set cooldown: slower than player (default 0.8 attack speed)
-            local attackSpeed = combat.attackSpeed or 0.8
-            combat.cooldown = 1 / attackSpeed
-
-            -- Set swing timer
-            combat.swingTimer = combat.swingDuration or 0.3
+            combatTiming.beginSwing(combat, { timeStamp = world.time or 0 })
         end
 
         ::continue::

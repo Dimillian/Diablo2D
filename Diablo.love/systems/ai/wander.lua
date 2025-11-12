@@ -1,21 +1,17 @@
 local wanderSystem = {}
 local vector = require("modules.vector")
-
-local COHESION_RANGE = 120
-local COHESION_STRENGTH = 0.1
-local SEPARATION_RANGE = 70
-local SEPARATION_STRENGTH = 0.5
+local coordinates = require("systems.helpers.coordinates")
 
 local function randomDirection()
     local angle = math.random() * math.pi * 2
     return math.cos(angle), math.sin(angle)
 end
 
-local function calculateSeparation(entity, world)
-    local pos = entity.position
-    local size = entity.size or { w = 0, h = 0 }
-    local centerX = pos.x + (size.w / 2)
-    local centerY = pos.y + (size.h / 2)
+local function calculateSeparation(entity, world, wander)
+    local centerX, centerY = coordinates.getEntityCenter(entity)
+    if not centerX or not centerY then
+        return 0, 0
+    end
 
     local separationX = 0
     local separationY = 0
@@ -24,22 +20,27 @@ local function calculateSeparation(entity, world)
     local otherEntities = world:queryEntities({ "foe", "position", "size" })
 
     for _, other in ipairs(otherEntities) do
-        if other.id == entity.id or other.inactive then
+        if other.id == entity.id then
             goto continue
         end
 
-        local otherPos = other.position
-        local otherSize = other.size or { w = 0, h = 0 }
-        local otherCenterX = otherPos.x + (otherSize.w / 2)
-        local otherCenterY = otherPos.y + (otherSize.h / 2)
+        if other.inactive and other.inactive.isInactive then
+            goto continue
+        end
+
+        local otherCenterX, otherCenterY = coordinates.getEntityCenter(other)
+        if not otherCenterX or not otherCenterY then
+            goto continue
+        end
 
         local dx = centerX - otherCenterX
         local dy = centerY - otherCenterY
         local distance = vector.length(dx, dy)
 
-        if distance > 0 and distance < SEPARATION_RANGE then
+        local separationRange = wander.separationRange
+        if distance > 0 and distance < separationRange then
             local ndx, ndy = vector.normalize(dx, dy)
-            local strength = (SEPARATION_RANGE - distance) / SEPARATION_RANGE
+            local strength = (separationRange - distance) / separationRange
             separationX = separationX + ndx * strength
             separationY = separationY + ndy * strength
             separationCount = separationCount + 1
@@ -51,14 +52,14 @@ local function calculateSeparation(entity, world)
     if separationCount > 0 then
         local sepDx, sepDy, sepLength = vector.normalize(separationX, separationY)
         if sepLength > 0 then
-            return sepDx * SEPARATION_STRENGTH, sepDy * SEPARATION_STRENGTH
+            return sepDx * wander.separationStrength, sepDy * wander.separationStrength
         end
     end
 
     return 0, 0
 end
 
-local function calculatePackCohesion(entity, world)
+local function calculatePackCohesion(entity, world, wander)
     local foe = entity.foe
     if not foe or not foe.packId then
         return 0, 0
@@ -70,7 +71,11 @@ local function calculatePackCohesion(entity, world)
     local packCount = 0
 
     for _, member in ipairs(packMembers) do
-        if member.id == entity.id or member.inactive or not member.foe or member.foe.packId ~= foe.packId then
+        if member.id == entity.id or not member.foe or member.foe.packId ~= foe.packId then
+            goto continue
+        end
+
+        if member.inactive and member.inactive.isInactive then
             goto continue
         end
 
@@ -78,7 +83,7 @@ local function calculatePackCohesion(entity, world)
         local dy = member.position.y - entity.position.y
         local distance = vector.length(dx, dy)
 
-        if distance > 0 and distance <= COHESION_RANGE then
+        if distance > 0 and distance <= wander.cohesionRange then
             packCenterX = packCenterX + member.position.x
             packCenterY = packCenterY + member.position.y
             packCount = packCount + 1
@@ -98,14 +103,14 @@ local function calculatePackCohesion(entity, world)
     local dy = packCenterY - entity.position.y
     local ndx, ndy = vector.normalize(dx, dy)
 
-    return ndx * COHESION_STRENGTH, ndy * COHESION_STRENGTH
+    return ndx * wander.cohesionStrength, ndy * wander.cohesionStrength
 end
 
 function wanderSystem.update(world, dt)
     local entities = world:queryEntities({ "wander", "movement" })
 
     for _, entity in ipairs(entities) do
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 
@@ -121,7 +126,7 @@ function wanderSystem.update(world, dt)
         local movement = entity.movement
 
         if not wander.currentInterval then
-            local variation = wander.interval * 0.3
+            local variation = wander.interval * wander.variance
             wander.currentInterval = wander.interval + (math.random() * variation * 2 - variation)
 
             movement.vx, movement.vy = randomDirection()
@@ -135,36 +140,48 @@ function wanderSystem.update(world, dt)
             wander.elapsed = 0
 
             local randDx, randDy = randomDirection()
-            local cohDx, cohDy = calculatePackCohesion(entity, world)
-            local sepDx, sepDy = calculateSeparation(entity, world)
+            local cohDx, cohDy = calculatePackCohesion(entity, world, wander)
+            local sepDx, sepDy = calculateSeparation(entity, world, wander)
 
-            local combinedDx = randDx + cohDx + sepDx * 1.5
-            local combinedDy = randDy + cohDy + sepDy * 1.5
+            local combinedDx = (randDx * wander.randomWeight)
+                + (cohDx * wander.cohesionImpulseWeight)
+                + (sepDx * wander.separationImpulseWeight)
+            local combinedDy = (randDy * wander.randomWeight)
+                + (cohDy * wander.cohesionImpulseWeight)
+                + (sepDy * wander.separationImpulseWeight)
             local ndx, ndy = vector.normalize(combinedDx, combinedDy)
 
-            movement.vx = ndx
-            movement.vy = ndy
-            movement.lookDirection.x = ndx
-            movement.lookDirection.y = ndy
+            if ndx and ndy then
+                movement.vx = ndx
+                movement.vy = ndy
+                movement.lookDirection.x = ndx
+                movement.lookDirection.y = ndy
+            end
 
-            local variation = wander.interval * 0.3
+            local variation = wander.interval * wander.variance
             wander.currentInterval = wander.interval + (math.random() * variation * 2 - variation)
         else
-            local cohDx, cohDy = calculatePackCohesion(entity, world)
-            local sepDx, sepDy = calculateSeparation(entity, world)
+            local cohDx, cohDy = calculatePackCohesion(entity, world, wander)
+            local sepDx, sepDy = calculateSeparation(entity, world, wander)
 
             if cohDx ~= 0 or cohDy ~= 0 or sepDx ~= 0 or sepDy ~= 0 then
                 local currentDx = movement.lookDirection.x
                 local currentDy = movement.lookDirection.y
 
-                local combinedDx = currentDx + cohDx * 0.5 + sepDx * 1.2
-                local combinedDy = currentDy + cohDy * 0.5 + sepDy * 1.2
+                local combinedDx = currentDx
+                    + (cohDx * wander.cohesionSteeringWeight)
+                    + (sepDx * wander.separationSteeringWeight)
+                local combinedDy = currentDy
+                    + (cohDy * wander.cohesionSteeringWeight)
+                    + (sepDy * wander.separationSteeringWeight)
                 local ndx, ndy = vector.normalize(combinedDx, combinedDy)
 
-                movement.vx = ndx
-                movement.vy = ndy
-                movement.lookDirection.x = ndx
-                movement.lookDirection.y = ndy
+                if ndx and ndy then
+                    movement.vx = ndx
+                    movement.vy = ndy
+                    movement.lookDirection.x = ndx
+                    movement.lookDirection.y = ndy
+                end
             else
                 movement.vx = movement.lookDirection.x
                 movement.vy = movement.lookDirection.y

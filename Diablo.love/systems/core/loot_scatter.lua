@@ -11,7 +11,7 @@ function lootScatterSystem.update(world, dt)
     end
 
     for _, loot in ipairs(lootEntities) do
-        if loot.inactive then
+        if loot.inactive and loot.inactive.isInactive then
             world:removeComponent(loot.id, "lootScatter")
             goto continue
         end

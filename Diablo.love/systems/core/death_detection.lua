@@ -22,7 +22,7 @@ function deathDetectionSystem.update(world, dt) -- luacheck: ignore 212/dt
     local entitiesWithHealth = world:queryEntities({ "health" })
 
     for _, entity in ipairs(entitiesWithHealth) do
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 

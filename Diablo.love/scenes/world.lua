@@ -70,8 +70,6 @@ function WorldScene.new(opts)
         time = 0,
         lastUpdateDt = 0,
         pendingCombatEvents = {},
-        currentTargetId = nil,
-        targetDisplayTimer = 0,
         sceneManager = opts.sceneManager, -- Reference to scene manager for opening inventory
         systemHelpers = {
             coordinates = require("systems.helpers.coordinates"),

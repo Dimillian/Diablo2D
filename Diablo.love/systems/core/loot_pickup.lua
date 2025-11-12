@@ -128,7 +128,7 @@ function lootPickupSystem.update(world, dt)
     local playerX, playerY = getEntityCenter(player)
 
     for _, loot in ipairs(loots) do
-        if loot.inactive then
+        if loot.inactive and loot.inactive.isInactive then
             goto continue
         end
 

@@ -10,7 +10,7 @@ function renderHealthSystem.draw(world)
     local entities = world:queryEntities({ "foe", "health", "position" })
 
     for _, entity in ipairs(entities) do
-        if entity.inactive or entity.dead then
+        if (entity.inactive and entity.inactive.isInactive) or entity.dead then
             goto continue
         end
 

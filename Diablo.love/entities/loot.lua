@@ -9,6 +9,7 @@ function Loot.new(opts)
     local createLootable = require("components.lootable")
     local createSize = require("components.size")
     local createLootScatter = require("components.loot_scatter")
+    local createInactive = require("components.inactive")
 
     local entity = {
         id = opts.id or ("loot_" .. math.random(10000, 99999)),
@@ -25,6 +26,7 @@ function Loot.new(opts)
             color = { 0.9, 0.8, 0.2, 1 },
         }),
         lootable = createLootable(opts.lootable),
+        inactive = createInactive(),
     }
 
     if opts.hoverable then

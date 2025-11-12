@@ -2,6 +2,7 @@ local Spells = require("data.spells")
 local ProjectileEntity = require("entities.projectile")
 local coordinates = require("systems.helpers.coordinates")
 local vector = require("modules.vector")
+local Targeting = require("systems.helpers.targeting")
 
 local skillCastSystem = {}
 
@@ -15,17 +16,7 @@ local function getEntityCenter(entity)
 end
 
 local function getTarget(world)
-    local targetId = world.currentTargetId
-    if not targetId then
-        return nil
-    end
-
-    local target = world:getEntity(targetId)
-    if not target or not target.health or target.health.current <= 0 or target.dead then
-        return nil
-    end
-
-    return target
+    return Targeting.getCurrentTarget(world)
 end
 
 local function computeTargetPosition(world, projectileTarget, caster)

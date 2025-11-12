@@ -29,7 +29,7 @@ function renderPlayerSystem.draw(world)
     end
 
     -- Skip inactive player
-    if player.inactive then
+    if player.inactive and player.inactive.isInactive then
         return
     end
 

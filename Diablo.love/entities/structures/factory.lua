@@ -3,6 +3,7 @@ local createSize = require("components.size")
 local createRenderable = require("components.renderable")
 local createStructure = require("components.structure")
 local createPhysicsBody = require("components.physics_body")
+local createInactive = require("components.inactive")
 
 local StructureFactory = {}
 StructureFactory.__index = StructureFactory
@@ -53,6 +54,7 @@ function StructureFactory.build(opts)
             fixedRotation = true,
             friction = 0,
         }),
+        inactive = createInactive(),
     }
 
     entity.renderable.shape = template.renderable.shape

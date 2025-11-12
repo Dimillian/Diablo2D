@@ -1,38 +1,9 @@
 local vector = require("modules.vector")
 local Targeting = require("systems.helpers.targeting")
+local coordinates = require("systems.helpers.coordinates")
+local combatTiming = require("systems.helpers.combat_timing")
 
 local playerAttackSystem = {}
-
-local function getEntityCenter(entity)
-    if not entity or not entity.position then
-        return nil, nil
-    end
-
-    local x = entity.position.x
-    local y = entity.position.y
-
-    if entity.size then
-        x = x + (entity.size.w or 0) / 2
-        y = y + (entity.size.h or 0) / 2
-    end
-
-    return x, y
-end
-
-local function computeEffectiveAttackSpeed(entity, combat)
-    local base = combat.attackSpeed
-    local multiplier = 1
-
-    if entity.stats and entity.stats.total and entity.stats.total.attackSpeed then
-        multiplier = multiplier + entity.stats.total.attackSpeed
-    end
-
-    if multiplier < 0.1 then
-        multiplier = 0.1
-    end
-
-    return math.max(base * multiplier, 0.1)
-end
 
 function playerAttackSystem.update(world, dt)
     Targeting.tick(world, dt)
@@ -47,11 +18,7 @@ function playerAttackSystem.update(world, dt)
         return
     end
 
-    combat.cooldown = math.max((combat.cooldown or 0) - dt, 0)
-
-    if combat.swingTimer and combat.swingTimer > 0 then
-        combat.swingTimer = math.max(combat.swingTimer - dt, 0)
-    end
+    combatTiming.updateTimers(combat, dt)
 
     local input =
         world.input and world.input.mouse and world.input.mouse.primary
@@ -70,7 +37,8 @@ function playerAttackSystem.update(world, dt)
 
     local target = Targeting.getCurrentTarget(world)
     if wantsAttack then
-        target = Targeting.resolveMouseTarget(world, { range = combat.range }) or target
+        local desiredRange = combatTiming.getRange(combat)
+        target = Targeting.resolveMouseTarget(world, { range = desiredRange }) or target
     end
 
     if combat.cooldown > 0 then
@@ -82,12 +50,11 @@ function playerAttackSystem.update(world, dt)
     end
 
     -- Always trigger swing animation and cooldown for visual feedback
-    local effectiveAttackSpeed = computeEffectiveAttackSpeed(player, combat)
-    local cooldownReset = 1 / effectiveAttackSpeed
-
-    combat.cooldown = cooldownReset
-    combat.swingTimer = combat.swingDuration or 0.35
-    combat.lastAttackTime = world.time or 0
+    local effectiveAttackSpeed = combatTiming.computeEffectiveAttackSpeed(player)
+    combatTiming.beginSwing(combat, {
+        attackSpeed = effectiveAttackSpeed,
+        timeStamp = world.time or 0,
+    })
 
     -- Only queue damage if valid target exists and is in range
     if not target then
@@ -99,13 +66,13 @@ function playerAttackSystem.update(world, dt)
         return
     end
 
-    local playerX, playerY = getEntityCenter(player)
-    local targetX, targetY = getEntityCenter(target)
+    local playerX, playerY = coordinates.getEntityCenter(player)
+    local targetX, targetY = coordinates.getEntityCenter(target)
     if not playerX or not targetX then
         return
     end
 
-    local range = combat.range or 120
+    local range = combatTiming.getRange(combat)
     local distance = vector.distance(playerX, playerY, targetX, targetY)
     if distance > range then
         return

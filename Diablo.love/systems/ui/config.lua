@@ -7,6 +7,27 @@ UIConfig.buttonSize = 48 -- Size of potion/bag buttons
 UIConfig.bottomOffset = 44 -- 32 + 12, spacing from bottom for bottom bar elements
 UIConfig.buttonSpacing = 8 -- Spacing between buttons
 UIConfig.sideMargin = 32 -- Left/right margin for experience bar
+UIConfig.iconPadding = {
+    small = 3,
+    large = 8,
+}
+UIConfig.defaultBadgeSize = 14
+UIConfig.potionBadgeSize = 16
+
+UIConfig.iconBox = {
+    shadowColor = { 0, 0, 0, 0.5 },
+    shadowOffset = 2,
+    backgroundColor = { 0.1, 0.1, 0.1, 0.9 },
+    borderColor = { 0.9, 0.85, 0.65, 1 },
+    badgeBackgroundColor = { 0.1, 0.1, 0.1, 0.9 },
+    badgeTextColor = { 0.95, 0.9, 0.7, 1 },
+    disabledOverlayColor = { 0, 0, 0, 0.55 },
+    cooldownOverlayColor = { 0, 0, 0, 0.45 },
+    highlightLineWidth = 2,
+    borderLineWidth = 2,
+    smallCornerRadius = 3,
+    largeCornerRadius = 4,
+}
 
 ---Calculate spacing between health/mana bars
 ---@return number spacing The spacing between bars

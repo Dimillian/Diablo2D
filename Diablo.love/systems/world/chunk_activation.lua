@@ -2,6 +2,7 @@ local ChunkManager = require("modules.world.chunk_manager")
 local Foe = require("entities.foe")
 local foeTypes = require("data.foe_types")
 local StructureFactory = require("entities.structures.factory")
+local createChunkResident = require("components.chunk_resident")
 
 local chunkActivationSystem = {}
 
@@ -26,11 +27,11 @@ local function instantiateFoe(world, chunk, descriptor)
         packId = descriptor.packId,
     })
 
-    foe.chunkResident = {
+    foe.chunkResident = createChunkResident({
         chunkKey = chunk.key,
         descriptorId = descriptor.id,
         kind = "foe",
-    }
+    })
 
     world:addEntity(foe)
     chunk.spawnedEntities[descriptor.id] = foe.id
@@ -49,11 +50,11 @@ local function instantiateStructure(world, chunk, descriptor)
         rotation = descriptor.rotation,
     })
 
-    structure.chunkResident = {
+    structure.chunkResident = createChunkResident({
         chunkKey = chunk.key,
         descriptorId = descriptor.id,
         kind = "structure",
-    }
+    })
 
     world:addEntity(structure)
     chunk.spawnedEntities[descriptor.id] = structure.id

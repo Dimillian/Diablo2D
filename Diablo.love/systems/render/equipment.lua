@@ -1,4 +1,5 @@
 local Resources = require("modules.resources")
+local ComponentDefaults = require("data.component_defaults")
 
 local renderEquipmentSystem = {}
 
@@ -185,7 +186,7 @@ local function calculateStabAnimation(combat)
         return nil, nil, nil
     end
 
-    local swingDuration = combat.swingDuration or 0.35
+    local swingDuration = combat.swingDuration or ComponentDefaults.COMBAT_SWING_DURATION
     local ratio = math.max(0, math.min(combat.swingTimer / swingDuration, 1))
     local progress = 1 - ratio
 
@@ -390,7 +391,7 @@ function renderEquipmentSystem.draw(world)
 
     for _, entity in ipairs(entities) do
         -- Skip inactive entities
-        if entity.inactive then
+        if entity.inactive and entity.inactive.isInactive then
             goto continue
         end
 
