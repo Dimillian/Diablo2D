@@ -11,6 +11,137 @@ Tooltips.rarityColors = {
 }
 
 local SPRITE_SIZE = 32
+local TITLE_SEPARATOR_MARGIN = 4
+local TITLE_SEPARATOR_HEIGHT = 2
+local SUBTITLE_BOTTOM_SPACING = 6
+local SECTION_HEADER_TOP_PADDING = 6
+local SECTION_HEADER_BOTTOM_PADDING = 2
+local SECTION_DIVIDER_HEIGHT = 10
+
+local SECTION_HEADER_COLOR = { 0.95, 0.9, 0.75, 1 }
+local SECTION_DIVIDER_COLOR = { 0.35, 0.35, 0.45, 0.65 }
+
+local SECTION_ORDER = {
+    { key = "base", label = "Base Power" },
+    { key = "defense", label = "Defense" },
+    { key = "offense", label = "Offense" },
+    { key = "utility", label = "Utility" },
+    { key = "comparison", label = "Compared To Equipped" },
+}
+
+local STAT_CATEGORY_MAP = {
+    damage = "base",
+    defense = "base",
+    health = "defense",
+    critChance = "offense",
+    moveSpeed = "utility",
+    dodgeChance = "defense",
+    goldFind = "utility",
+    lifeSteal = "offense",
+    attackSpeed = "offense",
+    resistAll = "defense",
+    manaRegen = "utility",
+}
+
+local fontCache = {}
+
+local function getOrCreateFontLike(baseFont, size)
+    size = math.max(8, math.floor(size + 0.5))
+    if size <= 0 then
+        return baseFont
+    end
+
+    local filename = baseFont.getFilename and baseFont:getFilename()
+    if not filename then
+        return baseFont
+    end
+
+    local cacheKey = filename .. ":" .. size
+    if not fontCache[cacheKey] then
+        fontCache[cacheKey] = love.graphics.newFont(filename, size)
+    end
+
+    return fontCache[cacheKey]
+end
+
+local function resolveTooltipFonts(bodyFont)
+    local bodyHeight = bodyFont:getHeight()
+    local titleSize = math.max(bodyHeight + 2, math.floor(bodyHeight * 1.18))
+    local subtitleSize = math.max(bodyHeight + 1, math.floor(bodyHeight * 1.08))
+    local sectionSize = math.max(bodyHeight, math.floor(bodyHeight * 1.02))
+
+    return {
+        body = bodyFont,
+        title = getOrCreateFontLike(bodyFont, titleSize),
+        subtitle = getOrCreateFontLike(bodyFont, subtitleSize),
+        section = getOrCreateFontLike(bodyFont, sectionSize),
+    }
+end
+
+local function drawText(font, text, x, y, color, isBold)
+    love.graphics.setFont(font)
+    love.graphics.setColor(color)
+    love.graphics.print(text, x, y)
+    if isBold then
+        love.graphics.print(text, x + 1, y)
+    end
+end
+
+local function sectionKeyForStat(statKey)
+    return STAT_CATEGORY_MAP[statKey] or "utility"
+end
+
+local function addSectionLine(sectionLines, sectionKey, lineData)
+    sectionKey = sectionKey or "utility"
+    sectionLines[sectionKey] = sectionLines[sectionKey] or {}
+    local bucket = sectionLines[sectionKey]
+    bucket[#bucket + 1] = lineData
+end
+
+local function flattenSections(sectionLines, defaultColor)
+    local flattened = {}
+    local hasSections = false
+
+    for _, section in ipairs(SECTION_ORDER) do
+        local bucket = sectionLines[section.key]
+        if bucket and #bucket > 0 then
+            hasSections = true
+
+            if #flattened > 0 then
+                flattened[#flattened + 1] = {
+                    isSeparator = true,
+                    color = SECTION_DIVIDER_COLOR,
+                }
+            end
+
+            flattened[#flattened + 1] = {
+                text = section.label,
+                color = SECTION_HEADER_COLOR,
+                isSectionHeader = true,
+            }
+
+            for _, line in ipairs(bucket) do
+                flattened[#flattened + 1] = line
+            end
+        end
+    end
+
+    if not hasSections then
+        return {
+            {
+                text = SECTION_ORDER[1].label,
+                color = SECTION_HEADER_COLOR,
+                isSectionHeader = true,
+            },
+            {
+                text = "No bonuses",
+                color = defaultColor,
+            },
+        }
+    end
+
+    return flattened
+end
 
 local function snap(value)
     return math.floor(value + 0.5)
@@ -120,250 +251,241 @@ function Tooltips.buildItemStatLines(item, equippedItems, isEquippedItem)
     equippedItems = equippedItems or {}
     isEquippedItem = isEquippedItem or false
     local stats = item.stats or {}
-    local lines = {}
     local defaultColor = { 1, 1, 1, 1 }
-    local separatorColor = { 0.5, 0.5, 0.5, 0.5 } -- Gray separator
+    local sectionLines = {}
+    local compareValues = not isEquippedItem
 
-    -- If hovering equipped item, show all stats in white (no comparisons)
-    if isEquippedItem then
-        -- Damage range
-        if stats.damageMin and stats.damageMax and (stats.damageMin > 0 or stats.damageMax > 0) then
-            lines[#lines + 1] = {
-                text = string.format("Damage: %d - %d", stats.damageMin, stats.damageMax),
-                color = defaultColor
-            }
-        end
-
-        -- Defense
-        if stats.defense and stats.defense > 0 then
-            lines[#lines + 1] = { text = string.format("Defense: %d", stats.defense), color = defaultColor }
-        end
-
-        -- Health
-        if stats.health and stats.health > 0 then
-            lines[#lines + 1] = { text = string.format("+%d Health", stats.health), color = defaultColor }
-        end
-
-        -- Percent-based stats
-        if stats.critChance and stats.critChance > 0 then
-            lines[#lines + 1] = { text = formatPercent(stats.critChance) .. " Crit Chance", color = defaultColor }
-        end
-        if stats.moveSpeed and stats.moveSpeed > 0 then
-            lines[#lines + 1] = { text = formatPercent(stats.moveSpeed) .. " Move Speed", color = defaultColor }
-        end
-        if stats.dodgeChance and stats.dodgeChance > 0 then
-            lines[#lines + 1] = { text = formatPercent(stats.dodgeChance) .. " Dodge Chance", color = defaultColor }
-        end
-        if stats.goldFind and stats.goldFind > 0 then
-            lines[#lines + 1] = { text = formatPercent(stats.goldFind) .. " Gold Find", color = defaultColor }
-        end
-        if stats.lifeSteal and stats.lifeSteal > 0 then
-            lines[#lines + 1] = { text = formatPercent(stats.lifeSteal) .. " Life Steal", color = defaultColor }
-        end
-        if stats.attackSpeed and stats.attackSpeed > 0 then
-            lines[#lines + 1] = { text = formatPercent(stats.attackSpeed) .. " Attack Speed", color = defaultColor }
-        end
-        if stats.resistAll and stats.resistAll > 0 then
-            lines[#lines + 1] = { text = formatPercent(stats.resistAll) .. " All Resist", color = defaultColor }
-        end
-
-        if #lines == 0 then
-            lines[#lines + 1] = { text = "No bonuses", color = defaultColor }
-        end
-
-        return lines
+    local function addLine(sectionKey, lineData)
+        addSectionLine(sectionLines, sectionKey, lineData)
     end
-
-    -- Collect all stats from hovered item (gains/comparisons)
-    local hasGains = false
 
     -- Damage range
     if stats.damageMin and stats.damageMax and (stats.damageMin > 0 or stats.damageMax > 0) then
-        local hasEquipped = false
-        local bestEquippedAvg = nil
-        for _, equippedItem in ipairs(equippedItems) do
-            if equippedItem and equippedItem.stats then
-                local eqStats = equippedItem.stats
-                if eqStats.damageMin and eqStats.damageMax then
-                    hasEquipped = true
-                    local equippedAvg = (eqStats.damageMin + eqStats.damageMax) / 2
-                    if bestEquippedAvg == nil or equippedAvg > bestEquippedAvg then
-                        bestEquippedAvg = equippedAvg
+        if compareValues then
+            local hasEquipped = false
+            local bestEquippedAvg = nil
+            for _, equippedItem in ipairs(equippedItems) do
+                if equippedItem and equippedItem.stats then
+                    local eqStats = equippedItem.stats
+                    if eqStats.damageMin and eqStats.damageMax then
+                        hasEquipped = true
+                        local equippedAvg = (eqStats.damageMin + eqStats.damageMax) / 2
+                        if bestEquippedAvg == nil or equippedAvg > bestEquippedAvg then
+                            bestEquippedAvg = equippedAvg
+                        end
                     end
                 end
             end
-        end
 
-        local avgDiff = nil
-        if bestEquippedAvg then
-            local hoveredAvg = (stats.damageMin + stats.damageMax) / 2
-            avgDiff = hoveredAvg - bestEquippedAvg
-        end
+            local avgDiff = nil
+            if bestEquippedAvg then
+                local hoveredAvg = (stats.damageMin + stats.damageMax) / 2
+                avgDiff = hoveredAvg - bestEquippedAvg
+            end
 
-        local text = formatComparisonRange(stats.damageMin, stats.damageMax, avgDiff, avgDiff)
-        local isNewStat = not hasEquipped
-        local color = getComparisonColor(avgDiff, isNewStat)
-        lines[#lines + 1] = { text = "Damage: " .. text, color = color }
-        hasGains = true
+            local text = formatComparisonRange(stats.damageMin, stats.damageMax, avgDiff, avgDiff)
+            local isNewStat = not hasEquipped
+            local color = getComparisonColor(avgDiff, isNewStat)
+            addLine("base", { text = "Damage: " .. text, color = color })
+        else
+            addLine("base", {
+                text = string.format("Damage: %d - %d", stats.damageMin, stats.damageMax),
+                color = defaultColor,
+            })
+        end
     end
 
     -- Defense
     if stats.defense and stats.defense > 0 then
-        local equippedValue = getBestEquippedValue(function(s) return s.defense end, equippedItems)
-        local diff = equippedValue and compareStat(stats.defense, equippedValue) or nil
-        local isNewStat = not hasStatOnEquipped(function(s) return s.defense end, equippedItems)
-        local text = formatComparison(stats.defense, diff)
-        local color = getComparisonColor(diff, isNewStat)
-        lines[#lines + 1] = { text = "Defense: " .. text, color = color }
-        hasGains = true
+        if compareValues then
+            local equippedValue = getBestEquippedValue(function(s) return s.defense end, equippedItems)
+            local diff = equippedValue and compareStat(stats.defense, equippedValue) or nil
+            local isNewStat = not hasStatOnEquipped(function(s) return s.defense end, equippedItems)
+            local text = formatComparison(stats.defense, diff)
+            local color = getComparisonColor(diff, isNewStat)
+            addLine("base", { text = "Defense: " .. text, color = color })
+        else
+            addLine("base", { text = string.format("Defense: %d", stats.defense), color = defaultColor })
+        end
     end
 
     -- Health
     if stats.health and stats.health > 0 then
-        local equippedValue = getBestEquippedValue(function(s) return s.health end, equippedItems)
-        local diff = equippedValue and compareStat(stats.health, equippedValue) or nil
-        local isNewStat = not hasStatOnEquipped(function(s) return s.health end, equippedItems)
-        local text = formatComparison(stats.health, diff)
-        local color = getComparisonColor(diff, isNewStat)
-        lines[#lines + 1] = { text = "+" .. text .. " Health", color = color }
-        hasGains = true
+        if compareValues then
+            local equippedValue = getBestEquippedValue(function(s) return s.health end, equippedItems)
+            local diff = equippedValue and compareStat(stats.health, equippedValue) or nil
+            local isNewStat = not hasStatOnEquipped(function(s) return s.health end, equippedItems)
+            local text = formatComparison(stats.health, diff)
+            local color = getComparisonColor(diff, isNewStat)
+            addLine("defense", { text = "+" .. text .. " Health", color = color })
+        else
+            addLine("defense", { text = string.format("+%d Health", stats.health), color = defaultColor })
+        end
     end
 
     -- Percent-based stats
-    local function addPercentStat(label, getValue)
-        if getValue(stats) and getValue(stats) > 0 then
-            local equippedValue = getBestEquippedValue(getValue, equippedItems)
-            local diff = equippedValue and compareStat(getValue(stats), equippedValue) or nil
-            local diffPercent = diff and (diff * 100) or nil
-            local isNewStat = not hasStatOnEquipped(getValue, equippedItems)
-
-            local text = formatPercent(getValue(stats)) .. " " .. label
-            if diffPercent then
-                if diffPercent > 0 then
-                    text = text .. string.format(" (+%.1f%%)", diffPercent)
-                elseif diffPercent < 0 then
-                    text = text .. string.format(" (%.1f%%)", diffPercent)
+    local function addPercentStat(label, statKey)
+        local value = stats[statKey]
+        if value and value > 0 then
+            if compareValues then
+                local getValue = function(s) return s[statKey] end
+                local equippedValue = getBestEquippedValue(getValue, equippedItems)
+                local diff = equippedValue and compareStat(value, equippedValue) or nil
+                local diffPercent = diff and (diff * 100) or nil
+                local isNewStat = not hasStatOnEquipped(getValue, equippedItems)
+                local text = formatPercent(value) .. " " .. label
+                if diffPercent then
+                    if diffPercent > 0 then
+                        text = text .. string.format(" (+%.1f%%)", diffPercent)
+                    elseif diffPercent < 0 then
+                        text = text .. string.format(" (%.1f%%)", diffPercent)
+                    end
                 end
+                local color = getComparisonColor(diffPercent, isNewStat)
+                addLine(sectionKeyForStat(statKey), { text = text, color = color })
+            else
+                addLine(
+                    sectionKeyForStat(statKey),
+                    { text = formatPercent(value) .. " " .. label, color = defaultColor }
+                )
             end
-            local color = getComparisonColor(diffPercent, isNewStat)
-            lines[#lines + 1] = { text = text, color = color }
-            hasGains = true
         end
     end
 
-    addPercentStat("Crit Chance", function(s) return s.critChance end)
-    addPercentStat("Move Speed", function(s) return s.moveSpeed end)
-    addPercentStat("Dodge Chance", function(s) return s.dodgeChance end)
-    addPercentStat("Gold Find", function(s) return s.goldFind end)
-    addPercentStat("Life Steal", function(s) return s.lifeSteal end)
-    addPercentStat("Attack Speed", function(s) return s.attackSpeed end)
-    addPercentStat("All Resist", function(s) return s.resistAll end)
+    addPercentStat("Crit Chance", "critChance")
+    addPercentStat("Move Speed", "moveSpeed")
+    addPercentStat("Dodge Chance", "dodgeChance")
+    addPercentStat("Gold Find", "goldFind")
+    addPercentStat("Life Steal", "lifeSteal")
+    addPercentStat("Attack Speed", "attackSpeed")
+    addPercentStat("All Resist", "resistAll")
 
-    -- Collect stats from equipped items that are NOT on hovered item (losses)
-    -- Show the best loss for each stat type (highest value)
-    local losses = {}
-    local lossStats = {}
+    if compareValues then
+        -- Collect stats from equipped items that are NOT on hovered item (losses)
+        -- Show the best loss for each stat type (highest value)
+        local function addLoss(lineData)
+            addLine("comparison", lineData)
+        end
 
-    -- Damage range loss
-    if not (stats.damageMin and stats.damageMax) then
-        local bestEquippedAvg = nil
-        for _, equippedItem in ipairs(equippedItems) do
-            if equippedItem and equippedItem.stats then
-                local eqStats = equippedItem.stats
-                if eqStats.damageMin and eqStats.damageMax then
-                    local equippedAvg = (eqStats.damageMin + eqStats.damageMax) / 2
-                    if bestEquippedAvg == nil or equippedAvg > bestEquippedAvg then
-                        bestEquippedAvg = equippedAvg
-                        lossStats.damage = { min = eqStats.damageMin, max = eqStats.damageMax }
+        -- Damage range loss
+        if not (stats.damageMin and stats.damageMax and (stats.damageMin > 0 or stats.damageMax > 0)) then
+            local bestEquippedAvg = nil
+            local lossStats = {}
+            for _, equippedItem in ipairs(equippedItems) do
+                if equippedItem and equippedItem.stats then
+                    local eqStats = equippedItem.stats
+                    if eqStats.damageMin and eqStats.damageMax then
+                        local equippedAvg = (eqStats.damageMin + eqStats.damageMax) / 2
+                        if bestEquippedAvg == nil or equippedAvg > bestEquippedAvg then
+                            bestEquippedAvg = equippedAvg
+                            lossStats = { min = eqStats.damageMin, max = eqStats.damageMax }
+                        end
                     end
                 end
             end
+            if lossStats.min and (lossStats.min > 0 or lossStats.max > 0) then
+                addLoss({
+                    text = string.format("Damage: %d - %d", lossStats.min, lossStats.max),
+                    color = { 0.85, 0.3, 0.3, 1 },
+                })
+            end
         end
-        if lossStats.damage then
-            losses[#losses + 1] = {
-                text = string.format("Damage: %d - %d", lossStats.damage.min, lossStats.damage.max),
-                color = { 0.85, 0.3, 0.3, 1 }
-            }
+
+        -- Defense loss
+        if not stats.defense or stats.defense == 0 then
+            local bestValue = getBestEquippedValue(function(s) return s.defense end, equippedItems)
+            if bestValue and bestValue > 0 then
+                addLoss({
+                    text = string.format("Defense: %d", bestValue),
+                    color = { 0.85, 0.3, 0.3, 1 },
+                })
+            end
         end
+
+        -- Health loss
+        if not stats.health or stats.health == 0 then
+            local bestValue = getBestEquippedValue(function(s) return s.health end, equippedItems)
+            if bestValue and bestValue > 0 then
+                addLoss({
+                    text = string.format("+%d Health", bestValue),
+                    color = { 0.85, 0.3, 0.3, 1 },
+                })
+            end
+        end
+
+        -- Percent stat losses
+        local function checkPercentLoss(label, statKey)
+            if not stats[statKey] or stats[statKey] == 0 then
+                local getValue = function(s) return s[statKey] end
+                local bestValue = getBestEquippedValue(getValue, equippedItems)
+                if bestValue and bestValue > 0 then
+                    addLoss({
+                        text = formatPercent(bestValue) .. " " .. label,
+                        color = { 0.85, 0.3, 0.3, 1 },
+                    })
+                end
+            end
+        end
+
+        checkPercentLoss("Crit Chance", "critChance")
+        checkPercentLoss("Move Speed", "moveSpeed")
+        checkPercentLoss("Dodge Chance", "dodgeChance")
+        checkPercentLoss("Gold Find", "goldFind")
+        checkPercentLoss("Life Steal", "lifeSteal")
+        checkPercentLoss("Attack Speed", "attackSpeed")
+        checkPercentLoss("All Resist", "resistAll")
     end
 
-    -- Defense loss
-    if not stats.defense or stats.defense == 0 then
-        local bestValue = getBestEquippedValue(function(s) return s.defense end, equippedItems)
-        if bestValue then
-            losses[#losses + 1] = {
-                text = string.format("Defense: %d", bestValue),
-                color = { 0.85, 0.3, 0.3, 1 }
-            }
-        end
-    end
+    return flattenSections(sectionLines, defaultColor)
+end
 
-    -- Health loss
-    if not stats.health or stats.health == 0 then
-        local bestValue = getBestEquippedValue(function(s) return s.health end, equippedItems)
-        if bestValue then
-            losses[#losses + 1] = {
-                text = string.format("+%d Health", bestValue),
-                color = { 0.85, 0.3, 0.3, 1 }
-            }
-        end
-    end
+local function measureTooltip(fonts, item, padding, equippedItems, isEquippedItem)
+    local lines = Tooltips.buildItemStatLines(item, equippedItems, isEquippedItem)
+    local name = item.name or "Unknown Item"
+    local rarityLabel = item.rarityLabel or ""
 
-    -- Percent stat losses
-    local function checkPercentLoss(label, getValue)
-        if not getValue(stats) or getValue(stats) == 0 then
-            local bestValue = getBestEquippedValue(getValue, equippedItems)
-            if bestValue then
-                losses[#losses + 1] = {
-                    text = formatPercent(bestValue) .. " " .. label,
-                    color = { 0.85, 0.3, 0.3, 1 }
-                }
+    local textWidth = math.max(
+        fonts.title:getWidth(name),
+        fonts.subtitle:getWidth(rarityLabel)
+    )
+
+    for _, lineData in ipairs(lines) do
+        if not lineData.isSeparator then
+            local lineText = lineData.text or ""
+            if lineData.isSectionHeader then
+                textWidth = math.max(textWidth, fonts.section:getWidth(lineText))
+            else
+                textWidth = math.max(textWidth, fonts.body:getWidth(lineText))
             end
         end
     end
 
-    checkPercentLoss("Crit Chance", function(s) return s.critChance end)
-    checkPercentLoss("Move Speed", function(s) return s.moveSpeed end)
-    checkPercentLoss("Dodge Chance", function(s) return s.dodgeChance end)
-    checkPercentLoss("Gold Find", function(s) return s.goldFind end)
-    checkPercentLoss("Life Steal", function(s) return s.lifeSteal end)
-    checkPercentLoss("Attack Speed", function(s) return s.attackSpeed end)
-    checkPercentLoss("All Resist", function(s) return s.resistAll end)
-
-    -- Add separator if we have both gains and losses
-    if hasGains and #losses > 0 then
-        lines[#lines + 1] = { text = "---", color = separatorColor, isSeparator = true }
-    end
-
-    -- Add losses
-    for _, loss in ipairs(losses) do
-        lines[#lines + 1] = loss
-    end
-
-    if #lines == 0 then
-        lines[#lines + 1] = { text = "No bonuses", color = defaultColor }
-    end
-
-    return lines
-end
-
-local function measureTooltip(font, item, padding, equippedItems, isEquippedItem)
-    local lines = Tooltips.buildItemStatLines(item, equippedItems, isEquippedItem)
-    local textWidth = font:getWidth(item.name or "Unknown Item")
-    textWidth = math.max(textWidth, font:getWidth(item.rarityLabel or ""))
-
-    for _, lineData in ipairs(lines) do
-        local lineText = lineData.text or lineData
-        textWidth = math.max(textWidth, font:getWidth(lineText))
-    end
-
-    -- Width = sprite + sprite padding + text + text padding
-    local spritePadding = padding -- Space between sprite and text
+    local spritePadding = padding
     local width = SPRITE_SIZE + spritePadding + textWidth + padding * 2
-    local lineHeight = font:getHeight()
-    local height = math.max(SPRITE_SIZE + padding * 2, lineHeight * (#lines + 2) + padding * 3)
 
-    return snap(width), snap(height), lines, lineHeight
+    local contentHeight = fonts.title:getHeight()
+    contentHeight = contentHeight + TITLE_SEPARATOR_MARGIN + TITLE_SEPARATOR_HEIGHT + TITLE_SEPARATOR_MARGIN
+    contentHeight = contentHeight + fonts.subtitle:getHeight() + SUBTITLE_BOTTOM_SPACING
+
+    local previousWasSeparator = true
+    for _, lineData in ipairs(lines) do
+        if lineData.isSeparator then
+            contentHeight = contentHeight + SECTION_DIVIDER_HEIGHT
+            previousWasSeparator = true
+        elseif lineData.isSectionHeader then
+            if not previousWasSeparator then
+                contentHeight = contentHeight + SECTION_HEADER_TOP_PADDING
+            end
+            contentHeight = contentHeight + fonts.section:getHeight() + SECTION_HEADER_BOTTOM_PADDING
+            previousWasSeparator = false
+        else
+            contentHeight = contentHeight + fonts.body:getHeight()
+            previousWasSeparator = false
+        end
+    end
+
+    local height = math.max(SPRITE_SIZE + padding * 2, contentHeight + padding * 2)
+    return snap(width), snap(height), lines
 end
 
 function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
@@ -374,6 +496,7 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     opts = opts or {}
 
     local font = opts.font or love.graphics.getFont()
+    local fonts = resolveTooltipFonts(font)
     local padding = opts.padding or 10
     local offsetX = opts.offsetX or 16
     local offsetY = opts.offsetY or 16
@@ -381,7 +504,7 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
     local equippedItems = opts.equippedItems or {}
     local isEquippedItem = opts.isEquippedItem or false
 
-    local width, height, lines, lineHeight = measureTooltip(font, item, padding, equippedItems, isEquippedItem)
+    local width, height, lines = measureTooltip(fonts, item, padding, equippedItems, isEquippedItem)
 
     local tooltipX = snap(pointerX + offsetX)
     local tooltipY = snap(pointerY + offsetY)
@@ -446,31 +569,52 @@ function Tooltips.drawItemTooltip(item, pointerX, pointerY, opts)
 
     -- Draw text on the right side of the sprite
     local textX = snap(tooltipX + padding + SPRITE_SIZE + spritePadding)
-    local titleY = snap(tooltipY + padding)
+    local textAreaWidth = width - padding * 2 - SPRITE_SIZE - spritePadding
+    local currentY = snap(tooltipY + padding)
+    local defaultTextColor = { 1, 1, 1, 1 }
 
-    love.graphics.setColor(rarityColor)
-    love.graphics.print(item.name or "Unknown Item", textX, titleY)
+    drawText(fonts.title, item.name or "Unknown Item", textX, currentY, rarityColor, true)
 
-    love.graphics.setColor(0.75, 0.75, 0.85, 1)
-    love.graphics.print(item.rarityLabel or "", textX, snap(titleY + lineHeight))
+    currentY = currentY + fonts.title:getHeight() + TITLE_SEPARATOR_MARGIN
+
+    love.graphics.setColor(rarityColor[1], rarityColor[2], rarityColor[3], 0.65)
+    love.graphics.rectangle("fill", textX, currentY, textAreaWidth, TITLE_SEPARATOR_HEIGHT)
+
+    currentY = currentY + TITLE_SEPARATOR_HEIGHT + TITLE_SEPARATOR_MARGIN
+
+    drawText(fonts.subtitle, item.rarityLabel or "", textX, currentY, { 0.75, 0.75, 0.85, 1 }, true)
+
+    currentY = currentY + fonts.subtitle:getHeight() + SUBTITLE_BOTTOM_SPACING
 
     -- Draw stat lines with color coding
-    for index, lineData in ipairs(lines) do
-        local lineY = snap(titleY + lineHeight * (index + 1))
-
-        -- Handle separator line
+    local previousWasSeparator = true
+    for _, lineData in ipairs(lines) do
         if lineData.isSeparator then
-            local separatorColor = lineData.color or { 0.5, 0.5, 0.5, 0.5 }
+            local separatorColor = lineData.color or SECTION_DIVIDER_COLOR
             love.graphics.setColor(separatorColor)
-            local separatorY = lineY + lineHeight / 2
-            -- Calculate text area width (full width minus padding on both sides)
-            local textAreaWidth = width - padding * 2 - SPRITE_SIZE - spritePadding
+            local separatorY = currentY + SECTION_DIVIDER_HEIGHT / 2
+            love.graphics.setLineWidth(1)
             love.graphics.line(textX, separatorY, textX + textAreaWidth, separatorY)
+            currentY = currentY + SECTION_DIVIDER_HEIGHT
+            previousWasSeparator = true
+        elseif lineData.isSectionHeader then
+            if not previousWasSeparator then
+                currentY = currentY + SECTION_HEADER_TOP_PADDING
+            end
+            love.graphics.setFont(fonts.section)
+            love.graphics.setColor(lineData.color or SECTION_HEADER_COLOR)
+            love.graphics.print(lineData.text or "", textX, currentY)
+            currentY = currentY + fonts.section:getHeight() + SECTION_HEADER_BOTTOM_PADDING
+            love.graphics.setFont(fonts.body)
+            previousWasSeparator = false
         else
             local lineText = lineData.text or lineData
-            local lineColor = lineData.color or { 1, 1, 1, 1 }
+            local lineColor = lineData.color or defaultTextColor
+            love.graphics.setFont(fonts.body)
             love.graphics.setColor(lineColor)
-            love.graphics.print(lineText, textX, lineY)
+            love.graphics.print(lineText, textX, currentY)
+            currentY = currentY + fonts.body:getHeight()
+            previousWasSeparator = false
         end
     end
 
