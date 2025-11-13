@@ -12,9 +12,15 @@ local function spawnDamageNumber(world, event)
         return
     end
 
-    local velocityX = (math.random() - 0.5) * 30
-    local velocityY = -40 - math.random() * 20
-    local lifetime = 0.9
+    local isCrit = event.crit or false
+    local velocityX = (math.random() - 0.5) * (isCrit and 60 or 30)
+    local velocityY = (isCrit and -55 or -40) - math.random() * 25
+    local lifetime = isCrit and 1.2 or 0.9
+    local color = isCrit and { 1, 0.95, 0.35, 1 } or { 1, 0.35, 0.3, 1 }
+    local shadowColor = isCrit and { 0.4, 0.15, 0, 0.95 } or { 0, 0, 0, 0.75 }
+
+    local spawnYOffset = isCrit and 26 or 18
+    local spawnY = event.position.y - spawnYOffset
 
     local entity = {
         id = string.format("floatingDamage_%d", ensureIds(world)),
@@ -22,7 +28,7 @@ local function spawnDamageNumber(world, event)
             damage = event.amount or 0,
             position = {
                 x = event.position.x,
-                y = event.position.y,
+                y = spawnY,
             },
             velocity = {
                 x = velocityX,
@@ -30,7 +36,13 @@ local function spawnDamageNumber(world, event)
             },
             timer = lifetime,
             maxTimer = lifetime,
-            color = event.crit and { 1, 0.95, 0.35, 1 } or { 1, 0.3, 0.3, 1 },
+            color = color,
+            shadowColor = shadowColor,
+            crit = isCrit,
+            scaleStart = isCrit and 1.8 or 1.25,
+            scaleEnd = isCrit and 1.1 or 0.85,
+            wobbleAmplitude = isCrit and 10 or 4,
+            wobbleFrequency = isCrit and 16 or 9,
         }),
     }
 
@@ -64,27 +76,73 @@ function renderDamageNumbersSystem.draw(world)
     for _, entity in ipairs(entities) do
         local floating = entity.floatingDamage
         floating.timer = floating.timer - dt
+        floating.elapsed = (floating.elapsed or 0) + dt
 
         floating.position.x = floating.position.x + (floating.velocity.x or 0) * dt
         floating.position.y = floating.position.y + (floating.velocity.y or 0) * dt
         floating.velocity.y = (floating.velocity.y or 0) + gravity * dt
 
         local alpha = math.max(floating.timer / (floating.maxTimer or 1), 0)
+        local progress = 1 - alpha
+        local easedProgress = 1 - (1 - progress) ^ 2
+        local scaleStart = floating.scaleStart or 1
+        local scaleEnd = floating.scaleEnd or scaleStart
+        local scale = scaleStart + (scaleEnd - scaleStart) * easedProgress
+        local wobble = 0
+        local wobbleAmplitude = floating.wobbleAmplitude or 0
+        local wobbleFrequency = floating.wobbleFrequency or 0
+        if wobbleAmplitude ~= 0 and wobbleFrequency ~= 0 then
+            wobble = math.sin(wobbleFrequency * (floating.elapsed or 0) + (floating.wobbleOffset or 0))
+            wobble = wobble * wobbleAmplitude
+        end
+        local drawX = floating.position.x + wobble
+        local drawY = floating.position.y
 
         love.graphics.push("all")
+        local text = string.format("%d", math.floor(floating.damage + 0.5))
+
+        local shadow = floating.shadowColor or floating.color
+        love.graphics.setColor(
+            shadow[1],
+            shadow[2],
+            shadow[3],
+            (shadow[4] or 1) * alpha
+        )
+        love.graphics.print(
+            text,
+            drawX + 2 * scale,
+            drawY + 2 * scale,
+            0,
+            scale,
+            scale
+        )
+
         love.graphics.setColor(
             floating.color[1],
             floating.color[2],
             floating.color[3],
             (floating.color[4] or 1) * alpha
         )
-
-        local text = string.format("%d", math.floor(floating.damage + 0.5))
         love.graphics.print(
             text,
-            floating.position.x,
-            floating.position.y
+            drawX,
+            drawY,
+            0,
+            scale,
+            scale
         )
+
+        if floating.crit then
+            love.graphics.setColor(1, 1, 1, 0.5 * alpha)
+            love.graphics.print(
+                text,
+                drawX,
+                drawY - 3,
+                0,
+                scale * 0.9,
+                scale * 0.9
+            )
+        end
 
         love.graphics.pop()
 
