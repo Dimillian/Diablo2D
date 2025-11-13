@@ -181,8 +181,17 @@ local function spawnItemLoot(world, event)
         return
     end
 
+    local foeTier = 1
+    if event.foeTypeId then
+        local foeConfig = FoeTypes.getConfig(event.foeTypeId)
+        if foeConfig and foeConfig.tier then
+            foeTier = math.max(1, math.floor(foeConfig.tier))
+        end
+    end
+
     local item = ItemGenerator.roll({
         source = "loot",
+        foeTier = foeTier,
     })
 
     if not item then

@@ -14,6 +14,8 @@ math.randomseed(os.time())
 
 local SAMPLE_COUNT = tonumber(arg and arg[1]) or 10000
 local DROP_SAMPLE_COUNT = tonumber(arg and arg[2]) or SAMPLE_COUNT
+local FOE_TIER = tonumber(arg and arg[3]) or 1
+FOE_TIER = math.max(1, math.floor(FOE_TIER))
 local rarityOrder = { "common", "uncommon", "rare", "epic", "legendary" }
 local trackedStats = {
     "damageMin",
@@ -100,7 +102,7 @@ for _, rarityId in ipairs(rarityOrder) do
         local result = ensureResultTable()
 
         for _ = 1, SAMPLE_COUNT do
-            local item = ItemGenerator.generate({ rarity = rarity })
+            local item = ItemGenerator.generate({ rarity = rarity, foeTier = FOE_TIER })
             local stats = item.stats or {}
 
             for _, statKey in ipairs(trackedStats) do
@@ -124,12 +126,13 @@ local dropRarityCount = {}
 local dropSlotCount = {}
 
 for _ = 1, DROP_SAMPLE_COUNT do
-    local item = ItemGenerator.generate()
+    local item = ItemGenerator.generate({ foeTier = FOE_TIER })
     increment(dropRarityCount, item.rarity)
     increment(dropSlotCount, item.slot or "unknown")
 end
 
 local function printHeader()
+    print(string.format("Tier sampled: %d", FOE_TIER))
     print(string.rep("=", 60))
     print("Item Balance Monte Carlo Report")
     print(string.format("Samples per rarity: %d", SAMPLE_COUNT))

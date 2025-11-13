@@ -104,7 +104,7 @@ end
 function InventoryScene:keypressed(key)
     local action = InputManager.getActionForKey(key)
     if action == InputActions.INVENTORY_TEST_ITEM then
-        local item = ItemGenerator.generate()
+        local item = ItemGenerator.generate({ foeTier = 1 })
         local player = self.world:getPlayer()
         if player then
             EquipmentHelper.addToInventory(player, item)

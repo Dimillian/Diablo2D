@@ -29,30 +29,35 @@ function starterGearSystem.update(world, _dt)
         rarity = "common",
         allowedTypes = { "sword", "axe" },
         source = "starter",
+        foeTier = 1,
     })
 
     local starterHelmet = ItemGenerator.roll({
         rarity = "common",
         itemType = "helmet",
         source = "starter",
+        foeTier = 1,
     })
 
     local starterChest = ItemGenerator.roll({
         rarity = "common",
         itemType = "chest",
         source = "starter",
+        foeTier = 1,
     })
 
     local starterGloves = ItemGenerator.roll({
         rarity = "common",
         itemType = "gloves",
         source = "starter",
+        foeTier = 1,
     })
 
     local starterBoots = ItemGenerator.roll({
         rarity = "common",
         itemType = "boots",
         source = "starter",
+        foeTier = 1,
     })
 
     EquipmentHelper.equip(player, starterWeapon)

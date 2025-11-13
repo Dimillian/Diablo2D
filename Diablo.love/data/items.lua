@@ -4,42 +4,37 @@ Items.rarities = {
     common = {
         id = "common",
         label = "Common",
-        weight = 75,
+        weight = 80,
         prefixCount = 0,
         suffixCount = 0,
-        baseStatMultiplier = 1.0,
     },
     uncommon = {
         id = "uncommon",
         label = "Uncommon",
-        weight = 25,
+        weight = 20,
         prefixCount = 1,
         suffixCount = 1,
-        baseStatMultiplier = 1.1,
     },
     rare = {
         id = "rare",
         label = "Rare",
-        weight = 10,
+        weight = 7,
         prefixCount = 1,
         suffixCount = 1,
-        baseStatMultiplier = 1.25,
     },
     epic = {
         id = "epic",
         label = "Epic",
-        weight = 5,
+        weight = 3,
         prefixCount = 2,
         suffixCount = 1,
-        baseStatMultiplier = 1.5,
     },
     legendary = {
         id = "legendary",
         label = "Legendary",
-        weight = 2,
+        weight = 1,
         prefixCount = 2,
         suffixCount = 2,
-        baseStatMultiplier = 1.6,
     },
 }
 
@@ -577,7 +572,7 @@ Items.prefixes = {
 Items.suffixes = {
     {
         name = "of Vitality",
-        slots = { "head", "chest", "weapon", "gloves", "ring", "amulet" },
+        slots = { "head", "chest", "gloves", "ring", "amulet" },
         maxRarity = "uncommon",
         stats = {
             health = { flat = { 10, 20 } },
@@ -588,7 +583,7 @@ Items.suffixes = {
         slots = { "head", "chest", "feet", "gloves", "ring", "amulet" },
         maxRarity = "uncommon",
         stats = {
-            dodgeChance = { flat = { 0.03, 0.08 } },
+            dodgeChance = { flat = { 0.01, 0.05 } },
         },
     },
     {
@@ -596,7 +591,7 @@ Items.suffixes = {
         slots = { "head", "chest", "feet", "gloves", "ring", "amulet" },
         maxRarity = "uncommon",
         stats = {
-            defense = { percent = { 0.06, 0.12 } },
+            defense = { percent = { 0.03, 0.09 } },
         },
     },
     {

@@ -4,6 +4,33 @@ local ItemGenerator = {}
 
 local idCounter = 0
 
+local FOE_TIER_MULTIPLIERS = {
+    [1] = { base = 1.0, flat = 1.0, percent = 1.0 },
+    [2] = { base = 1.15, flat = 1.1, percent = 1.08 },
+    [3] = { base = 1.3, flat = 1.2, percent = 1.15 },
+}
+
+local HIGHEST_DEFINED_TIER = 1
+for tier in pairs(FOE_TIER_MULTIPLIERS) do
+    if tier > HIGHEST_DEFINED_TIER then
+        HIGHEST_DEFINED_TIER = tier
+    end
+end
+
+local function getTierScale(tier)
+    tier = math.floor(tier or 1)
+    if tier < 1 then
+        tier = 1
+    end
+
+    local scale = FOE_TIER_MULTIPLIERS[tier]
+    if scale then
+        return scale
+    end
+
+    return FOE_TIER_MULTIPLIERS[HIGHEST_DEFINED_TIER]
+end
+
 -- Map item types to sprite folder names and sprite file prefixes
 local spriteFolders = {
     sword = { folder = "weapons/sword", prefix = "sword" },
@@ -104,7 +131,15 @@ local function chooseRandom(list)
     return list[index], index
 end
 
-local function createBaseStats(itemType, rarity)
+local function scaleFlatValue(value, tierScale)
+    return value * (tierScale.flat or 1)
+end
+
+local function scalePercentValue(value, tierScale)
+    return value * (tierScale.percent or 1)
+end
+
+local function createBaseStats(itemType, tierScale)
     local stats = {
         damageMin = 0,
         damageMax = 0,
@@ -162,10 +197,10 @@ local function createBaseStats(itemType, rarity)
         stats.moveSpeed = itemType.base.moveSpeed
     end
 
-    local multiplier = rarity.baseStatMultiplier or 1
-    stats.damageMin = stats.damageMin * multiplier
-    stats.damageMax = stats.damageMax * multiplier
-    stats.defense = stats.defense * multiplier
+    local baseMultiplier = tierScale.base or 1
+    stats.damageMin = stats.damageMin * baseMultiplier
+    stats.damageMax = stats.damageMax * baseMultiplier
+    stats.defense = stats.defense * baseMultiplier
 
     return stats
 end
@@ -200,25 +235,25 @@ local function rollRange(range)
     return min + math.random() * (max - min)
 end
 
-local function applyStats(stats, definition)
+local function applyStats(stats, definition, tierScale)
     for key, modifiers in pairs(definition.stats) do
         if key == "damage" then
             if modifiers.flat then
-                local value = rollRange(modifiers.flat)
+                local value = scaleFlatValue(rollRange(modifiers.flat), tierScale)
                 stats.damageMin = stats.damageMin + value
                 stats.damageMax = stats.damageMax + value
             end
             if modifiers.percent then
-                local value = rollRange(modifiers.percent)
+                local value = scalePercentValue(rollRange(modifiers.percent), tierScale)
                 stats.damageMin = stats.damageMin * (1 + value)
                 stats.damageMax = stats.damageMax * (1 + value)
             end
         else
             if modifiers.flat then
-                applyFlat(stats, key, rollRange(modifiers.flat))
+                applyFlat(stats, key, scaleFlatValue(rollRange(modifiers.flat), tierScale))
             end
             if modifiers.percent then
-                applyPercent(stats, key, rollRange(modifiers.percent))
+                applyPercent(stats, key, scalePercentValue(rollRange(modifiers.percent), tierScale))
             end
         end
     end
@@ -443,13 +478,15 @@ function ItemGenerator.generate(opts)
     local prefixes = rollAffixes(ItemData.prefixes, prefixCount, itemType.slot, rarity.id)
     local suffixes = rollAffixes(ItemData.suffixes, rarity.suffixCount, itemType.slot, rarity.id)
 
-    local stats = createBaseStats(itemType, rarity)
+    local tierScale = getTierScale(opts.foeTier)
+
+    local stats = createBaseStats(itemType, tierScale)
     for _, prefix in ipairs(prefixes) do
-        applyStats(stats, prefix)
+        applyStats(stats, prefix, tierScale)
     end
 
     for _, suffix in ipairs(suffixes) do
-        applyStats(stats, suffix)
+        applyStats(stats, suffix, tierScale)
     end
 
     finalizeStats(stats)
@@ -486,6 +523,7 @@ end
 ---   - itemType: String type ID (e.g., "sword") or ItemData.types entry
 ---   - allowedTypes: Array of string type IDs (e.g., {"sword", "axe"}) or entries
 ---   - source: String tag (e.g., "starter") for filtering/labeling purposes
+---   - foeTier: Number (>= 1) tier used to scale base stats and affixes (defaults to 1)
 ---@return table Generated item payload
 function ItemGenerator.roll(opts)
     opts = opts or {}
@@ -517,6 +555,7 @@ function ItemGenerator.roll(opts)
         rarity = rarity,
         itemType = itemType,
         source = opts.source,
+        foeTier = opts.foeTier,
     }
 
     return ItemGenerator.generate(generateOpts)
