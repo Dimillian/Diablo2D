@@ -515,7 +515,7 @@ function WorldScene:mousepressed(x, y, button, _istouch, _presses)
 
         if pointInRect(self.bottomBarBookRect) then
             if self.sceneManager then
-                local skillsKey = InputManager.getActionKey(InputActions.TOGGLE_SKILLS) or "k"
+                local skillsKey = InputManager.getActionKey(InputActions.TOGGLE_SKILLS)
                 self.sceneManager:toggleSkills(skillsKey)
             end
             return
@@ -527,7 +527,7 @@ function WorldScene:mousepressed(x, y, button, _istouch, _presses)
             if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
                 -- Open inventory via scene manager
                 if self.sceneManager then
-                    local inventoryKey = InputManager.getActionKey(InputActions.TOGGLE_INVENTORY) or "i"
+                    local inventoryKey = InputManager.getActionKey(InputActions.TOGGLE_INVENTORY)
                     self.sceneManager:toggleInventory(inventoryKey)
                 end
                 return
@@ -536,7 +536,7 @@ function WorldScene:mousepressed(x, y, button, _istouch, _presses)
 
         if pointInRect(self.bottomBarWorldMapRect) then
             if self.sceneManager then
-                local worldMapKey = InputManager.getActionKey(InputActions.TOGGLE_WORLD_MAP) or "m"
+                local worldMapKey = InputManager.getActionKey(InputActions.TOGGLE_WORLD_MAP)
                 self.sceneManager:toggleWorldMap(worldMapKey)
             end
             return

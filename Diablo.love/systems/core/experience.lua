@@ -40,6 +40,7 @@ local function queueLevelUpNotification(world, newLevel, bonusesPayload)
         title = ("Level %d"):format(newLevel),
         bodyLines = bonusesPayload.bodyLines,
         iconPath = LEVEL_UP_ICON_PATH,
+        onClickAction = "open_inventory",
     })
 end
 

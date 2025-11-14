@@ -71,6 +71,7 @@ local function applyPayloadToNotification(entry, payload, sequence)
     notification.iconPath = payload.iconPath
     notification.priority = payload.priority or 0
     notification.ttl = payload.ttl or DEFAULT_TTL
+    notification.onClickAction = payload.onClickAction
     notification.enterDuration = payload.enterDuration or DEFAULT_ENTER_DURATION
     notification.exitDuration = payload.exitDuration or DEFAULT_EXIT_DURATION
     notification.allowDuplicates = payload.allowDuplicates or false
@@ -96,6 +97,7 @@ local function normalizePayload(payload, sequence)
         iconPath = payload.iconPath or payload.icon,
         priority = payload.priority or 0,
         ttl = payload.ttl or DEFAULT_TTL,
+        onClickAction = payload.onClickAction,
         enterDuration = payload.enterDuration or DEFAULT_ENTER_DURATION,
         exitDuration = payload.exitDuration or DEFAULT_EXIT_DURATION,
         allowDuplicates = payload.allowDuplicates or false,

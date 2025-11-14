@@ -9,6 +9,7 @@ local function createNotificationComponent(opts)
         iconPath = opts.iconPath,
         priority = opts.priority or 0,
         ttl = opts.ttl or 5,
+        onClickAction = opts.onClickAction,
         timeElapsed = opts.timeElapsed or 0,
         state = opts.state or "enter",
         stateTime = opts.stateTime or 0,

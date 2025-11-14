@@ -23,6 +23,19 @@ describe("notification_bus", function()
         assert.are.equal("enter", active[1].notification.state)
     end)
 
+    it("preserves click actions when promoting notifications", function()
+        notificationBus.queue(world, {
+            title = "Assign your points",
+            onClickAction = "open_inventory",
+        })
+
+        notificationBus.update(world, 0)
+
+        local active = notificationBus.getActive(world)
+        assert.are.equal(1, #active)
+        assert.are.equal("open_inventory", active[1].notification.onClickAction)
+    end)
+
     it("respects the maximum active stack and keeps overflow pending", function()
         for index = 1, 5 do
             notificationBus.queue(world, { title = "Alert " .. index })
