@@ -1,34 +1,30 @@
+local renderWindowChrome = require("systems.render.window.chrome")
+
 local renderPauseMenu = {}
 
-local MENU_ITEM_HEIGHT = 50
-local MENU_ITEM_SPACING = 10
-local MENU_WIDTH = 300
-local MENU_PADDING = 20
+local MENU_ITEM_HEIGHT = 56
+local MENU_ITEM_SPACING = 14
+local MENU_WIDTH = 320
+local MENU_PADDING = 24
 local MENU_ITEM_COUNT = 4
 
 function renderPauseMenu.draw(scene)
-    local screenWidth = love.graphics.getWidth()
-    local screenHeight = love.graphics.getHeight()
+    renderWindowChrome.draw(scene, scene.windowChromeConfig)
 
-    -- Dimmed backdrop
-    love.graphics.setColor(0, 0, 0, 0.7)
-    love.graphics.rectangle("fill", 0, 0, screenWidth, screenHeight)
+    local layout = scene.windowLayout
+    if not layout then
+        return
+    end
 
-    -- Calculate menu position (centered)
-    local menuHeight = (MENU_ITEM_HEIGHT * MENU_ITEM_COUNT)
-        + (MENU_ITEM_SPACING * (MENU_ITEM_COUNT - 1))
-        + (MENU_PADDING * 2)
-    local menuX = (screenWidth - MENU_WIDTH) / 2
-    local menuY = (screenHeight - menuHeight) / 2
-
-    -- Menu background
-    love.graphics.setColor(0.15, 0.15, 0.15, 0.95)
-    love.graphics.rectangle("fill", menuX, menuY, MENU_WIDTH, menuHeight, 8, 8)
-
-    -- Menu border
-    love.graphics.setColor(0.8, 0.75, 0.5, 1)
-    love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", menuX, menuY, MENU_WIDTH, menuHeight, 8, 8)
+    local contentArea = layout.content
+    local menuWidth = math.min(MENU_WIDTH, contentArea.width)
+    local itemWidth = menuWidth - (MENU_PADDING * 2)
+    if itemWidth < 0 then
+        itemWidth = 0
+    end
+    local menuHeight = (MENU_ITEM_HEIGHT * MENU_ITEM_COUNT) + (MENU_ITEM_SPACING * (MENU_ITEM_COUNT - 1))
+    local menuX = contentArea.x + (contentArea.width - menuWidth) / 2
+    local menuY = contentArea.y + (contentArea.height - menuHeight) / 2
 
     -- Only show hover states if this scene is the current top scene
     local isTopScene = false
@@ -40,10 +36,10 @@ function renderPauseMenu.draw(scene)
     local font = love.graphics.getFont()
 
     -- Resume button
-    local resumeY = menuY + MENU_PADDING
+    local resumeY = menuY
     local isResumeHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + MENU_WIDTH - MENU_PADDING
+        and mouseX <= menuX + menuWidth - MENU_PADDING
         and mouseY >= resumeY
         and mouseY <= resumeY + MENU_ITEM_HEIGHT
 
@@ -53,7 +49,7 @@ function renderPauseMenu.draw(scene)
             "fill",
             menuX + MENU_PADDING,
             resumeY,
-            MENU_WIDTH - (MENU_PADDING * 2),
+            itemWidth,
             MENU_ITEM_HEIGHT,
             4,
             4
@@ -67,7 +63,7 @@ function renderPauseMenu.draw(scene)
     local controlsY = resumeY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
     local isControlsHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + MENU_WIDTH - MENU_PADDING
+        and mouseX <= menuX + menuWidth - MENU_PADDING
         and mouseY >= controlsY
         and mouseY <= controlsY + MENU_ITEM_HEIGHT
 
@@ -77,7 +73,7 @@ function renderPauseMenu.draw(scene)
             "fill",
             menuX + MENU_PADDING,
             controlsY,
-            MENU_WIDTH - (MENU_PADDING * 2),
+            itemWidth,
             MENU_ITEM_HEIGHT,
             4,
             4
@@ -91,7 +87,7 @@ function renderPauseMenu.draw(scene)
     local crtY = controlsY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
     local isCRTHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + MENU_WIDTH - MENU_PADDING
+        and mouseX <= menuX + menuWidth - MENU_PADDING
         and mouseY >= crtY
         and mouseY <= crtY + MENU_ITEM_HEIGHT
 
@@ -101,7 +97,7 @@ function renderPauseMenu.draw(scene)
             "fill",
             menuX + MENU_PADDING,
             crtY,
-            MENU_WIDTH - (MENU_PADDING * 2),
+            itemWidth,
             MENU_ITEM_HEIGHT,
             4,
             4
@@ -116,7 +112,7 @@ function renderPauseMenu.draw(scene)
     local quitY = crtY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
     local isQuitHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + MENU_WIDTH - MENU_PADDING
+        and mouseX <= menuX + menuWidth - MENU_PADDING
         and mouseY >= quitY
         and mouseY <= quitY + MENU_ITEM_HEIGHT
 
@@ -126,7 +122,7 @@ function renderPauseMenu.draw(scene)
             "fill",
             menuX + MENU_PADDING,
             quitY,
-            MENU_WIDTH - (MENU_PADDING * 2),
+            itemWidth,
             MENU_ITEM_HEIGHT,
             4,
             4
@@ -141,25 +137,25 @@ function renderPauseMenu.draw(scene)
     scene.menuRects.resume = {
         x = menuX + MENU_PADDING,
         y = resumeY,
-        w = MENU_WIDTH - (MENU_PADDING * 2),
+        w = itemWidth,
         h = MENU_ITEM_HEIGHT,
     }
     scene.menuRects.controls = {
         x = menuX + MENU_PADDING,
         y = controlsY,
-        w = MENU_WIDTH - (MENU_PADDING * 2),
+        w = itemWidth,
         h = MENU_ITEM_HEIGHT,
     }
     scene.menuRects.crt = {
         x = menuX + MENU_PADDING,
         y = crtY,
-        w = MENU_WIDTH - (MENU_PADDING * 2),
+        w = itemWidth,
         h = MENU_ITEM_HEIGHT,
     }
     scene.menuRects.quit = {
         x = menuX + MENU_PADDING,
         y = quitY,
-        w = MENU_WIDTH - (MENU_PADDING * 2),
+        w = itemWidth,
         h = MENU_ITEM_HEIGHT,
     }
 end

@@ -3,6 +3,31 @@ local WindowLayout = require("systems.helpers.window_layout")
 
 local renderWindowChrome = {}
 
+local function drawPanelGlow(layout)
+    love.graphics.push("all")
+    love.graphics.setBlendMode("add", "alphamultiply")
+
+    local glowColor = { 1.0, 0.88, 0.55 }
+    for i = 1, 3 do
+        local growth = (4 - i) * 4
+        local alpha = 0.12 / i
+        local lineWidth = 10 + (3 - i) * 4
+        love.graphics.setColor(glowColor[1], glowColor[2], glowColor[3], alpha)
+        love.graphics.setLineWidth(lineWidth)
+        love.graphics.rectangle(
+            "line",
+            layout.panelX - growth,
+            layout.panelY - growth,
+            layout.panelWidth + growth * 2,
+            layout.panelHeight + growth * 2,
+            20 + growth,
+            20 + growth
+        )
+    end
+
+    love.graphics.pop()
+end
+
 local function drawCloseButton(layout, isHovered)
     local closeX = layout.header.closeX
     local closeY = layout.header.closeY
@@ -63,6 +88,8 @@ function renderWindowChrome.draw(scene, opts)
         10
     )
 
+    drawPanelGlow(layout)
+
     -- Panel border
     love.graphics.setColor(0.8, 0.75, 0.5, 1)
     love.graphics.setLineWidth(3)
@@ -74,6 +101,19 @@ function renderWindowChrome.draw(scene, opts)
         layout.panelHeight,
         10,
         10
+    )
+
+    -- Inner highlight to keep edges bright so CRT bloom catches them
+    love.graphics.setColor(1.0, 0.95, 0.75, 0.25)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle(
+        "line",
+        layout.panelX + 3,
+        layout.panelY + 3,
+        layout.panelWidth - 6,
+        layout.panelHeight - 6,
+        8,
+        8
     )
 
     -- Header divider (uses 16px header padding, not content padding)

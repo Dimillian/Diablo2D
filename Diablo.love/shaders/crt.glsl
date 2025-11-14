@@ -8,6 +8,7 @@ extern number rgbOffset;
 extern number sharpStrength;
 extern number glowStrength;
 extern number glowThreshold;
+extern number glowRadius;
 
 float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
@@ -51,12 +52,17 @@ vec4 effect(vec4 color, Image texture, vec2 textureCoords, vec2 screenCoords) {
     vec3 blurSample = (north + south + east + west) * 0.25;
     vec3 sharpened = baseColor + (baseColor - blurSample) * sharpStrength;
 
-    vec3 glowSamples =
-        Texel(texture, uv + texel * vec2(2.0, 0.0)).rgb +
-        Texel(texture, uv - texel * vec2(2.0, 0.0)).rgb +
-        Texel(texture, uv + texel * vec2(0.0, 2.0)).rgb +
-        Texel(texture, uv - texel * vec2(0.0, 2.0)).rgb;
-    vec3 glowColor = glowSamples * 0.25;
+    vec2 glowStep = texel * glowRadius;
+    vec3 glowAccum = vec3(0.0);
+    glowAccum += Texel(texture, uv + vec2(glowStep.x, 0.0)).rgb;
+    glowAccum += Texel(texture, uv - vec2(glowStep.x, 0.0)).rgb;
+    glowAccum += Texel(texture, uv + vec2(0.0, glowStep.y)).rgb;
+    glowAccum += Texel(texture, uv - vec2(0.0, glowStep.y)).rgb;
+    glowAccum += Texel(texture, uv + glowStep).rgb;
+    glowAccum += Texel(texture, uv - glowStep).rgb;
+    glowAccum += Texel(texture, uv + vec2(glowStep.x, -glowStep.y)).rgb;
+    glowAccum += Texel(texture, uv - vec2(glowStep.x, -glowStep.y)).rgb;
+    vec3 glowColor = glowAccum * 0.125;
     float glowMask = max(max(glowColor.r, max(glowColor.g, glowColor.b)) - glowThreshold, 0.0);
     glowColor *= glowMask * glowStrength;
 

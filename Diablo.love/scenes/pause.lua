@@ -21,6 +21,17 @@ function PauseScene.new(opts)
         },
     }
 
+    scene.windowChromeConfig = {
+        title = scene.title,
+        layout = {
+            widthRatio = 0.38,
+            heightRatio = 0.5,
+            headerHeight = 64,
+            padding = 28,
+        },
+    }
+    scene.windowLayoutOptions = scene.windowChromeConfig.layout
+
     return setmetatable(scene, PauseScene)
 end
 
@@ -62,6 +73,16 @@ end
 function PauseScene:mousepressed(x, y, button)
     if button ~= 1 then
         return
+    end
+
+    if self.windowRects and self.windowRects.close then
+        local rect = self.windowRects.close
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            if self.world and self.world.sceneManager then
+                self.world.sceneManager:pop()
+            end
+            return
+        end
     end
 
     local rects = self.menuRects or {}
