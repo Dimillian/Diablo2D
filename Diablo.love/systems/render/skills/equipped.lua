@@ -53,15 +53,22 @@ function renderSkillsEquipped.draw(scene)
     local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.35 })
     layout.columns = columns
     local leftColumn = columns.left
+    local area = scene.equippedArea or leftColumn
     local padding = layout.padding
     local font = love.graphics.getFont()
 
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Equipped", leftColumn.x, leftColumn.y)
+    love.graphics.print("Equipped", area.x, area.y)
 
-    local slotsTop = leftColumn.y + font:getHeight() + padding * 0.5
+    local slotsTop = area.y + font:getHeight() + padding * 0.5
     local slotSize = 52
     local slotSpacing = 18
+    local availableHeight = math.max(0, area.height - (slotsTop - area.y))
+    local requiredHeight = slotSize * 4 + slotSpacing * 3
+    if availableHeight > 0 and requiredHeight > availableHeight then
+        local extra = availableHeight - slotSize * 4
+        slotSpacing = math.max(8, extra / 3)
+    end
 
     scene.slotRects = {}
     scene.hoveredSlotIndex = nil
@@ -69,7 +76,7 @@ function renderSkillsEquipped.draw(scene)
     local mouseX, mouseY = love.mouse.getPosition()
 
     for slotIndex = 1, 4 do
-        local slotX = leftColumn.x
+        local slotX = area.x
         local slotY = slotsTop + (slotIndex - 1) * (slotSize + slotSpacing)
 
         local rect = {
