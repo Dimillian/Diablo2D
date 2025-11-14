@@ -9,10 +9,10 @@ local enabled = true
 local settings = {
     curvature = 0.005,
     scanStrength = 0.20,
-    vignetteStrength = 0.35,
-    noiseStrength = 0.010,
-    sharpStrength = 0.80,
-    glowStrength = 1.1,
+    vignetteStrength = 0.50,
+    noiseStrength = 0.10,
+    sharpStrength = 0.50,
+    glowStrength = 0.50,
     glowThreshold = 0.35,
     glowRadius = 3.0,
 }
