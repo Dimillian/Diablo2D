@@ -1,5 +1,6 @@
 local Spells = require("data.spells")
 local Resources = require("modules.resources")
+local SkillTree = require("modules.skill_tree")
 local renderSkillsEquipped = {}
 
 local function drawSlot(x, y, size, isHovered)
@@ -110,7 +111,8 @@ function renderSkillsEquipped.draw(scene)
         end
 
         local spellId = player.skills.equipped[slotIndex]
-        local spell = spellId and Spells.types[spellId] or nil
+        local baseSpell = spellId and Spells.types[spellId] or nil
+        local spell = baseSpell and SkillTree.buildModifiedSpell(player.skills, baseSpell) or baseSpell
         drawEquippedSpell(spell, rect.x, rect.y, rect.w)
 
         scene.slotRects[#scene.slotRects + 1] = rect

@@ -134,11 +134,15 @@ function SkillTree.computeModifiers(skills, spell)
         damageFlat = 0,
         projectileSize = 0,
         projectileSpeed = 0,
+        manaCost = 0,
     }
 
     if not skills or not spell or not spell.skillTree then
         return modifiers
     end
+
+    local totalPoints = SkillTree.getTotalPoints(skills, spell.id)
+    modifiers.manaCost = totalPoints * 2
 
     local allocation = SkillTree.getAllocation(skills, spell.id)
     if not allocation or not allocation.nodes then
@@ -198,6 +202,10 @@ function SkillTree.buildModifiedSpell(skills, spell)
 
     if spell.projectileSpeed then
         modified.projectileSpeed = (spell.projectileSpeed or 0) + modifiers.projectileSpeed
+    end
+
+    if spell.manaCost then
+        modified.manaCost = math.max(1, (spell.manaCost or 0) + modifiers.manaCost)
     end
 
     modified.modifiers = modifiers

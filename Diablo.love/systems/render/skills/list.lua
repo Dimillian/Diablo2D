@@ -78,8 +78,10 @@ function renderSkillsList.draw(scene)
         love.graphics.setColor(0.95, 0.9, 0.7, 1)
         love.graphics.print(spell.label or spell.id, rect.x + 72, rect.y + 8)
 
+        local modifiedSpell = skills and SkillTree.buildModifiedSpell(skills, spell) or spell
         love.graphics.setColor(0.8, 0.75, 0.5, 1)
-        love.graphics.print(string.format("Mana: %d", spell.manaCost or 0), rect.x + 72, rect.y + rect.h / 2 - 6)
+        local manaCost = modifiedSpell.manaCost or spell.manaCost or 0
+        love.graphics.print(string.format("Mana: %d", manaCost), rect.x + 72, rect.y + rect.h / 2 - 6)
 
         if skills then
             local totalPoints = SkillTree.getTotalPoints(skills, spell.id)

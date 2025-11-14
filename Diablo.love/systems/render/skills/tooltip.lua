@@ -144,49 +144,21 @@ local function buildSpellTooltipLines(scene, spell)
     local player = scene.world and scene.world:getPlayer()
     local skills = player and player.skills
     local modifiedSpell = SkillTree.buildModifiedSpell(skills, spell) or spell
-    local modifiers = modifiedSpell.modifiers or { damageFlat = 0, projectileSize = 0, projectileSpeed = 0 }
 
     if modifiedSpell.damage then
         local minDamage = modifiedSpell.damage.min or 0
         local maxDamage = modifiedSpell.damage.max or modifiedSpell.damage.min or 0
         appendLine(lines, string.format("Damage: %d - %d", minDamage, maxDamage))
-
-        local baseDamage = spell.damage
-        if baseDamage and modifiers.damageFlat and modifiers.damageFlat ~= 0 then
-            appendLine(lines, string.format("  (+%d from skill tree)", modifiers.damageFlat))
-        end
     end
 
-    appendLine(lines, string.format("Mana Cost: %d", spell.manaCost or 0))
+    appendLine(lines, string.format("Mana Cost: %d", modifiedSpell.manaCost or spell.manaCost or 0))
 
     if spell.projectileSpeed then
-        if modifiers.projectileSpeed and modifiers.projectileSpeed ~= 0 then
-            appendLine(
-                lines,
-                string.format(
-                    "Projectile Speed: %d (+%d)",
-                    (modifiedSpell.projectileSpeed or spell.projectileSpeed),
-                    modifiers.projectileSpeed
-                )
-            )
-        else
-            appendLine(lines, string.format("Projectile Speed: %d", spell.projectileSpeed))
-        end
+        appendLine(lines, string.format("Projectile Speed: %d", modifiedSpell.projectileSpeed or spell.projectileSpeed))
     end
 
     if spell.projectileSize then
-        if modifiers.projectileSize and modifiers.projectileSize ~= 0 then
-            appendLine(
-                lines,
-                string.format(
-                    "Projectile Size: %d (+%d)",
-                    (modifiedSpell.projectileSize or spell.projectileSize),
-                    modifiers.projectileSize
-                )
-            )
-        else
-            appendLine(lines, string.format("Projectile Size: %d", spell.projectileSize))
-        end
+        appendLine(lines, string.format("Projectile Size: %d", modifiedSpell.projectileSize or spell.projectileSize))
     end
 
     return lines
