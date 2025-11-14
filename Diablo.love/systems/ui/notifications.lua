@@ -1,5 +1,7 @@
 local notificationBus = require("modules.notification_bus")
 local Resources = require("modules.resources")
+local InputManager = require("modules.input_manager")
+local InputActions = require("modules.input_actions")
 
 local notificationsSystem = {}
 
@@ -14,8 +16,30 @@ local MINIMAP_SIZE = 150
 local MINIMAP_PADDING = 16
 local MINIMAP_STACK_GAP = 16
 
+local ACTION_HANDLERS = {
+    open_inventory = function(world)
+        if not world or not world.sceneManager then
+            return
+        end
+
+        local inventoryKey = InputManager.getActionKey(InputActions.TOGGLE_INVENTORY) or "i"
+        world.sceneManager:toggleInventory(inventoryKey)
+    end,
+}
+
 local function smoothstep(t)
     return t * t * (3 - 2 * t)
+end
+
+local function triggerNotificationAction(world, notification)
+    if not notification or not notification.onClickAction then
+        return
+    end
+
+    local handler = ACTION_HANDLERS[notification.onClickAction]
+    if handler then
+        handler(world, notification)
+    end
 end
 
 local function computeCardHeight(notification, font)
@@ -134,6 +158,16 @@ function notificationsSystem.update(world, dt)
             and isCloseHovered
             and notification.renderAlpha > 0
         then
+            notificationBus.dismiss(world, notification.id, "click")
+            primary.consumedClickId = primary.clickId
+        elseif primary
+            and primary.pressed
+            and (primary.consumedClickId == nil or primary.consumedClickId == primary.clickId)
+            and isCardHovered
+            and not isCloseHovered
+            and notification.renderAlpha > 0
+        then
+            triggerNotificationAction(world, notification)
             notificationBus.dismiss(world, notification.id, "click")
             primary.consumedClickId = primary.clickId
         end

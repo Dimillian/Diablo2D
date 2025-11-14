@@ -22,6 +22,7 @@ local function drawIconBox(x, y, size, iconName, opts)
     local disabled = opts.disabled
     local cooldownRatio = opts.cooldownRatio or 0
     local highlightColor = opts.highlightColor
+    local highlightPulse = opts.highlightPulse
 
     local boxConfig = UIConfig.iconBox
     local cornerRadius = size >= 40 and boxConfig.largeCornerRadius or boxConfig.smallCornerRadius
@@ -105,9 +106,53 @@ local function drawIconBox(x, y, size, iconName, opts)
     end
 
     if highlightColor then
-        love.graphics.setColor(highlightColor)
-        love.graphics.setLineWidth(boxConfig.highlightLineWidth)
-        love.graphics.rectangle("line", x - 2, y - 2, size + 4, size + 4, cornerRadius + 1, cornerRadius + 1)
+        local r = highlightColor[1] or highlightColor.r or 1
+        local g = highlightColor[2] or highlightColor.g or 1
+        local b = highlightColor[3] or highlightColor.b or 1
+        local baseAlpha = highlightColor[4] or highlightColor.a or 1
+
+        if highlightPulse and love and love.timer and love.timer.getTime then
+            local t = love.timer.getTime()
+            local normalized = (math.sin(t * 4) + 1) / 2
+            baseAlpha = baseAlpha * (0.65 + 0.35 * normalized)
+        end
+
+        local highlightLineWidth = boxConfig.highlightLineWidth or 2
+
+        love.graphics.setColor(r, g, b, baseAlpha * 0.12)
+        love.graphics.rectangle(
+            "fill",
+            x - 4,
+            y - 4,
+            size + 8,
+            size + 8,
+            cornerRadius + 2,
+            cornerRadius + 2
+        )
+
+        love.graphics.setColor(r, g, b, baseAlpha * 0.45)
+        love.graphics.setLineWidth(math.max(1, highlightLineWidth - 0.5))
+        love.graphics.rectangle(
+            "line",
+            x - 4,
+            y - 4,
+            size + 8,
+            size + 8,
+            cornerRadius + 2,
+            cornerRadius + 2
+        )
+
+        love.graphics.setColor(r, g, b, baseAlpha)
+        love.graphics.setLineWidth(highlightLineWidth)
+        love.graphics.rectangle(
+            "line",
+            x - 2,
+            y - 2,
+            size + 4,
+            size + 4,
+            cornerRadius + 1,
+            cornerRadius + 1
+        )
     end
 end
 
@@ -200,6 +245,19 @@ function uiBottomBar.draw(world)
             rectField = "bottomBarBagRect",
             iconName = "bag",
             badgeText = "I",
+            dynamicOpts = function()
+                local experience = player and player.experience
+                local unallocated = experience and (experience.unallocatedPoints or 0) or 0
+
+                if unallocated > 0 then
+                    return {
+                        highlightColor = { 1, 0.84, 0.3, 1 },
+                        highlightPulse = true,
+                    }
+                end
+
+                return nil
+            end,
         },
         {
             rectField = "bottomBarWorldMapRect",
