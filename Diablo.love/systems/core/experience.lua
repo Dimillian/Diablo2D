@@ -4,14 +4,26 @@ local notificationBus = require("modules.notification_bus")
 local experienceSystem = {}
 
 local LEVEL_UP_ICON_PATH = "resources/icons/book.png"
+local ATTRIBUTE_POINTS_PER_LEVEL = 15
+local SKILL_POINTS_PER_LEVEL = 1
 
----Returns the level-up bonuses payload containing notification about attribute points.
+---Returns the level-up bonuses payload containing notification about attribute and skill points.
+---@param attributePoints integer|nil
+---@param skillPoints integer|nil
 ---@return table payload Contains bodyLines field
-local function getLevelUpBonusesPayload()
+local function getLevelUpBonusesPayload(attributePoints, skillPoints)
+    local lines = {}
+    local attributes = attributePoints or ATTRIBUTE_POINTS_PER_LEVEL
+    lines[#lines + 1] = string.format("%d attribute points available", attributes)
+
+    local skills = skillPoints or SKILL_POINTS_PER_LEVEL
+    if skills > 0 then
+        local label = skills == 1 and "skill point" or "skill points"
+        lines[#lines + 1] = string.format("%d %s available", skills, label)
+    end
+
     return {
-        bodyLines = {
-            "15 attribute points available",
-        },
+        bodyLines = lines,
     }
 end
 
@@ -38,15 +50,17 @@ local function applyLevelUpBonuses(world, player)
         return
     end
 
-    local bonusesPayload = getLevelUpBonusesPayload()
-
     while true do
         local totalXPForNextLevel = Leveling.getXPForLevel((exp.level or 1) + 1)
         if exp.currentXP and exp.currentXP >= totalXPForNextLevel then
             exp.level = (exp.level or 1) + 1
 
             -- Grant 15 unallocated attribute points
-            exp.unallocatedPoints = (exp.unallocatedPoints or 0) + 15
+            exp.unallocatedPoints = (exp.unallocatedPoints or 0) + ATTRIBUTE_POINTS_PER_LEVEL
+
+            if player.skills then
+                player.skills.availablePoints = (player.skills.availablePoints or 0) + SKILL_POINTS_PER_LEVEL
+            end
 
             -- Restore health and mana to max on level up
             if player.health then
@@ -56,6 +70,7 @@ local function applyLevelUpBonuses(world, player)
                 player.mana.current = player.mana.max
             end
 
+            local bonusesPayload = getLevelUpBonusesPayload(ATTRIBUTE_POINTS_PER_LEVEL, SKILL_POINTS_PER_LEVEL)
             queueLevelUpNotification(world, exp.level, bonusesPayload)
         else
             break

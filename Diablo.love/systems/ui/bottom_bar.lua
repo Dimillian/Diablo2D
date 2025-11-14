@@ -240,6 +240,19 @@ function uiBottomBar.draw(world)
             rectField = "bottomBarBookRect",
             iconName = "book",
             badgeText = "K",
+            dynamicOpts = function()
+                local skills = player and player.skills
+                local availablePoints = skills and (skills.availablePoints or 0) or 0
+
+                if availablePoints > 0 then
+                    return {
+                        highlightColor = { 1, 0.84, 0.3, 1 },
+                        highlightPulse = true,
+                    }
+                end
+
+                return nil
+            end,
         },
         {
             rectField = "bottomBarBagRect",

@@ -7,6 +7,8 @@ local function createSkillsComponent()
 
     return {
         equipped = equipped,
+        availablePoints = 0,
+        allocations = {},
     }
 end
 

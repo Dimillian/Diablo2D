@@ -14,6 +14,50 @@ Spells.types = {
         projectileImpactDuration = 0.2,
         icon = "resources/skills/fireball.png",
         lifetime = 2.5,
+        skillTree = {
+            nodes = {
+                ignition_core = {
+                    id = "ignition_core",
+                    label = "Ignition Core",
+                    description = "Invest points to amplify Fireball's raw damage.",
+                    maxPoints = 20,
+                    effects = {
+                        { type = "damage_flat", perPoint = 3 },
+                    },
+                    position = { x = 0.5, y = 0.18 },
+                },
+                searing_burst = {
+                    id = "searing_burst",
+                    label = "Searing Burst",
+                    description = "Unlocks a larger blast radius for Fireball.",
+                    maxPoints = 10,
+                    requirements = {
+                        { nodeId = "ignition_core", points = 5 },
+                    },
+                    effects = {
+                        { type = "projectile_size", perPoint = 2 },
+                    },
+                    position = { x = 0.5, y = 0.5 },
+                },
+                blazing_comet = {
+                    id = "blazing_comet",
+                    label = "Blazing Comet",
+                    description = "Accelerate the fireball into a blistering comet.",
+                    maxPoints = 10,
+                    requirements = {
+                        { nodeId = "searing_burst", points = 5 },
+                    },
+                    effects = {
+                        { type = "projectile_speed", perPoint = 35 },
+                    },
+                    position = { x = 0.5, y = 0.82 },
+                },
+            },
+            edges = {
+                { from = "ignition_core", to = "searing_burst" },
+                { from = "searing_burst", to = "blazing_comet" },
+            },
+        },
     },
 }
 

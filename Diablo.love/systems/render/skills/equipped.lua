@@ -1,7 +1,5 @@
 local Spells = require("data.spells")
 local Resources = require("modules.resources")
-local WindowLayout = require("systems.helpers.window_layout")
-
 local renderSkillsEquipped = {}
 
 local function drawSlot(x, y, size, isHovered)
@@ -33,10 +31,16 @@ local function drawEquippedSpell(spell, x, y, size)
         love.graphics.draw(icon, x + (size - drawWidth) / 2, y + (size - drawHeight) / 2, 0, scale, scale)
     end
 
+    local font = love.graphics.getFont()
+    local textY = y + size + 6
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print(spell.label or spell.id, x + size + 12, y + 6)
+    local label = spell.label or spell.id
+    local textWidth = font:getWidth(label)
+    love.graphics.print(label, x + (size - textWidth) / 2, textY)
     love.graphics.setColor(0.8, 0.75, 0.5, 1)
-    love.graphics.print(string.format("Mana: %d", spell.manaCost or 0), x + size + 12, y + 26)
+    local manaText = string.format("Mana: %d", spell.manaCost or 0)
+    local manaWidth = font:getWidth(manaText)
+    love.graphics.print(manaText, x + (size - manaWidth) / 2, textY + font:getHeight() + 2)
 end
 
 function renderSkillsEquipped.draw(scene)
@@ -50,18 +54,25 @@ function renderSkillsEquipped.draw(scene)
         return
     end
 
-    local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.35 })
-    layout.columns = columns
-    local leftColumn = columns.left
+    local area = scene.equippedArea or layout.content
+    if not area or area.width <= 0 or area.height <= 0 then
+        return
+    end
     local padding = layout.padding
     local font = love.graphics.getFont()
 
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Equipped", leftColumn.x, leftColumn.y)
+    love.graphics.print("Equipped", area.x, area.y)
 
-    local slotsTop = leftColumn.y + font:getHeight() + padding * 0.5
+    local slotsTop = area.y + font:getHeight() + padding * 0.5
     local slotSize = 52
     local slotSpacing = 18
+    local availableWidth = math.max(0, area.width)
+    local requiredWidth = slotSize * 4 + slotSpacing * 3
+    if availableWidth > 0 and requiredWidth > availableWidth then
+        local extra = availableWidth - slotSize * 4
+        slotSpacing = math.max(8, extra / 3)
+    end
 
     scene.slotRects = {}
     scene.hoveredSlotIndex = nil
@@ -69,8 +80,8 @@ function renderSkillsEquipped.draw(scene)
     local mouseX, mouseY = love.mouse.getPosition()
 
     for slotIndex = 1, 4 do
-        local slotX = leftColumn.x
-        local slotY = slotsTop + (slotIndex - 1) * (slotSize + slotSpacing)
+        local slotX = area.x + (slotIndex - 1) * (slotSize + slotSpacing)
+        local slotY = slotsTop
 
         local rect = {
             x = slotX,
@@ -86,7 +97,17 @@ function renderSkillsEquipped.draw(scene)
             scene.hoveredSlotIndex = slotIndex
         end
 
-        drawSlot(rect.x, rect.y, rect.w, isHovered)
+        local isMenuOpen = scene.equipMenu and scene.equipMenu.slotIndex == slotIndex
+        drawSlot(rect.x, rect.y, rect.w, isHovered or isMenuOpen)
+
+        if isMenuOpen then
+            scene.equipMenu.slotRect = {
+                x = rect.x,
+                y = rect.y,
+                w = rect.w,
+                h = rect.h,
+            }
+        end
 
         local spellId = player.skills.equipped[slotIndex]
         local spell = spellId and Spells.types[spellId] or nil
@@ -94,6 +115,7 @@ function renderSkillsEquipped.draw(scene)
 
         scene.slotRects[#scene.slotRects + 1] = rect
     end
+
 end
 
 return renderSkillsEquipped
