@@ -83,7 +83,10 @@ function renderSkillsList.draw(scene)
 
         if skills then
             local totalPoints = SkillTree.getTotalPoints(skills, spell.id)
-            love.graphics.print(string.format("Points: %d", totalPoints), rect.x + 72, rect.y + rect.h - font:getHeight() - 6)
+            local pointsText = string.format("Points: %d", totalPoints)
+            local pointsX = rect.x + 72
+            local pointsY = rect.y + rect.h - font:getHeight() - 6
+            love.graphics.print(pointsText, pointsX, pointsY)
         end
 
         if mouseX >= rect.x and mouseX <= rect.x + rect.w and mouseY >= rect.y and mouseY <= rect.y + rect.h then

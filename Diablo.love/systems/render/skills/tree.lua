@@ -23,14 +23,10 @@ local function getNodePosition(area, node)
     local px = clamp01(position.x or 0.5)
     local py = clamp01(position.y or 0.5)
 
-    -- Expand vertical spacing between nodes by using a spacing multiplier
-    -- This increases the distance between nodes by stretching the vertical range
     local verticalSpacingMultiplier = 1.4
     local centerY = 0.5
     local offsetY = (py - centerY) * verticalSpacingMultiplier
     local remappedPy = centerY + offsetY
-
-    -- Clamp to ensure nodes stay within bounds
     remappedPy = clamp01(remappedPy)
 
     local x = area.x + innerPadding + innerWidth * px
@@ -90,7 +86,7 @@ local function drawTreeBackdrop(area)
     love.graphics.rectangle("line", area.x, area.y, area.width, area.height, 10, 10)
 end
 
-local function drawEdges(area, spell, skills, nodePositions)
+local function drawEdges(_area, spell, skills, nodePositions)
     local edges = (spell.skillTree and spell.skillTree.edges) or {}
     love.graphics.setLineWidth(3)
     for _, edge in ipairs(edges) do

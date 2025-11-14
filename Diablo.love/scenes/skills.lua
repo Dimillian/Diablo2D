@@ -19,7 +19,6 @@ local function assignSpellToSlot(player, slotIndex, spellId)
         return
     end
 
-    -- Fixed check: always 4 slots, don't use # operator as it returns 0 when all slots are nil
     if slotIndex < 1 or slotIndex > 4 then
         return
     end
@@ -30,7 +29,6 @@ local function assignSpellToSlot(player, slotIndex, spellId)
     end
 
     local slots = player.skills.equipped
-    -- Check all 4 slots, not just up to #slots
     for index = 1, 4 do
         if slots[index] == spellId then
             slots[index] = nil
@@ -168,12 +166,14 @@ function SkillsScene:mousepressed(x, y, button)
 
     local equipMenu = self.equipMenu
     if equipMenu then
-        -- Check if click is within menu bounds first
         local bounds = equipMenu.bounds
-        local isInMenuBounds = bounds and x >= bounds.x and x <= bounds.x + bounds.w and y >= bounds.y and y <= bounds.y + bounds.h
+        local isInMenuBounds = bounds
+            and x >= bounds.x
+            and x <= bounds.x + bounds.w
+            and y >= bounds.y
+            and y <= bounds.y + bounds.h
 
         if isInMenuBounds then
-            -- Check if click is on a menu option
             for _, option in ipairs(equipMenu.optionRects or {}) do
                 if x >= option.x and x <= option.x + option.w and y >= option.y and y <= option.y + option.h then
                     assignSpellToSlot(player, equipMenu.slotIndex, option.spellId)
@@ -182,7 +182,6 @@ function SkillsScene:mousepressed(x, y, button)
                 end
             end
         else
-            -- Click outside menu bounds - close menu and return to prevent other handlers
             self.equipMenu = nil
             return
         end

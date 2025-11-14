@@ -110,7 +110,6 @@ function renderSkillsEquipMenu.draw(scene)
             if icon then
                 local iconSize = MENU_ITEM_HEIGHT - 12
                 local scale = math.min(iconSize / icon:getWidth(), iconSize / icon:getHeight())
-                local drawWidth = icon:getWidth() * scale
                 local drawHeight = icon:getHeight() * scale
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.draw(
