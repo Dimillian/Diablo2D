@@ -16,15 +16,25 @@ end
 
 local function getNodePosition(area, node)
     local position = node.position or {}
-    local innerPadding = math.min(28, math.min(area.width, area.height) * 0.1)
+    local innerPadding = math.min(50, math.min(area.width, area.height) * 0.15)
     local innerWidth = math.max(0, area.width - innerPadding * 2)
     local innerHeight = math.max(0, area.height - innerPadding * 2)
 
     local px = clamp01(position.x or 0.5)
     local py = clamp01(position.y or 0.5)
 
+    -- Expand vertical spacing between nodes by using a spacing multiplier
+    -- This increases the distance between nodes by stretching the vertical range
+    local verticalSpacingMultiplier = 1.4
+    local centerY = 0.5
+    local offsetY = (py - centerY) * verticalSpacingMultiplier
+    local remappedPy = centerY + offsetY
+
+    -- Clamp to ensure nodes stay within bounds
+    remappedPy = clamp01(remappedPy)
+
     local x = area.x + innerPadding + innerWidth * px
-    local y = area.y + innerPadding + innerHeight * py
+    local y = area.y + innerPadding + innerHeight * remappedPy
     return x, y
 end
 
@@ -63,7 +73,7 @@ local function drawHeader(treeArea, skills)
     love.graphics.setColor(0.75, 0.7, 0.55, 1)
     local instructions
     if availablePoints > 0 then
-        instructions = "Click a node to invest." 
+        instructions = "Click a node to invest."
     else
         instructions = "Earn skill points by leveling up."
     end
@@ -152,7 +162,7 @@ local function drawNode(scene, area, spell, node, skills, nodePositions)
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
     local label = node.label or node.id
     local textWidth = font:getWidth(label)
-    love.graphics.print(label, position.x - textWidth / 2, position.y + radius + 6)
+    love.graphics.print(label, position.x - textWidth / 2, position.y + radius + 16)
 
     local pointsText
     if maxPoints == math.huge then
@@ -161,7 +171,7 @@ local function drawNode(scene, area, spell, node, skills, nodePositions)
         pointsText = string.format("%d / %d", points, maxPoints)
     end
     local pointsWidth = font:getWidth(pointsText)
-    love.graphics.print(pointsText, position.x - pointsWidth / 2, position.y - font:getHeight() / 2)
+    love.graphics.print(pointsText, position.x - pointsWidth / 2, position.y - radius - font:getHeight() - 4)
 
     scene.skillTreeNodeRects[#scene.skillTreeNodeRects + 1] = {
         x = position.x - radius,
@@ -181,10 +191,10 @@ local function drawNode(scene, area, spell, node, skills, nodePositions)
 
     if canInvest and not isMaxed then
         love.graphics.setColor(0.95, 0.9, 0.7, 1)
-        love.graphics.print("+", position.x - 4, position.y - radius - font:getHeight())
+        love.graphics.print("+", position.x - 4, position.y - radius - font:getHeight() - 4)
     elseif isMaxed then
         love.graphics.setColor(0.75, 0.7, 0.5, 1)
-        love.graphics.print("Max", position.x - font:getWidth("Max") / 2, position.y - radius - font:getHeight())
+        love.graphics.print("Max", position.x - font:getWidth("Max") / 2, position.y - radius - font:getHeight() - 4)
     end
 end
 

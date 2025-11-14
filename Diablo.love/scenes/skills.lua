@@ -19,7 +19,8 @@ local function assignSpellToSlot(player, slotIndex, spellId)
         return
     end
 
-    if slotIndex < 1 or slotIndex > #player.skills.equipped then
+    -- Fixed check: always 4 slots, don't use # operator as it returns 0 when all slots are nil
+    if slotIndex < 1 or slotIndex > 4 then
         return
     end
 
@@ -29,7 +30,8 @@ local function assignSpellToSlot(player, slotIndex, spellId)
     end
 
     local slots = player.skills.equipped
-    for index = 1, #slots do
+    -- Check all 4 slots, not just up to #slots
+    for index = 1, 4 do
         if slots[index] == spellId then
             slots[index] = nil
         end
@@ -48,8 +50,8 @@ function SkillsScene.new(opts)
         title = "Skills",
         availableSpells = Spells.getAll(),
         windowLayoutOptions = {
-            widthRatio = 0.62,
-            heightRatio = 0.6,
+            widthRatio = 0.8,
+            heightRatio = 0.8,
             headerHeight = 72,
             padding = 28,
         },
@@ -166,17 +168,23 @@ function SkillsScene:mousepressed(x, y, button)
 
     local equipMenu = self.equipMenu
     if equipMenu then
-        for _, option in ipairs(equipMenu.optionRects or {}) do
-            if x >= option.x and x <= option.x + option.w and y >= option.y and y <= option.y + option.h then
-                assignSpellToSlot(player, equipMenu.slotIndex, option.spellId)
-                self.equipMenu = nil
-                return
-            end
-        end
-
+        -- Check if click is within menu bounds first
         local bounds = equipMenu.bounds
-        if not bounds or x < bounds.x or x > bounds.x + bounds.w or y < bounds.y or y > bounds.y + bounds.h then
+        local isInMenuBounds = bounds and x >= bounds.x and x <= bounds.x + bounds.w and y >= bounds.y and y <= bounds.y + bounds.h
+
+        if isInMenuBounds then
+            -- Check if click is on a menu option
+            for _, option in ipairs(equipMenu.optionRects or {}) do
+                if x >= option.x and x <= option.x + option.w and y >= option.y and y <= option.y + option.h then
+                    assignSpellToSlot(player, equipMenu.slotIndex, option.spellId)
+                    self.equipMenu = nil
+                    return
+                end
+            end
+        else
+            -- Click outside menu bounds - close menu and return to prevent other handlers
             self.equipMenu = nil
+            return
         end
     end
 

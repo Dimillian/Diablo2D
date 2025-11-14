@@ -31,10 +31,16 @@ local function drawEquippedSpell(spell, x, y, size)
         love.graphics.draw(icon, x + (size - drawWidth) / 2, y + (size - drawHeight) / 2, 0, scale, scale)
     end
 
+    local font = love.graphics.getFont()
+    local textY = y + size + 6
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print(spell.label or spell.id, x + size + 12, y + 6)
+    local label = spell.label or spell.id
+    local textWidth = font:getWidth(label)
+    love.graphics.print(label, x + (size - textWidth) / 2, textY)
     love.graphics.setColor(0.8, 0.75, 0.5, 1)
-    love.graphics.print(string.format("Mana: %d", spell.manaCost or 0), x + size + 12, y + 26)
+    local manaText = string.format("Mana: %d", spell.manaCost or 0)
+    local manaWidth = font:getWidth(manaText)
+    love.graphics.print(manaText, x + (size - manaWidth) / 2, textY + font:getHeight() + 2)
 end
 
 function renderSkillsEquipped.draw(scene)
@@ -61,10 +67,10 @@ function renderSkillsEquipped.draw(scene)
     local slotsTop = area.y + font:getHeight() + padding * 0.5
     local slotSize = 52
     local slotSpacing = 18
-    local availableHeight = math.max(0, area.height - (slotsTop - area.y))
-    local requiredHeight = slotSize * 4 + slotSpacing * 3
-    if availableHeight > 0 and requiredHeight > availableHeight then
-        local extra = availableHeight - slotSize * 4
+    local availableWidth = math.max(0, area.width)
+    local requiredWidth = slotSize * 4 + slotSpacing * 3
+    if availableWidth > 0 and requiredWidth > availableWidth then
+        local extra = availableWidth - slotSize * 4
         slotSpacing = math.max(8, extra / 3)
     end
 
@@ -74,8 +80,8 @@ function renderSkillsEquipped.draw(scene)
     local mouseX, mouseY = love.mouse.getPosition()
 
     for slotIndex = 1, 4 do
-        local slotX = area.x
-        local slotY = slotsTop + (slotIndex - 1) * (slotSize + slotSpacing)
+        local slotX = area.x + (slotIndex - 1) * (slotSize + slotSpacing)
+        local slotY = slotsTop
 
         local rect = {
             x = slotX,
