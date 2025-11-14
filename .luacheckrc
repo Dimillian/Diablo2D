@@ -7,6 +7,7 @@ globals = {
     "next",
     "type",
     "assert",
+    "pcall",
     "setmetatable",
     "math",
     "table",
