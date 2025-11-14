@@ -66,16 +66,13 @@ local function drawHeader(treeArea, skills)
     end
     love.graphics.print(string.format("Skill Points: %d", availablePoints), treeArea.x, treeArea.y)
 
-    love.graphics.setColor(0.75, 0.7, 0.55, 1)
-    local instructions
     if availablePoints > 0 then
-        instructions = "Click a node to invest."
-    else
-        instructions = "Earn skill points by leveling up."
+        love.graphics.setColor(0.75, 0.7, 0.55, 1)
+        love.graphics.print("Click a node to invest.", treeArea.x, treeArea.y + fontHeight + 6)
+        return fontHeight * 2 + 12
     end
-    love.graphics.print(instructions, treeArea.x, treeArea.y + fontHeight + 6)
 
-    return fontHeight * 2 + 12
+    return fontHeight + 6
 end
 
 local function drawTreeBackdrop(area)
@@ -119,7 +116,6 @@ local function drawNode(scene, area, spell, node, skills, nodePositions)
     if availablePoints > 0 and requirementsMet and points < maxPoints then
         canInvest = true
     end
-    local isMaxed = maxPoints ~= math.huge and points >= maxPoints
 
     if points > 0 then
         love.graphics.setColor(0.72, 0.28, 0.12, 0.95)
@@ -183,14 +179,6 @@ local function drawNode(scene, area, spell, node, skills, nodePositions)
             spellId = spell.id,
             nodeId = node.id,
         }
-    end
-
-    if canInvest and not isMaxed then
-        love.graphics.setColor(0.95, 0.9, 0.7, 1)
-        love.graphics.print("+", position.x - 4, position.y - radius - font:getHeight() - 4)
-    elseif isMaxed then
-        love.graphics.setColor(0.75, 0.7, 0.5, 1)
-        love.graphics.print("Max", position.x - font:getWidth("Max") / 2, position.y - radius - font:getHeight() - 4)
     end
 end
 
