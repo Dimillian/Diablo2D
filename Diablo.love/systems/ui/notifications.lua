@@ -22,7 +22,7 @@ local ACTION_HANDLERS = {
             return
         end
 
-        local inventoryKey = InputManager.getActionKey(InputActions.TOGGLE_INVENTORY) or "i"
+        local inventoryKey = InputManager.getActionKey(InputActions.TOGGLE_INVENTORY)
         world.sceneManager:toggleInventory(inventoryKey)
     end,
 }

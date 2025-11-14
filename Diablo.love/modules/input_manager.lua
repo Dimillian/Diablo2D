@@ -136,10 +136,16 @@ end
 ---@return string|number|nil Primary key, or nil if action not found
 function InputManager.getActionKey(actionName)
     local keys = getKeysForAction(actionName)
-    if not keys or #keys == 0 then
-        return nil
+    if keys and #keys > 0 then
+        return keys[1]
     end
-    return keys[1]
+
+    local default = defaultBindings[actionName]
+    if default and #default > 0 then
+        return default[1]
+    end
+
+    return nil
 end
 
 ---Convert a Love2D key string to an action name.
