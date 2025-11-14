@@ -10,6 +10,9 @@ local settings = {
     scanStrength = 0.20,
     vignetteStrength = 0.35,
     noiseStrength = 0.010,
+    sharpStrength = 0.80,
+    glowStrength = 0.70,
+    glowThreshold = 0.45,
 }
 
 local function loadShaderSource()
@@ -30,6 +33,9 @@ local function sendStaticUniforms()
     shader:send("scanStrength", settings.scanStrength)
     shader:send("vignetteStrength", settings.vignetteStrength)
     shader:send("noiseStrength", settings.noiseStrength)
+    shader:send("sharpStrength", settings.sharpStrength)
+    shader:send("glowStrength", settings.glowStrength)
+    shader:send("glowThreshold", settings.glowThreshold)
 end
 
 local function ensureCanvas(width, height)

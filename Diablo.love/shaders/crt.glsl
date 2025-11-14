@@ -5,6 +5,9 @@ extern number scanStrength;
 extern number vignetteStrength;
 extern number noiseStrength;
 extern number rgbOffset;
+extern number sharpStrength;
+extern number glowStrength;
+extern number glowThreshold;
 
 float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
@@ -25,6 +28,8 @@ vec4 effect(vec4 color, Image texture, vec2 textureCoords, vec2 screenCoords) {
         return vec4(0.0, 0.0, 0.0, 1.0);
     }
 
+    vec2 texel = 1.0 / resolution;
+
     float scan = sin((screenCoords.y / resolution.y + time * 0.5) * resolution.y * 1.2);
     float scanMix = mix(1.0 - scanStrength, 1.0, scan * 0.5 + 0.5);
 
@@ -36,11 +41,30 @@ vec4 effect(vec4 color, Image texture, vec2 textureCoords, vec2 screenCoords) {
 
     vec4 colorSample = vec4(r, centerSample.g, b, centerSample.a);
 
+    vec3 baseColor = colorSample.rgb;
+
+    vec3 north = Texel(texture, uv + vec2(0.0, texel.y)).rgb;
+    vec3 south = Texel(texture, uv - vec2(0.0, texel.y)).rgb;
+    vec3 east = Texel(texture, uv + vec2(texel.x, 0.0)).rgb;
+    vec3 west = Texel(texture, uv - vec2(texel.x, 0.0)).rgb;
+
+    vec3 blurSample = (north + south + east + west) * 0.25;
+    vec3 sharpened = baseColor + (baseColor - blurSample) * sharpStrength;
+
+    vec3 glowSamples =
+        Texel(texture, uv + texel * vec2(2.0, 0.0)).rgb +
+        Texel(texture, uv - texel * vec2(2.0, 0.0)).rgb +
+        Texel(texture, uv + texel * vec2(0.0, 2.0)).rgb +
+        Texel(texture, uv - texel * vec2(0.0, 2.0)).rgb;
+    vec3 glowColor = glowSamples * 0.25;
+    float glowMask = max(max(glowColor.r, max(glowColor.g, glowColor.b)) - glowThreshold, 0.0);
+    glowColor *= glowMask * glowStrength;
+
     float dist = distance(uv, vec2(0.5));
     float vignette = 1.0 - smoothstep(0.3, 0.72, dist);
     vignette = mix(1.0 - vignetteStrength, 1.0, vignette);
 
-    vec3 finalColor = colorSample.rgb * scanMix;
+    vec3 finalColor = (sharpened + glowColor) * scanMix;
     finalColor += grain;
     finalColor *= vignette;
 
