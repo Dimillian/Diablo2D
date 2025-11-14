@@ -6,6 +6,7 @@ local SceneManager = require("modules.scene_manager")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
+local CRTShader = require("modules.crt_shader")
 
 local sceneManager = SceneManager.new()
 
@@ -128,10 +129,12 @@ function love.load()
     end
 
     sceneManager:push(WorldScene.new(opts))
+    CRTShader.load()
 end
 
 function love.update(dt)
     InputManager.update()
+    CRTShader.update(dt)
 
     local scene = sceneManager:current()
     if scene and scene.update then
@@ -140,11 +143,17 @@ function love.update(dt)
 end
 
 function love.draw()
-    for _, scene in sceneManager:each() do
-        if scene.draw then
-            scene:draw()
+    CRTShader.draw(function()
+        for _, scene in sceneManager:each() do
+            if scene.draw then
+                scene:draw()
+            end
         end
-    end
+    end)
+end
+
+function love.resize(width, height)
+    CRTShader.resize(width, height)
 end
 
 function love.keypressed(key)
