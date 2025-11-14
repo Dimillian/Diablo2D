@@ -11,7 +11,6 @@ local function getLevelUpBonusesPayload()
     return {
         bodyLines = {
             "15 attribute points available",
-            "Click to open inventory",
         },
     }
 end
