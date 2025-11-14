@@ -1,4 +1,5 @@
 local Spells = require("data.spells")
+local SkillTree = require("modules.skill_tree")
 local ProjectileEntity = require("entities.projectile")
 local coordinates = require("systems.helpers.coordinates")
 local vector = require("modules.vector")
@@ -100,8 +101,11 @@ local function castSpell(world, slotIndex)
         return false
     end
 
+    local modifiedSpell = SkillTree.buildModifiedSpell(player.skills, spell) or spell
+
     local mana = player.mana
-    if not mana or (mana.current or 0) < (spell.manaCost or 0) then
+    local manaCost = modifiedSpell.manaCost or spell.manaCost or 0
+    if not mana or (mana.current or 0) < manaCost then
         return false
     end
 
@@ -111,12 +115,12 @@ local function castSpell(world, slotIndex)
         return false
     end
 
-    local success = createProjectile(world, player, spell, targetX, targetY, targetId)
+    local success = createProjectile(world, player, modifiedSpell, targetX, targetY, targetId)
     if not success then
         return false
     end
 
-    mana.current = math.max(0, (mana.current or 0) - (spell.manaCost or 0))
+    mana.current = math.max(0, (mana.current or 0) - manaCost)
     return true
 end
 
@@ -172,8 +176,11 @@ function skillCastSystem.handleKeypress(world, action)
         return false
     end
 
+    local modifiedSpell = SkillTree.buildModifiedSpell(player.skills, spell) or spell
+
     local mana = player.mana
-    if not mana or (mana.current or 0) < (spell.manaCost or 0) then
+    local manaCost = modifiedSpell.manaCost or spell.manaCost or 0
+    if not mana or (mana.current or 0) < manaCost then
         return false
     end
 

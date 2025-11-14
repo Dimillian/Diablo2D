@@ -21,6 +21,11 @@ local function drawEquippedSpell(spell, x, y, size)
     if not spell then
         love.graphics.setColor(0.3, 0.3, 0.3, 0.35)
         love.graphics.rectangle("line", x + 8, y + 8, size - 16, size - 16, 6, 6)
+        local font = love.graphics.getFont()
+        local placeholder = "Empty"
+        local placeholderWidth = font:getWidth(placeholder)
+        love.graphics.setColor(0.6, 0.55, 0.35, 0.9)
+        love.graphics.print(placeholder, x + (size - placeholderWidth) / 2, y + size + 12)
         return
     end
 
@@ -33,10 +38,16 @@ local function drawEquippedSpell(spell, x, y, size)
         love.graphics.draw(icon, x + (size - drawWidth) / 2, y + (size - drawHeight) / 2, 0, scale, scale)
     end
 
+    local font = love.graphics.getFont()
+    local label = spell.label or spell.id
+    local labelWidth = font:getWidth(label)
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print(spell.label or spell.id, x + size + 12, y + 6)
+    love.graphics.print(label, x + (size - labelWidth) / 2, y + size + 6)
+
+    local manaText = string.format("Mana: %d", spell.manaCost or 0)
+    local manaWidth = font:getWidth(manaText)
     love.graphics.setColor(0.8, 0.75, 0.5, 1)
-    love.graphics.print(string.format("Mana: %d", spell.manaCost or 0), x + size + 12, y + 26)
+    love.graphics.print(manaText, x + (size - manaWidth) / 2, y + size + 24)
 end
 
 function renderSkillsEquipped.draw(scene)
@@ -53,15 +64,27 @@ function renderSkillsEquipped.draw(scene)
     local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.35 })
     layout.columns = columns
     local leftColumn = columns.left
+    local area = scene.equippedArea or leftColumn
     local padding = layout.padding
     local font = love.graphics.getFont()
 
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Equipped", leftColumn.x, leftColumn.y)
+    love.graphics.print("Equipped", area.x, area.y)
 
-    local slotsTop = leftColumn.y + font:getHeight() + padding * 0.5
+    local slotsTop = area.y + font:getHeight() + padding * 0.5
     local slotSize = 52
     local slotSpacing = 18
+    local slotCount = 4
+
+    local maxWidth = area.width
+    local totalWidth = slotSize * slotCount + slotSpacing * (slotCount - 1)
+    if totalWidth > maxWidth then
+        local availableSpacing = maxWidth - slotSize * slotCount
+        slotSpacing = math.max(8, availableSpacing / math.max(1, slotCount - 1))
+        totalWidth = slotSize * slotCount + slotSpacing * (slotCount - 1)
+    end
+
+    local slotsLeft = area.x + math.max(0, (maxWidth - totalWidth) / 2)
 
     scene.slotRects = {}
     scene.hoveredSlotIndex = nil
@@ -69,8 +92,8 @@ function renderSkillsEquipped.draw(scene)
     local mouseX, mouseY = love.mouse.getPosition()
 
     for slotIndex = 1, 4 do
-        local slotX = leftColumn.x
-        local slotY = slotsTop + (slotIndex - 1) * (slotSize + slotSpacing)
+        local slotX = slotsLeft + (slotIndex - 1) * (slotSize + slotSpacing)
+        local slotY = slotsTop
 
         local rect = {
             x = slotX,

@@ -2,11 +2,13 @@ local Spells = require("data.spells")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
+local SkillTree = require("modules.skill_tree")
 
 local renderWindowChrome = require("systems.render.window.chrome")
 local renderSkillsList = require("systems.render.skills.list")
 local renderSkillsEquipped = require("systems.render.skills.equipped")
 local renderSkillsTooltip = require("systems.render.skills.tooltip")
+local renderSkillsTree = require("systems.render.skills.tree")
 
 local SkillsScene = {}
 SkillsScene.__index = SkillsScene
@@ -55,6 +57,7 @@ function SkillsScene.new(opts)
         systems = {
             draw = {
                 renderWindowChrome.draw,
+                renderSkillsTree.draw,
                 renderSkillsList.draw,
                 renderSkillsEquipped.draw,
                 renderSkillsTooltip.draw,
@@ -66,7 +69,7 @@ function SkillsScene.new(opts)
         title = scene.title,
         icon = "book_open",
         columns = {
-            leftRatio = 0.35,
+            leftRatio = 0.5,
             spacing = 28,
         },
     }
@@ -79,8 +82,15 @@ function SkillsScene:enter()
     self.slotRects = {}
     self.hoveredSpellId = nil
     self.hoveredSlotIndex = nil
+    self.hoveredSkillNode = nil
     self.windowRects = {}
     self.windowLayout = nil
+    self.skillTreeNodeRects = {}
+
+    if (not self.selectedSpellId or not Spells.types[self.selectedSpellId]) and self.availableSpells then
+        local firstSpell = self.availableSpells[1]
+        self.selectedSpellId = firstSpell and firstSpell.id or nil
+    end
 end
 
 -- luacheck: ignore 212/self
@@ -96,7 +106,9 @@ function SkillsScene:draw()
 
     self.hoveredSpellId = nil
     self.hoveredSlotIndex = nil
+    self.hoveredSkillNode = nil
     self.windowRects = {}
+    self.skillTreeNodeRects = {}
 
     for _, system in ipairs(self.systems.draw) do
         system(self)
@@ -139,9 +151,25 @@ function SkillsScene:mousepressed(x, y, button)
         return
     end
 
+    for _, rect in ipairs(self.skillTreeNodeRects or {}) do
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            local spell = rect.spellId and Spells.types[rect.spellId]
+            if spell and player.skills then
+                if rect.spellId then
+                    self.selectedSpellId = rect.spellId
+                end
+                SkillTree.invest(player.skills, spell, rect.nodeId)
+            end
+            return
+        end
+    end
+
     for _, rect in ipairs(self.spellRects or {}) do
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
-            equipSpell(player, rect.spell and rect.spell.id)
+            if rect.spell and rect.spell.id then
+                self.selectedSpellId = rect.spell.id
+                equipSpell(player, rect.spell.id)
+            end
             return
         end
     end
