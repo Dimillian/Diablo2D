@@ -27,6 +27,7 @@ local cullingSystem = require("systems.core.culling")
 local uiNotificationsSystem = require("systems.ui.notifications")
 local uiMain = require("systems.ui.main")
 local uiMinimapSystem = require("systems.ui.ui_minimap")
+local debugMenu = require("systems.ui.debug_menu")
 local cameraSystem = require("systems.core.camera")
 local applyStatsSystem = require("systems.core.apply_stats")
 local starterGearSystem = require("systems.core.starter_gear")
@@ -138,6 +139,7 @@ function WorldScene.new(opts)
                 uiMinimapSystem.draw,
                 uiNotificationsSystem.draw,
                 uiTargetSystem.draw,
+                debugMenu.draw,
                 lootTooltipSystem.draw,
             },
         },
@@ -501,6 +503,11 @@ function WorldScene:mousepressed(x, y, button, _istouch, _presses)
                 and x <= rect.x + rect.w
                 and y >= rect.y
                 and y <= rect.y + rect.h
+        end
+
+        -- Handle debug menu clicks
+        if debugMenu.handleClick(self, x, y) then
+            return
         end
 
         if pointInRect(self.bottomBarHealthPotionRect) then

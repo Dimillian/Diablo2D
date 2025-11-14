@@ -121,4 +121,24 @@ function experienceSystem.update(world, _dt)
     exp.xpForNextLevel = Leveling.getXPRequiredForNextLevel(exp.level)
 end
 
+---Trigger a level up for the player by setting XP to required amount and applying bonuses.
+---@param world WorldScene The world scene
+---@param player table The player entity
+function experienceSystem.triggerLevelUp(world, player)
+    if not player or not player.experience then
+        return
+    end
+
+    local exp = player.experience
+    local currentLevel = exp.level or 1
+    local nextLevel = currentLevel + 1
+    local totalXPForNextLevel = Leveling.getXPForLevel(nextLevel)
+
+    -- Set current XP to the required amount for next level
+    exp.currentXP = totalXPForNextLevel
+
+    -- Apply level up bonuses (this will increment level and grant points)
+    applyLevelUpBonuses(world, player)
+end
+
 return experienceSystem
