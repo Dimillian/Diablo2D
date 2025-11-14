@@ -4,6 +4,7 @@ local shader = nil
 local canvas = nil
 local timeUniform = 0
 local shaderPath = "shaders/crt.glsl"
+local enabled = true
 
 local settings = {
     curvature = 0.005,
@@ -87,10 +88,13 @@ function CRTShader.update(dt)
 end
 
 function CRTShader.draw(drawFunc)
-    if type(drawFunc) ~= "function" or not shader or not canvas then
-        if type(drawFunc) == "function" then
-            drawFunc()
-        end
+    local canPostProcess = enabled and shader and canvas
+    if type(drawFunc) ~= "function" then
+        return
+    end
+
+    if not canPostProcess then
+        drawFunc()
         return
     end
 
@@ -107,6 +111,19 @@ function CRTShader.draw(drawFunc)
     love.graphics.draw(canvas, 0, 0)
     love.graphics.setShader()
     love.graphics.pop()
+end
+
+function CRTShader.isEnabled()
+    return enabled
+end
+
+function CRTShader.setEnabled(state)
+    state = state ~= false
+    enabled = state
+end
+
+function CRTShader.toggle()
+    CRTShader.setEnabled(not enabled)
 end
 
 return CRTShader

@@ -4,6 +4,7 @@ local MENU_ITEM_HEIGHT = 50
 local MENU_ITEM_SPACING = 10
 local MENU_WIDTH = 300
 local MENU_PADDING = 20
+local MENU_ITEM_COUNT = 4
 
 function renderPauseMenu.draw(scene)
     local screenWidth = love.graphics.getWidth()
@@ -14,7 +15,9 @@ function renderPauseMenu.draw(scene)
     love.graphics.rectangle("fill", 0, 0, screenWidth, screenHeight)
 
     -- Calculate menu position (centered)
-    local menuHeight = (MENU_ITEM_HEIGHT * 3) + (MENU_ITEM_SPACING * 2) + (MENU_PADDING * 2)
+    local menuHeight = (MENU_ITEM_HEIGHT * MENU_ITEM_COUNT)
+        + (MENU_ITEM_SPACING * (MENU_ITEM_COUNT - 1))
+        + (MENU_PADDING * 2)
     local menuX = (screenWidth - MENU_WIDTH) / 2
     local menuY = (screenHeight - menuHeight) / 2
 
@@ -84,8 +87,33 @@ function renderPauseMenu.draw(scene)
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
     love.graphics.print("Controls", menuX + MENU_PADDING + 10, controlsY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
 
+    -- CRT toggle button
+    local crtY = controlsY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
+    local isCRTHovered = isTopScene
+        and mouseX >= menuX + MENU_PADDING
+        and mouseX <= menuX + MENU_WIDTH - MENU_PADDING
+        and mouseY >= crtY
+        and mouseY <= crtY + MENU_ITEM_HEIGHT
+
+    if isCRTHovered then
+        love.graphics.setColor(0.3, 0.3, 0.3, 1)
+        love.graphics.rectangle(
+            "fill",
+            menuX + MENU_PADDING,
+            crtY,
+            MENU_WIDTH - (MENU_PADDING * 2),
+            MENU_ITEM_HEIGHT,
+            4,
+            4
+        )
+    end
+
+    local crtLabel = "CRT Shader: " .. (scene.isCRTEnabled and scene:isCRTEnabled() and "ON" or "OFF")
+    love.graphics.setColor(0.9, 0.85, 0.65, 1)
+    love.graphics.print(crtLabel, menuX + MENU_PADDING + 10, crtY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
+
     -- Quit button
-    local quitY = controlsY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
+    local quitY = crtY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
     local isQuitHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
         and mouseX <= menuX + MENU_WIDTH - MENU_PADDING
@@ -119,6 +147,12 @@ function renderPauseMenu.draw(scene)
     scene.menuRects.controls = {
         x = menuX + MENU_PADDING,
         y = controlsY,
+        w = MENU_WIDTH - (MENU_PADDING * 2),
+        h = MENU_ITEM_HEIGHT,
+    }
+    scene.menuRects.crt = {
+        x = menuX + MENU_PADDING,
+        y = crtY,
         w = MENU_WIDTH - (MENU_PADDING * 2),
         h = MENU_ITEM_HEIGHT,
     }

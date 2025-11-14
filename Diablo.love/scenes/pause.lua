@@ -2,6 +2,7 @@ local renderPauseMenu = require("systems.render.pause.menu")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
+local CRTShader = require("modules.crt_shader")
 
 local PauseScene = {}
 PauseScene.__index = PauseScene
@@ -92,6 +93,15 @@ function PauseScene:mousepressed(x, y, button)
         end
     end
 
+    -- CRT toggle
+    if rects.crt then
+        local rect = rects.crt
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            self:toggleCRT()
+            return
+        end
+    end
+
     -- Quit button
     if rects.quit then
         local rect = rects.quit
@@ -100,6 +110,14 @@ function PauseScene:mousepressed(x, y, button)
             return
         end
     end
+end
+
+function PauseScene:isCRTEnabled()
+    return CRTShader.isEnabled()
+end
+
+function PauseScene:toggleCRT()
+    CRTShader.toggle()
 end
 
 return PauseScene
