@@ -200,14 +200,46 @@ function renderSkillsTree.draw(scene)
         return
     end
 
-    local columns = layout.columns or WindowLayout.calculateColumns(layout, scene.windowChromeConfig and scene.windowChromeConfig.columns)
-    layout.columns = columns
-    local leftColumn = columns.left
     local padding = layout.padding or 28
+    local showTree = scene.isTreeVisible and scene.selectedSpellId ~= nil
 
-    local treeArea, equippedArea = WindowLayout.splitVertical(leftColumn, { ratio = 0.62, spacing = padding }, padding)
-    scene.skillTreeArea = treeArea
+    local baseArea
+    if showTree then
+        local columnOptions = layout.columnOptions or {}
+        local columns = layout.columns
+            or WindowLayout.calculateColumns(layout, {
+                leftRatio = columnOptions.leftRatio or 0.4,
+                spacing = columnOptions.spacing or padding,
+            })
+        layout.columns = columns
+        baseArea = columns.left
+        scene.skillTreeArea = columns.right
+    else
+        layout.columns = nil
+        baseArea = layout.content
+        scene.skillTreeArea = nil
+    end
+
+    if not baseArea then
+        return
+    end
+
+    local listArea, equippedArea = WindowLayout.splitVertical(baseArea, { ratio = 0.62, spacing = padding }, padding)
+    scene.listArea = listArea
     scene.equippedArea = equippedArea
+
+    scene.skillTreeNodeRects = {}
+
+    if not showTree or not scene.skillTreeArea then
+        return
+    end
+
+    local treeArea = {
+        x = scene.skillTreeArea.x,
+        y = scene.skillTreeArea.y,
+        width = scene.skillTreeArea.width,
+        height = scene.skillTreeArea.height,
+    }
 
     local skills = player.skills
     local headerHeight = drawHeader(treeArea, skills)
@@ -226,9 +258,15 @@ function renderSkillsTree.draw(scene)
 
     local selectedSpellId = scene.selectedSpellId
     local spell = selectedSpellId and Spells.types[selectedSpellId] or nil
-    if not spell or not spell.skillTree then
+    if not spell then
         love.graphics.setColor(0.7, 0.65, 0.5, 1)
         love.graphics.print("Select a spell to view its skill tree.", graphArea.x + padding, graphArea.y + padding)
+        return
+    end
+
+    if not spell.skillTree then
+        love.graphics.setColor(0.7, 0.65, 0.5, 1)
+        love.graphics.print("This spell does not have a skill tree yet.", graphArea.x + padding, graphArea.y + padding)
         return
     end
 
@@ -242,7 +280,6 @@ function renderSkillsTree.draw(scene)
 
     drawEdges(graphArea, spell, skills, nodePositions)
 
-    scene.skillTreeNodeRects = {}
     for _, node in ipairs(nodeList) do
         drawNode(scene, graphArea, spell, node, skills, nodePositions)
     end

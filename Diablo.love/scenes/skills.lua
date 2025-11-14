@@ -7,36 +7,35 @@ local SkillTree = require("modules.skill_tree")
 local renderWindowChrome = require("systems.render.window.chrome")
 local renderSkillsList = require("systems.render.skills.list")
 local renderSkillsEquipped = require("systems.render.skills.equipped")
+local renderSkillsEquipMenu = require("systems.render.skills.equip_menu")
 local renderSkillsTooltip = require("systems.render.skills.tooltip")
 local renderSkillsTree = require("systems.render.skills.tree")
 
 local SkillsScene = {}
 SkillsScene.__index = SkillsScene
 
-local function equipSpell(player, spellId)
-    if not spellId then
+local function assignSpellToSlot(player, slotIndex, spellId)
+    if not player or not player.skills then
+        return
+    end
+
+    if slotIndex < 1 or slotIndex > #player.skills.equipped then
+        return
+    end
+
+    if spellId == nil or spellId == "__clear__" then
+        player.skills.equipped[slotIndex] = nil
         return
     end
 
     local slots = player.skills.equipped
-    for index = 1, 4 do
+    for index = 1, #slots do
         if slots[index] == spellId then
-            return
+            slots[index] = nil
         end
     end
 
-    for index = 1, 4 do
-        if not slots[index] then
-            slots[index] = spellId
-            return
-        end
-    end
-
-    slots[1] = spellId
-end
-
-local function unequipSlot(player, slotIndex)
-    player.skills.equipped[slotIndex] = nil
+    slots[slotIndex] = spellId
 end
 
 function SkillsScene.new(opts)
@@ -60,6 +59,7 @@ function SkillsScene.new(opts)
                 renderSkillsTree.draw,
                 renderSkillsList.draw,
                 renderSkillsEquipped.draw,
+                renderSkillsEquipMenu.draw,
                 renderSkillsTooltip.draw,
             },
         },
@@ -86,6 +86,8 @@ function SkillsScene:enter()
     self.windowRects = {}
     self.windowLayout = nil
     self.skillTreeNodeRects = {}
+    self.equipMenu = nil
+    self.isTreeVisible = false
 
     if (not self.selectedSpellId or not Spells.types[self.selectedSpellId]) and self.availableSpells then
         local firstSpell = self.availableSpells[1]
@@ -103,6 +105,17 @@ end
 
 function SkillsScene:draw()
     love.graphics.push("all")
+
+    local showTree = self.isTreeVisible and self.selectedSpellId ~= nil
+    if self.windowChromeConfig then
+        if showTree then
+            self.windowLayoutOptions.widthRatio = 0.82
+            self.windowChromeConfig.columns = { leftRatio = 0.42, spacing = 32 }
+        else
+            self.windowLayoutOptions.widthRatio = 0.54
+            self.windowChromeConfig.columns = nil
+        end
+    end
 
     self.hoveredSpellId = nil
     self.hoveredSlotIndex = nil
@@ -151,6 +164,22 @@ function SkillsScene:mousepressed(x, y, button)
         return
     end
 
+    local equipMenu = self.equipMenu
+    if equipMenu then
+        for _, option in ipairs(equipMenu.optionRects or {}) do
+            if x >= option.x and x <= option.x + option.w and y >= option.y and y <= option.y + option.h then
+                assignSpellToSlot(player, equipMenu.slotIndex, option.spellId)
+                self.equipMenu = nil
+                return
+            end
+        end
+
+        local bounds = equipMenu.bounds
+        if not bounds or x < bounds.x or x > bounds.x + bounds.w or y < bounds.y or y > bounds.y + bounds.h then
+            self.equipMenu = nil
+        end
+    end
+
     for _, rect in ipairs(self.skillTreeNodeRects or {}) do
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
             local spell = rect.spellId and Spells.types[rect.spellId]
@@ -159,6 +188,7 @@ function SkillsScene:mousepressed(x, y, button)
                     self.selectedSpellId = rect.spellId
                 end
                 SkillTree.invest(player.skills, spell, rect.nodeId)
+                self.equipMenu = nil
             end
             return
         end
@@ -168,7 +198,8 @@ function SkillsScene:mousepressed(x, y, button)
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
             if rect.spell and rect.spell.id then
                 self.selectedSpellId = rect.spell.id
-                equipSpell(player, rect.spell.id)
+                self.isTreeVisible = true
+                self.equipMenu = nil
             end
             return
         end
@@ -176,7 +207,20 @@ function SkillsScene:mousepressed(x, y, button)
 
     for _, rect in ipairs(self.slotRects or {}) do
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
-            unequipSlot(player, rect.index)
+            if self.equipMenu and self.equipMenu.slotIndex == rect.index then
+                self.equipMenu = nil
+                return
+            end
+
+            self.equipMenu = {
+                slotIndex = rect.index,
+                slotRect = {
+                    x = rect.x,
+                    y = rect.y,
+                    w = rect.w,
+                    h = rect.h,
+                },
+            }
             return
         end
     end

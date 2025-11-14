@@ -1,7 +1,5 @@
 local Resources = require("modules.resources")
 local SkillTree = require("modules.skill_tree")
-local WindowLayout = require("systems.helpers.window_layout")
-
 local renderSkillsList = {}
 
 function renderSkillsList.draw(scene)
@@ -11,18 +9,28 @@ function renderSkillsList.draw(scene)
         return
     end
 
-    local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.35 })
-    layout.columns = columns
-    local rightColumn = columns.right
+    local area = scene.listArea or layout.content
+    if not area or area.width <= 0 or area.height <= 0 then
+        return
+    end
+
     local padding = layout.padding
     local font = love.graphics.getFont()
 
     love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Spells", rightColumn.x, rightColumn.y)
+    love.graphics.print("Spells", area.x, area.y)
+
+    local headerOffset = font:getHeight()
+    if not scene.isTreeVisible then
+        love.graphics.setColor(0.75, 0.7, 0.55, 1)
+        love.graphics.print("Click a spell to open its skill tree", area.x, area.y + headerOffset + 6)
+        headerOffset = headerOffset + font:getHeight() + 6
+    end
+    love.graphics.setColor(0.95, 0.9, 0.7, 1)
 
     local itemHeight = 54
     local spacing = 12
-    local listTop = rightColumn.y + font:getHeight() + padding * 0.5
+    local listTop = area.y + headerOffset + padding * 0.5
 
     scene.spellRects = {}
     scene.hoveredSpellId = nil
@@ -36,9 +44,9 @@ function renderSkillsList.draw(scene)
     for index, spell in ipairs(spells) do
         local rectY = listTop + (index - 1) * (itemHeight + spacing)
         local rect = {
-            x = rightColumn.x,
+            x = area.x,
             y = rectY,
-            w = rightColumn.width,
+            w = area.width,
             h = itemHeight,
             spell = spell,
         }

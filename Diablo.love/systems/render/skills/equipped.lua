@@ -1,7 +1,5 @@
 local Spells = require("data.spells")
 local Resources = require("modules.resources")
-local WindowLayout = require("systems.helpers.window_layout")
-
 local renderSkillsEquipped = {}
 
 local function drawSlot(x, y, size, isHovered)
@@ -50,10 +48,10 @@ function renderSkillsEquipped.draw(scene)
         return
     end
 
-    local columns = layout.columns or WindowLayout.calculateColumns(layout, { leftRatio = 0.35 })
-    layout.columns = columns
-    local leftColumn = columns.left
-    local area = scene.equippedArea or leftColumn
+    local area = scene.equippedArea or layout.content
+    if not area or area.width <= 0 or area.height <= 0 then
+        return
+    end
     local padding = layout.padding
     local font = love.graphics.getFont()
 
@@ -93,7 +91,17 @@ function renderSkillsEquipped.draw(scene)
             scene.hoveredSlotIndex = slotIndex
         end
 
-        drawSlot(rect.x, rect.y, rect.w, isHovered)
+        local isMenuOpen = scene.equipMenu and scene.equipMenu.slotIndex == slotIndex
+        drawSlot(rect.x, rect.y, rect.w, isHovered or isMenuOpen)
+
+        if isMenuOpen then
+            scene.equipMenu.slotRect = {
+                x = rect.x,
+                y = rect.y,
+                w = rect.w,
+                h = rect.h,
+            }
+        end
 
         local spellId = player.skills.equipped[slotIndex]
         local spell = spellId and Spells.types[spellId] or nil
@@ -101,6 +109,7 @@ function renderSkillsEquipped.draw(scene)
 
         scene.slotRects[#scene.slotRects + 1] = rect
     end
+
 end
 
 return renderSkillsEquipped
