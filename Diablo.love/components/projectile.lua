@@ -18,6 +18,7 @@ local function createProjectileComponent(opts)
         impactPosition = opts.impactPosition,
         lastDirectionX = opts.directionX or 0,
         lastDirectionY = opts.directionY or 0,
+        hitEnemies = opts.hitEnemies or {},
     }
 end
 

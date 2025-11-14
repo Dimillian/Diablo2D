@@ -72,12 +72,19 @@ function collisionSystem.update(world, _dt)
         local projectileCenterX, projectileCenterY = coordinates.getEntityCenter(projectile)
         local projectileRadius = (projectile.size.w or projectile.size.h or 0) / 2
 
+        projectileComponent.hitEnemies = projectileComponent.hitEnemies or {}
+        local impactTriggered = false
+
         for _, foe in ipairs(foes) do
             if foe.id == projectileComponent.ownerId then
                 goto continue_foe
             end
 
             if foe.dead or not foe.health or foe.health.current <= 0 then
+                goto continue_foe
+            end
+
+            if projectileComponent.hitEnemies[foe.id] then
                 goto continue_foe
             end
 
@@ -114,12 +121,14 @@ function collisionSystem.update(world, _dt)
                 Aggro.ensureAggro(world, foe, owner.id, { target = owner })
             end
 
-            -- Death is now handled by death detection system
+            projectileComponent.hitEnemies[foe.id] = true
 
-            projectileEffects.triggerImpact(world, projectile, {
-                position = { x = projectileCenterX, y = projectileCenterY },
-            })
-            goto continue_projectile
+            if not impactTriggered then
+                projectileEffects.triggerImpact(world, projectile, {
+                    position = { x = projectileCenterX, y = projectileCenterY },
+                })
+                impactTriggered = true
+            end
 
             ::continue_foe::
         end
