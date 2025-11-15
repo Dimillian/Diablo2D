@@ -20,7 +20,14 @@ local function getTarget(world)
     return Targeting.getCurrentTarget(world)
 end
 
-local function computeTargetPosition(world, projectileTarget, caster)
+local function computeTargetPosition(world, projectileTarget, caster, spell)
+    if spell and spell.targeting == "cursor" then
+        local mx, my = love.mouse.getPosition()
+        local camera = world.camera or { x = 0, y = 0 }
+        local targetX, targetY = coordinates.toWorldFromScreen(camera, mx, my)
+        return targetX, targetY, nil
+    end
+
     if projectileTarget then
         local tx, ty = getEntityCenter(projectileTarget)
         if tx and ty then
@@ -55,25 +62,53 @@ local function createProjectile(world, caster, spell, targetX, targetY, targetId
     end
 
     local projectileSize = spell.projectileSize or 12
-    local projectileX = casterX - (projectileSize / 2)
-    local projectileY = casterY - (projectileSize / 2)
+    local spawnMode = spell.projectileSpawn or "caster"
+    local spawnHeight = spell.projectileSpawnHeight or 0
 
-    local dx = targetX - casterX
-    local dy = targetY - casterY
+    local spawnX, spawnY
+    if spawnMode == "target" then
+        spawnX = targetX
+        spawnY = targetY
+    elseif spawnMode == "sky" then
+        spawnX = targetX
+        spawnY = targetY - spawnHeight
+    else
+        spawnX = casterX
+        spawnY = casterY
+    end
+
+    if not spawnX or not spawnY then
+        spawnX = casterX
+        spawnY = casterY
+    end
+
+    local projectileX = spawnX - (projectileSize / 2)
+    local projectileY = spawnY - (projectileSize / 2)
+
+    local startCenterX = projectileX + (projectileSize / 2)
+    local startCenterY = projectileY + (projectileSize / 2)
+
+    local dx = targetX - startCenterX
+    local dy = targetY - startCenterY
     local ndx, ndy = vector.normalize(dx, dy)
+    if ndx == 0 and ndy == 0 then
+        ndx, ndy = 0, 1
+    end
 
     local projectile = ProjectileEntity.new({
         x = projectileX,
         y = projectileY,
         targetX = targetX,
         targetY = targetY,
-        targetId = targetId,
+        targetId = (spell.targeting == "cursor") and nil or targetId,
         spellId = spell.id,
         damage = spell.damage,
         ownerId = caster.id,
         speed = spell.projectileSpeed,
         size = projectileSize,
         color = spell.projectileColor,
+        secondaryColor = spell.projectileSecondaryColor,
+        coreColor = spell.projectileCoreColor,
         lifetime = spell.lifetime,
         vx = ndx,
         vy = ndy,
@@ -110,7 +145,7 @@ local function castSpell(world, slotIndex)
     end
 
     local target = getTarget(world)
-    local targetX, targetY, targetId = computeTargetPosition(world, target, player)
+    local targetX, targetY, targetId = computeTargetPosition(world, target, player, modifiedSpell)
     if not targetX or not targetY then
         return false
     end
