@@ -76,7 +76,7 @@ Spells.types = {
         projectileSpawn = "sky",
         projectileSpawnHeight = 220,
         targeting = "cursor",
-        icon = "resources/skills/fireball.png",
+        icon = "resources/skills/thunder.png",
         lifetime = 0.6,
     },
 }
