@@ -170,10 +170,10 @@ local function drawFlyingThunder(args)
     local boltLength = args.boltLength or (radius * 6)
     local progress = clamp(args.progress or 0, 0, 1)
 
-    local startX = centerX - dirX * boltLength * 0.5
-    local startY = centerY - dirY * boltLength * 0.5
-    local endX = centerX + dirX * boltLength * 0.5
-    local endY = centerY + dirY * boltLength * 0.5
+    local startX = centerX - dirX * boltLength
+    local startY = centerY - dirY * boltLength
+    local endX = centerX
+    local endY = centerY
     local perpX = -dirY
     local perpY = dirX
 
