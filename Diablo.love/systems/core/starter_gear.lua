@@ -25,6 +25,10 @@ function starterGearSystem.update(world, _dt)
         player.skills.equipped[1] = "fireball"
     end
 
+    if not player.skills.equipped[2] then
+        player.skills.equipped[2] = "thunder"
+    end
+
     local starterWeapon = ItemGenerator.roll({
         rarity = "common",
         allowedTypes = { "sword", "axe" },

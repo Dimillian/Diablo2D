@@ -59,6 +59,26 @@ Spells.types = {
             },
         },
     },
+    thunder = {
+        id = "thunder",
+        label = "Thunder",
+        description = "Call down a searing bolt of lightning at your cursor.",
+        manaCost = 14,
+        damage = { min = 18, max = 30 },
+        projectileSpeed = 900,
+        projectileSize = 44,
+        projectileColor = { 0.55, 0.75, 1.0, 1 },
+        projectileSecondaryColor = { 0.3, 0.6, 1.0, 0.9 },
+        projectileCoreColor = { 0.9, 0.95, 1.0, 1 },
+        projectileRenderKind = "thunder",
+        projectileImpactDuration = 0.35,
+        projectileBoltLength = 240,
+        projectileSpawn = "sky",
+        projectileSpawnHeight = 220,
+        targeting = "cursor",
+        icon = "resources/skills/thunder.png",
+        lifetime = 0.6,
+    },
 }
 
 ---Return an ordered array of spell definitions.

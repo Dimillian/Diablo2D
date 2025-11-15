@@ -157,6 +157,131 @@ local function drawImpactFireball(args)
     love.graphics.setLineWidth(1)
 end
 
+local function drawFlyingThunder(args)
+    local centerX, centerY = args.centerX, args.centerY
+    local radius = args.radius
+    local baseColor = args.colors.base
+    local secondary = args.colors.secondary
+    local core = args.colors.core
+    local dirX, dirY = normalizeDirection(args.dirX or 0, args.dirY or 1)
+    local time = args.time or 0
+    local seed = args.seed or 0
+    local lifeRatio = clamp(args.lifeRatio or 0, 0, 1)
+    local boltLength = args.boltLength or (radius * 6)
+    local progress = clamp(args.progress or 0, 0, 1)
+
+    local startX = centerX - dirX * boltLength
+    local startY = centerY - dirY * boltLength
+    local endX = centerX
+    local endY = centerY
+    local perpX = -dirY
+    local perpY = dirX
+
+    local jitterAmplitude = radius * (1.4 + 0.8 * (1 - lifeRatio) + 0.3 * progress)
+    local lightningPoints = {}
+    local segmentCount = 9
+    for i = 0, segmentCount do
+        local t = i / segmentCount
+        local basePointX = startX + dirX * boltLength * t
+        local basePointY = startY + dirY * boltLength * t
+        local wave = math.sin((time * 24) + seed * 9 + t * 15)
+        local flicker = math.sin((time * 32) + seed * 13 + i * 2.4)
+        local offset = (wave + flicker) * 0.5 * jitterAmplitude * (0.25 + 0.75 * (1 - lifeRatio))
+        local pointX = basePointX + perpX * offset
+        local pointY = basePointY + perpY * offset
+        lightningPoints[#lightningPoints + 1] = pointX
+        lightningPoints[#lightningPoints + 1] = pointY
+    end
+
+    if #lightningPoints >= 4 then
+        love.graphics.setBlendMode("add")
+        love.graphics.setLineJoin("miter")
+        love.graphics.setLineWidth(math.max(2, radius * 0.85))
+        love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], 0.35)
+        love.graphics.line(startX, startY, endX, endY)
+
+        love.graphics.setLineWidth(math.max(2, radius * 0.45))
+        love.graphics.setColor(secondary[1], secondary[2], secondary[3], 0.8 * (1 - lifeRatio * 0.5))
+        love.graphics.line(lightningPoints)
+
+        love.graphics.setLineWidth(math.max(1.5, radius * 0.25))
+        love.graphics.setColor(core[1], core[2], core[3], 0.95)
+        love.graphics.line(lightningPoints)
+
+        local sparkCount = 5
+        for i = 1, sparkCount do
+            local t = i / (sparkCount + 1)
+            local baseX = startX + dirX * boltLength * t
+            local baseY = startY + dirY * boltLength * t
+            local sparkJitter = math.sin(time * 40 + seed * (6 + i) + i * 1.7)
+            local sparkOffset = sparkJitter * jitterAmplitude * 0.25
+            local sparkX = baseX + perpX * sparkOffset
+            local sparkY = baseY + perpY * sparkOffset
+            local sparkRadius = radius * (0.45 - 0.1 * t) * (1 + 0.2 * math.sin(time * 30 + i))
+            love.graphics.setColor(core[1], core[2], core[3], 0.8)
+            love.graphics.circle("fill", sparkX, sparkY, sparkRadius)
+            love.graphics.setColor(secondary[1], secondary[2], secondary[3], 0.5)
+            love.graphics.circle("line", sparkX, sparkY, sparkRadius * 1.1)
+        end
+
+        love.graphics.setBlendMode("alpha")
+    end
+
+    love.graphics.setLineWidth(1)
+
+    local glowRadius = radius * (1.2 + 0.4 * (1 - lifeRatio) + 0.2 * progress)
+    love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], 0.25)
+    love.graphics.circle("fill", centerX, centerY, glowRadius)
+    love.graphics.setColor(core[1], core[2], core[3], 0.45)
+    love.graphics.circle("fill", centerX, centerY, glowRadius * 0.6)
+end
+
+local function drawImpactThunder(args)
+    local centerX, centerY = args.centerX, args.centerY
+    local radius = args.radius
+    local baseColor = args.colors.base
+    local secondary = args.colors.secondary
+    local core = args.colors.core
+    local time = args.time or 0
+    local timer = args.timer or 0
+    local duration = args.duration or 0.35
+
+    if duration <= 0 then
+        duration = 0.001
+    end
+
+    local progress = clamp(1 - (timer / duration), 0, 1)
+    local eased = progress * (2 - progress)
+
+    love.graphics.setBlendMode("add")
+    love.graphics.setColor(core[1], core[2], core[3], 0.9 * (1 - progress * 0.7))
+    love.graphics.circle("fill", centerX, centerY, radius * (0.95 + 0.2 * eased))
+
+    love.graphics.setColor(secondary[1], secondary[2], secondary[3], 0.75 * (1 - progress * 0.5))
+    love.graphics.circle("fill", centerX, centerY, radius * (1.6 + 0.8 * eased))
+
+    local shockwaveRadius = radius * (2.4 + 1.2 * eased)
+    love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], 0.6 * (1 - progress))
+    love.graphics.setLineWidth(math.max(2, radius * 0.6))
+    love.graphics.circle("line", centerX, centerY, shockwaveRadius)
+
+    local arcCount = 7
+    for i = 1, arcCount do
+        local angle = (i / arcCount) * TWO_PI + time * 5
+        local length = radius * (2.2 + eased * 1.4 + 0.2 * math.sin(time * 12 + i))
+        local endX = centerX + math.cos(angle) * length
+        local endY = centerY + math.sin(angle) * length
+        love.graphics.setColor(secondary[1], secondary[2], secondary[3], 0.55 * (1 - progress))
+        love.graphics.setLineWidth(math.max(1.5, radius * 0.35 * (1 - progress * 0.6)))
+        love.graphics.line(centerX, centerY, endX, endY)
+    end
+
+    love.graphics.setBlendMode("alpha")
+    love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], 0.35 * (1 - progress))
+    love.graphics.circle("fill", centerX, centerY, radius * (1.3 + 0.4 * (1 - progress)))
+    love.graphics.setLineWidth(1)
+end
+
 function renderProjectileSystem.draw(world)
     local projectiles = world:queryEntities({ "projectile", "position", "size", "renderable" })
     if #projectiles == 0 then
@@ -230,6 +355,20 @@ function renderProjectileSystem.draw(world)
                     timer = projectileComponent.impactTimer,
                     duration = projectileComponent.impactDuration,
                 })
+            elseif renderable.kind == "thunder" then
+                drawImpactThunder({
+                    centerX = centerX,
+                    centerY = centerY,
+                    radius = radius,
+                    colors = {
+                        base = baseColor,
+                        secondary = secondaryColor,
+                        core = coreColor,
+                    },
+                    time = time,
+                    timer = projectileComponent.impactTimer,
+                    duration = projectileComponent.impactDuration,
+                })
             else
                 drawSimpleImpact({
                     centerX = centerX,
@@ -263,6 +402,32 @@ function renderProjectileSystem.draw(world)
                 seed = seed,
                 lifeRatio = lifeRatio,
                 progress = progress,
+            })
+        elseif renderable.kind == "thunder" then
+            local lastDirX = projectileComponent.lastDirectionX
+            local lastDirY = projectileComponent.lastDirectionY
+            local dirX, dirY = normalizeDirection(lastDirX, lastDirY)
+            local boltLength = radius * 6
+            if spell and spell.projectileBoltLength then
+                boltLength = spell.projectileBoltLength
+            end
+
+            drawFlyingThunder({
+                centerX = centerX,
+                centerY = centerY,
+                radius = radius,
+                colors = {
+                    base = baseColor,
+                    secondary = secondaryColor,
+                    core = coreColor,
+                },
+                dirX = dirX,
+                dirY = dirY,
+                time = time,
+                seed = seed,
+                lifeRatio = lifeRatio,
+                progress = progress,
+                boltLength = boltLength,
             })
         else
             love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], baseColor[4])
