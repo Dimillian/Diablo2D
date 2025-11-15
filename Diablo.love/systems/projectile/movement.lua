@@ -63,10 +63,25 @@ function projectileMovementSystem.update(world, dt)
         local dx = targetX - centerX
         local dy = targetY - centerY
         local ndx, ndy = vector.normalize(dx, dy)
+        local travelSpeed = projectileComponent.speed or projectile.movement.speed or 0
+        local travelDistance = travelSpeed * dt
+        local radius = (math.max(projectile.size.w or 0, projectile.size.h or 0)) / 2
+        local distanceToTarget = vector.length(dx, dy)
+
+        if travelDistance >= math.max(0, distanceToTarget - radius) then
+            projectileComponent.lastDirectionX = ndx
+            projectileComponent.lastDirectionY = ndy
+            projectileEffects.triggerImpact(world, projectile, {
+                position = { x = targetX, y = targetY },
+                directionX = ndx,
+                directionY = ndy,
+            })
+            goto continue
+        end
 
         projectile.movement.vx = ndx
         projectile.movement.vy = ndy
-        projectile.movement.speed = projectileComponent.speed or projectile.movement.speed
+        projectile.movement.speed = travelSpeed
 
         projectileComponent.lastDirectionX = ndx
         projectileComponent.lastDirectionY = ndy
