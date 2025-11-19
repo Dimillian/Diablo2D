@@ -4,6 +4,7 @@ local ProjectileEntity = require("entities.projectile")
 local coordinates = require("systems.helpers.coordinates")
 local vector = require("modules.vector")
 local Targeting = require("systems.helpers.targeting")
+local soundHelper = require("systems.helpers.sound")
 
 local skillCastSystem = {}
 
@@ -117,6 +118,21 @@ local function createProjectile(world, caster, spell, targetX, targetY, targetId
     })
 
     world:addEntity(projectile)
+
+    -- Play travel sound for fireball
+    if spell.id == "fireball" then
+        local travelSound = soundHelper.playFireballTravelSound()
+        -- Store sound source on projectile so we can stop it on impact
+        projectile.travelSoundSource = travelSound
+    end
+
+    -- Play travel sound for thunder
+    if spell.id == "thunder" then
+        local travelSound = soundHelper.playThunderTravelSound()
+        -- Store sound source on projectile so we can stop it on impact
+        projectile.travelSoundSource = travelSound
+    end
+
     return true
 end
 

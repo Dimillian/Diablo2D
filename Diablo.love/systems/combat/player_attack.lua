@@ -2,6 +2,7 @@ local vector = require("modules.vector")
 local Targeting = require("systems.helpers.targeting")
 local coordinates = require("systems.helpers.coordinates")
 local combatTiming = require("systems.helpers.combat_timing")
+local soundHelper = require("systems.helpers.sound")
 
 local playerAttackSystem = {}
 
@@ -58,23 +59,27 @@ function playerAttackSystem.update(world, dt)
 
     -- Only queue damage if valid target exists and is in range
     if not target then
+        soundHelper.playMissSound()
         return
     end
 
     local targetHealth = target.health
     if not targetHealth or targetHealth.current <= 0 then
+        soundHelper.playMissSound()
         return
     end
 
     local playerX, playerY = coordinates.getEntityCenter(player)
     local targetX, targetY = coordinates.getEntityCenter(target)
     if not playerX or not targetX then
+        soundHelper.playMissSound()
         return
     end
 
     local range = combatTiming.getRange(combat)
     local distance = vector.distance(playerX, playerY, targetX, targetY)
     if distance > range then
+        soundHelper.playMissSound()
         return
     end
 
@@ -84,6 +89,9 @@ function playerAttackSystem.update(world, dt)
         time = world.time or 0,
         range = range,
     }
+
+    -- Play attack sound effect
+    soundHelper.playAttackSound()
 end
 
 return playerAttackSystem

@@ -5,6 +5,11 @@ local projectileEffects = require("systems.helpers.projectile_effects")
 local projectileMovementSystem = {}
 
 local function removeProjectile(world, projectile)
+    -- Stop travel sound if it's playing
+    if projectile.travelSoundSource then
+        projectile.travelSoundSource:stop()
+        projectile.travelSoundSource = nil
+    end
     world:removeEntity(projectile.id)
 end
 

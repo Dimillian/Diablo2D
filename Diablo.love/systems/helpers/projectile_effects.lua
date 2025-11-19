@@ -1,4 +1,5 @@
 local coordinates = require("systems.helpers.coordinates")
+local soundHelper = require("systems.helpers.sound")
 
 local projectileEffects = {}
 
@@ -55,6 +56,28 @@ function projectileEffects.triggerImpact(world, projectile, opts)
         local radius = (projectile.size.w or projectile.size.h or 0) / 2
         projectile.position.x = (projectileComponent.impactPosition.x or 0) - radius
         projectile.position.y = (projectileComponent.impactPosition.y or 0) - radius
+    end
+
+    -- Handle sounds for fireball
+    if projectileComponent.spellId == "fireball" then
+        -- Stop travel sound if it's playing
+        if projectile.travelSoundSource then
+            projectile.travelSoundSource:stop()
+            projectile.travelSoundSource = nil
+        end
+        -- Play impact sound
+        soundHelper.playFireballImpactSound()
+    end
+
+    -- Handle sounds for thunder
+    if projectileComponent.spellId == "thunder" then
+        -- Stop travel sound if it's playing
+        if projectile.travelSoundSource then
+            projectile.travelSoundSource:stop()
+            projectile.travelSoundSource = nil
+        end
+        -- Play impact sound
+        soundHelper.playThunderImpactSound()
     end
 
     return true
