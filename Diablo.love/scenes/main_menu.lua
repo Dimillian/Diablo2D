@@ -287,11 +287,17 @@ function MainMenuScene:startContinue()
 end
 
 function MainMenuScene:updateSelectionFromMouse(x, y)
+    local hoveredIndex = nil
+
     for index, item in ipairs(self.menuItems) do
         if pointInRect(x, y, item.rect) and not item.disabled then
-            self.selectedIndex = index
-            return
+            hoveredIndex = index
+            break
         end
+    end
+
+    if hoveredIndex then
+        self.selectedIndex = hoveredIndex
     end
 end
 
@@ -351,6 +357,12 @@ function MainMenuScene:update(dt)
     while #self.titleSparks < TITLE_SPARK_COUNT do
         seedSpark(self)
     end
+
+    computeLayout(self.menuItems)
+
+    -- Hover should mirror keyboard selection highlight
+    local mouseX, mouseY = love.mouse.getPosition()
+    self:updateSelectionFromMouse(mouseX, mouseY)
 
     computeLayout(self.menuItems)
 end
