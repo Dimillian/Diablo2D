@@ -12,6 +12,8 @@ local MAP_CONFIG = {
     playerFill = { 0.18, 0.82, 0.28, 1 },
     playerOutline = { 0.05, 0.28, 0.05, 1 },
     baseChunkPixelSize = 40,
+    minVisitedRatioForLabel = 0.25,
+    minLabelWidthPadding = 1.1,
 }
 
 local ZONE_HASH_X = 73856093
@@ -197,6 +199,16 @@ local function drawChunkRectangles(scene, layout)
 
     for _, region in pairs(regions) do
         if region.count > 0 and region.name and region.name ~= "" then
+            local regionWidthPixels = (region.maxCol - region.minCol + 1) * chunkPixelSize
+            local labelWidth = font:getWidth(region.name) * (MAP_CONFIG.minLabelWidthPadding or 1.1)
+            local visitedRatio = region.count > 0 and (region.visitedCount / region.count) or 0
+            if visitedRatio < (MAP_CONFIG.minVisitedRatioForLabel or 0.25) then
+                goto continue
+            end
+            if regionWidthPixels < labelWidth then
+                goto continue
+            end
+
             local centerX = region.sumX / region.count
             local centerY = region.sumY / region.count - font:getHeight() / 2
             local width = math.max(chunkPixelSize, (region.maxCol - region.minCol + 1) * chunkPixelSize)
@@ -207,6 +219,7 @@ local function drawChunkRectangles(scene, layout)
 
             love.graphics.setColor(0.95, 0.9, 0.7, opacity)
             love.graphics.printf(region.name, centerX - width / 2, centerY, width, "center")
+            ::continue::
         end
     end
 
