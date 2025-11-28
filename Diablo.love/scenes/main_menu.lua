@@ -15,6 +15,9 @@ local TITLE_GLOW = { 0.7, 0.15, 0.05, 0.5 }
 local TITLE_SPARK_COLOR = { 0.95, 0.4, 0.2, 0.8 }
 local TITLE_SPARK_FADE = { 0.95, 0.6, 0.3, 0.0 }
 local TITLE_SPARK_COUNT = 14
+local FIRE_PARTICLE_START = { 1.0, 0.96, 0.65, 1.0 }
+local FIRE_PARTICLE_END = { 1.0, 0.4, 0.08, 0.0 }
+local FIRE_PARTICLE_RATE = 42
 local BACKGROUND_TOP = { 0.08, 0.05, 0.05, 1 }
 local BACKGROUND_BOTTOM = { 0.06, 0.04, 0.08, 1 }
 local BUTTON_COLOR = { 0.18, 0.12, 0.12, 0.85 }
@@ -34,6 +37,57 @@ local function mixColor(a, b, t)
         lerp(a[4] or 1, b[4] or 1, t),
     }
 end
+
+local FIRE_SHADER = [[
+extern number time;
+extern vec2 resolution;
+extern vec2 origin;
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+vec4 effect(vec4 color, Image tex, vec2 uv, vec2 px) {
+    vec2 pos = (px - origin) / resolution;
+    pos = clamp(pos, 0.0, 1.0);
+    pos.y = 1.0 - pos.y;
+
+    float pixelate = 110.0;
+    pos = floor(pos * pixelate) / pixelate;
+
+    float t = time * 0.7;
+    float n1 = noise(vec2(pos.x * 9.0, pos.y * 6.0 + t * 1.4));
+    float n2 = noise(vec2(pos.x * 16.0 + t * 0.4, pos.y * 12.0 - t * 1.2));
+    float column = sin((pos.x + n1 * 0.08) * 18.0 + t * 2.0) * 0.08;
+
+    float base = pow(pos.y, 2.0);
+    float intensity = clamp(base * 1.1 + n1 * 0.45 + n2 * 0.35 + column, 0.0, 1.2);
+
+    float taper = smoothstep(0.12, 0.35, pos.y) * (1.0 - smoothstep(0.72, 0.95, pos.y));
+    float edge = smoothstep(0.05, 0.2, pos.x) * smoothstep(0.95, 0.8, pos.x);
+    float alpha = clamp(intensity * taper * edge, 0.0, 1.0);
+
+    vec3 cold = vec3(0.14, 0.04, 0.04);
+    vec3 warm = vec3(0.85, 0.28, 0.07);
+    vec3 hot = vec3(1.0, 0.82, 0.45);
+    float heat = clamp(intensity * 1.3 + pos.y * 0.3, 0.0, 1.0);
+    vec3 flame = mix(warm, hot, heat);
+    vec3 finalColor = mix(cold, flame, clamp(pos.y * 1.25, 0.0, 1.0));
+
+    return vec4(finalColor * color.rgb, alpha * color.a);
+}
+]]
 
 local function makeMenuItems(hasSave)
     return {
@@ -84,12 +138,41 @@ function MainMenuScene.new(opts)
         buttonFont = love.graphics.newFont(22),
         smallFont = love.graphics.newFont(14),
         titleSparks = {},
+        fireParticles = {},
+        fireSpawnTimer = 0,
+        fireShader = love.graphics.newShader(FIRE_SHADER),
         time = 0,
     }
 
     scene.selectedIndex = firstEnabledIndex(scene.menuItems)
 
     return setmetatable(scene, MainMenuScene)
+end
+
+local function getTitleLayout(scene)
+    local width = love.graphics.getWidth()
+    local font = scene.titleFont
+    local titleText = "DIABLO 2D"
+    local textWidth = font:getWidth(titleText)
+    local centerX = width / 2
+    local y = love.graphics.getHeight() * 0.18
+    local bannerPaddingX = 32
+    local bannerPaddingY = 16
+    local bannerX = centerX - textWidth / 2 - bannerPaddingX
+    local bannerY = y - bannerPaddingY
+    local bannerW = textWidth + bannerPaddingX * 2
+    local bannerH = font:getHeight() + bannerPaddingY * 2
+
+    return {
+        text = titleText,
+        font = font,
+        centerX = centerX,
+        y = y,
+        bannerX = bannerX,
+        bannerY = bannerY,
+        bannerW = bannerW,
+        bannerH = bannerH,
+    }
 end
 
 local function computeLayout(items)
@@ -125,48 +208,91 @@ local function drawBackground()
     end
 end
 
-local function drawRetroTitle(scene)
-    local width = love.graphics.getWidth()
-    local titleText = "DIABLO 2D"
-    local font = scene.titleFont
-    love.graphics.setFont(font)
+local function drawFireBackdrop(scene, layout)
+    if not scene.fireShader then
+        return
+    end
 
-    local textWidth = font:getWidth(titleText)
-    local centerX = width / 2
-    local y = love.graphics.getHeight() * 0.18
-    local bannerPaddingX = 32
-    local bannerPaddingY = 16
-    local bannerX = centerX - textWidth / 2 - bannerPaddingX
-    local bannerY = y - bannerPaddingY
-    local bannerW = textWidth + bannerPaddingX * 2
-    local bannerH = font:getHeight() + bannerPaddingY * 2
+    local fireH = layout.bannerH * 0.95
+    local fireY = layout.bannerY + layout.bannerH - fireH
+
+    love.graphics.push("all")
+    love.graphics.setShader(scene.fireShader)
+    scene.fireShader:send("time", scene.time or 0)
+    scene.fireShader:send("resolution", { layout.bannerW, fireH })
+    scene.fireShader:send("origin", { layout.bannerX, fireY })
+    love.graphics.setColor(1, 1, 1, 0.8)
+    love.graphics.rectangle("fill", layout.bannerX, fireY, layout.bannerW, fireH)
+    love.graphics.pop()
+end
+
+local function drawFireParticles(scene)
+    if not scene.fireParticles then
+        return
+    end
+
+    love.graphics.push("all")
+    love.graphics.setBlendMode("add", "alphamultiply")
+    for _, particle in ipairs(scene.fireParticles) do
+        local t = 1 - (particle.life / particle.maxLife)
+        local color = mixColor(FIRE_PARTICLE_START, FIRE_PARTICLE_END, t)
+        love.graphics.setColor(color)
+        love.graphics.rectangle(
+            "fill",
+            math.floor(particle.x + 0.5) - particle.size,
+            math.floor(particle.y + 0.5) - particle.size,
+            math.ceil(particle.size * 2.2),
+            math.ceil(particle.size * 2.2)
+        )
+        love.graphics.setColor(color[1], color[2], color[3], color[4] * 0.8)
+        love.graphics.rectangle(
+            "fill",
+            math.floor(particle.x + 0.5) - particle.size / 2,
+            math.floor(particle.y + 0.5) - particle.size / 2,
+            math.ceil(particle.size),
+            math.ceil(particle.size)
+        )
+    end
+    love.graphics.pop()
+end
+
+local function drawRetroTitle(scene, layout)
+    love.graphics.setFont(layout.font)
 
     -- Banner base
     love.graphics.setColor(0.08, 0.04, 0.04, 0.94)
-    love.graphics.rectangle("fill", bannerX, bannerY, bannerW, bannerH, 10, 10)
+    love.graphics.rectangle("fill", layout.bannerX, layout.bannerY, layout.bannerW, layout.bannerH, 10, 10)
 
     -- Banner highlight band
     love.graphics.setColor(0.25, 0.12, 0.12, 0.7)
-    love.graphics.rectangle("fill", bannerX, bannerY, bannerW, bannerH * 0.45, 10, 10)
+    love.graphics.rectangle("fill", layout.bannerX, layout.bannerY, layout.bannerW, layout.bannerH * 0.45, 10, 10)
 
     -- Inner border
     love.graphics.setLineWidth(2)
     love.graphics.setColor(0.85, 0.45, 0.25, 0.8)
-    love.graphics.rectangle("line", bannerX + 2, bannerY + 2, bannerW - 4, bannerH - 4, 8, 8)
+    love.graphics.rectangle(
+        "line",
+        layout.bannerX + 2,
+        layout.bannerY + 2,
+        layout.bannerW - 4,
+        layout.bannerH - 4,
+        8,
+        8
+    )
 
     -- Shadow pass
     love.graphics.setColor(TITLE_SHADOW)
-    love.graphics.printf(titleText, 0, y + 3, width, "center")
-    love.graphics.printf(titleText, 2, y + 1, width, "center")
+    love.graphics.printf(layout.text, 0, layout.y + 3, love.graphics.getWidth(), "center")
+    love.graphics.printf(layout.text, 2, layout.y + 1, love.graphics.getWidth(), "center")
 
     -- Main text
     love.graphics.setColor(TITLE_PRIMARY)
-    love.graphics.printf(titleText, 0, y, width, "center")
+    love.graphics.printf(layout.text, 0, layout.y, love.graphics.getWidth(), "center")
 
     -- Glow overlay
     love.graphics.setBlendMode("add", "alphamultiply")
     love.graphics.setColor(TITLE_GLOW)
-    love.graphics.printf(titleText, 0, y - 1, width, "center")
+    love.graphics.printf(layout.text, 0, layout.y - 1, love.graphics.getWidth(), "center")
 
     -- Animated sparkles around the banner edges
     love.graphics.setColor(1, 1, 1, 1)
@@ -294,18 +420,11 @@ function MainMenuScene:updateSelectionFromMouse(x, y)
 end
 
 local function seedSpark(scene)
-    local width = love.graphics.getWidth()
-    local font = scene.titleFont
-    local titleText = "DIABLO 2D"
-    local textWidth = font:getWidth(titleText)
-    local centerX = width / 2
-    local y = love.graphics.getHeight() * 0.18
-    local bannerPaddingX = 32
-    local bannerPaddingY = 16
-    local bannerX = centerX - textWidth / 2 - bannerPaddingX
-    local bannerY = y - bannerPaddingY
-    local bannerW = textWidth + bannerPaddingX * 2
-    local bannerH = font:getHeight() + bannerPaddingY * 2
+    local layout = getTitleLayout(scene)
+    local bannerX = layout.bannerX
+    local bannerY = layout.bannerY
+    local bannerW = layout.bannerW
+    local bannerH = layout.bannerH
 
     scene.titleSparks = scene.titleSparks or {}
     if #scene.titleSparks < TITLE_SPARK_COUNT then
@@ -335,8 +454,46 @@ local function seedSpark(scene)
     end
 end
 
+local function updateFireParticles(scene, layout, dt)
+    local particles = {}
+    for _, particle in ipairs(scene.fireParticles or {}) do
+        local life = particle.life - dt
+        if life > 0 then
+            particle.life = life
+            particle.y = particle.y - particle.speed * dt
+            particle.x = particle.x + particle.drift * dt
+            particle.size = particle.size * (1 - dt * 0.25)
+            particle.speed = particle.speed * (1 - dt * 0.08)
+            particles[#particles + 1] = particle
+        end
+    end
+
+    scene.fireParticles = particles
+    scene.fireSpawnTimer = (scene.fireSpawnTimer or 0) + dt
+
+    local spawnInterval = 1 / FIRE_PARTICLE_RATE
+    while scene.fireSpawnTimer >= spawnInterval do
+        scene.fireSpawnTimer = scene.fireSpawnTimer - spawnInterval
+        local x = love.math.random(layout.bannerX + 8, layout.bannerX + layout.bannerW - 8)
+        local y = layout.bannerY + layout.bannerH - 4
+        local size = love.math.random(7, 12)
+        local life = love.math.random() * 0.5 + 0.6
+
+        scene.fireParticles[#scene.fireParticles + 1] = {
+            x = x,
+            y = y,
+            size = size,
+            maxLife = life,
+            life = life,
+            speed = love.math.random() * 60 + 80,
+            drift = love.math.random() * 22 - 11,
+        }
+    end
+end
+
 function MainMenuScene:update(dt)
     self.time = (self.time or 0) + (dt or 0)
+    local layout = getTitleLayout(self)
     -- Remove expired sparks and replenish to target count for continuous effect
     local alive = {}
     for _, spark in ipairs(self.titleSparks or {}) do
@@ -350,6 +507,8 @@ function MainMenuScene:update(dt)
         seedSpark(self)
     end
 
+    updateFireParticles(self, layout, dt or 0)
+
     computeLayout(self.menuItems)
 
     -- Hover should mirror keyboard selection highlight
@@ -361,9 +520,12 @@ end
 
 function MainMenuScene:draw()
     computeLayout(self.menuItems)
+    local layout = getTitleLayout(self)
     drawBackground()
 
-    drawRetroTitle(self)
+    drawFireBackdrop(self, layout)
+    drawRetroTitle(self, layout)
+    drawFireParticles(self)
 
     love.graphics.setFont(self.buttonFont)
     for index, item in ipairs(self.menuItems) do
