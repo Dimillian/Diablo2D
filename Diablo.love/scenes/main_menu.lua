@@ -276,16 +276,6 @@ function MainMenuScene:draw()
             "center"
         )
     end
-
-    love.graphics.setFont(self.smallFont)
-    love.graphics.setColor(0.6, 0.5, 0.5, 0.9)
-    love.graphics.printf(
-        "Use arrows/W-S or mouse to navigate. Enter/click to select.",
-        0,
-        love.graphics.getHeight() - 36,
-        love.graphics.getWidth(),
-        "center"
-    )
 end
 
 function MainMenuScene:keypressed(key)
