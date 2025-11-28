@@ -12,6 +12,9 @@ local BUTTON_SPACING = 18
 local TITLE_PRIMARY = { 0.95, 0.78, 0.32, 1 }
 local TITLE_SHADOW = { 0.08, 0.02, 0.02, 0.9 }
 local TITLE_GLOW = { 0.7, 0.15, 0.05, 0.5 }
+local TITLE_SPARK_COLOR = { 0.95, 0.4, 0.2, 0.8 }
+local TITLE_SPARK_FADE = { 0.95, 0.6, 0.3, 0.0 }
+local TITLE_SPARK_COUNT = 14
 local BACKGROUND_TOP = { 0.08, 0.05, 0.05, 1 }
 local BACKGROUND_BOTTOM = { 0.06, 0.04, 0.08, 1 }
 local BUTTON_COLOR = { 0.18, 0.12, 0.12, 0.85 }
@@ -80,6 +83,8 @@ function MainMenuScene.new(opts)
         titleFont = love.graphics.newFont(54),
         buttonFont = love.graphics.newFont(22),
         smallFont = love.graphics.newFont(14),
+        titleSparks = {},
+        time = 0,
     }
 
     scene.selectedIndex = firstEnabledIndex(scene.menuItems)
@@ -127,7 +132,6 @@ local function drawRetroTitle(scene)
     love.graphics.setFont(font)
 
     local textWidth = font:getWidth(titleText)
-    local textHeight = font:getHeight()
     local centerX = width / 2
     local y = love.graphics.getHeight() * 0.18
     local bannerPaddingX = 32
@@ -135,7 +139,7 @@ local function drawRetroTitle(scene)
     local bannerX = centerX - textWidth / 2 - bannerPaddingX
     local bannerY = y - bannerPaddingY
     local bannerW = textWidth + bannerPaddingX * 2
-    local bannerH = textHeight + bannerPaddingY * 2
+    local bannerH = font:getHeight() + bannerPaddingY * 2
 
     -- Banner base
     love.graphics.setColor(0.08, 0.04, 0.04, 0.94)
@@ -163,6 +167,21 @@ local function drawRetroTitle(scene)
     love.graphics.setBlendMode("add", "alphamultiply")
     love.graphics.setColor(TITLE_GLOW)
     love.graphics.printf(titleText, 0, y - 1, width, "center")
+
+    -- Animated sparkles around the banner edges
+    love.graphics.setColor(1, 1, 1, 1)
+    local now = scene.time or 0
+    for _, spark in ipairs(scene.titleSparks or {}) do
+        local life = math.max(0, spark.start + spark.duration - now)
+        if life > 0 then
+            local t = life / spark.duration
+            local size = spark.size * (0.6 + 0.4 * t)
+            local alphaColor = mixColor(TITLE_SPARK_COLOR, TITLE_SPARK_FADE, 1 - t)
+            love.graphics.setColor(alphaColor)
+            love.graphics.circle("fill", spark.x, spark.y, size)
+        end
+    end
+
     love.graphics.setBlendMode("alpha")
 end
 
@@ -276,7 +295,51 @@ function MainMenuScene:updateSelectionFromMouse(x, y)
     end
 end
 
-function MainMenuScene:update(_dt)
+local function seedSpark(scene)
+    local width = love.graphics.getWidth()
+    local font = scene.titleFont
+    local titleText = "DIABLO 2D"
+    local textWidth = font:getWidth(titleText)
+    local centerX = width / 2
+    local y = love.graphics.getHeight() * 0.18
+    local bannerPaddingX = 32
+    local bannerPaddingY = 16
+    local bannerX = centerX - textWidth / 2 - bannerPaddingX
+    local bannerY = y - bannerPaddingY
+    local bannerW = textWidth + bannerPaddingX * 2
+    local bannerH = font:getHeight() + bannerPaddingY * 2
+
+    scene.titleSparks = scene.titleSparks or {}
+    if #scene.titleSparks < TITLE_SPARK_COUNT then
+        local edge = love.math.random(1, 4)
+        local x, yPos
+        if edge == 1 then
+            x = love.math.random(bannerX, bannerX + bannerW)
+            yPos = bannerY
+        elseif edge == 2 then
+            x = love.math.random(bannerX, bannerX + bannerW)
+            yPos = bannerY + bannerH
+        elseif edge == 3 then
+            x = bannerX
+            yPos = love.math.random(bannerY, bannerY + bannerH)
+        else
+            x = bannerX + bannerW
+            yPos = love.math.random(bannerY, bannerY + bannerH)
+        end
+
+        scene.titleSparks[#scene.titleSparks + 1] = {
+            x = x,
+            y = yPos,
+            size = love.math.random(3, 6),
+            duration = love.math.random() * 0.8 + 0.4,
+            start = scene.time,
+        }
+    end
+end
+
+function MainMenuScene:update(dt)
+    self.time = (self.time or 0) + (dt or 0)
+    seedSpark(self)
     computeLayout(self.menuItems)
 end
 
