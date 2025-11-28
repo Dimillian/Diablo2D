@@ -6,6 +6,7 @@ local MENU_ITEM_HEIGHT = 56
 local MENU_ITEM_SPACING = 14
 local MENU_WIDTH = 320
 local MENU_PADDING = 24
+local MENU_VERTICAL_PADDING = 16
 local MENU_ITEM_COUNT = 5
 
 function renderPauseMenu.draw(scene)
@@ -22,7 +23,9 @@ function renderPauseMenu.draw(scene)
     if itemWidth < 0 then
         itemWidth = 0
     end
-    local menuHeight = (MENU_ITEM_HEIGHT * MENU_ITEM_COUNT) + (MENU_ITEM_SPACING * (MENU_ITEM_COUNT - 1))
+    local menuHeight = (MENU_ITEM_HEIGHT * MENU_ITEM_COUNT)
+        + (MENU_ITEM_SPACING * (MENU_ITEM_COUNT - 1))
+        + (MENU_VERTICAL_PADDING * 2)
     local menuX = contentArea.x + (contentArea.width - menuWidth) / 2
     local menuY = contentArea.y + (contentArea.height - menuHeight) / 2
 
@@ -36,7 +39,7 @@ function renderPauseMenu.draw(scene)
     local font = love.graphics.getFont()
 
     -- Resume button
-    local resumeY = menuY
+    local resumeY = menuY + MENU_VERTICAL_PADDING
     local isResumeHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
         and mouseX <= menuX + menuWidth - MENU_PADDING
