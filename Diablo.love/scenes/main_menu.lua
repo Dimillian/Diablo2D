@@ -9,7 +9,9 @@ local BUTTON_WIDTH = 320
 local BUTTON_HEIGHT = 56
 local BUTTON_SPACING = 18
 
-local TITLE_COLOR = { 0.9, 0.85, 0.75, 1 }
+local TITLE_PRIMARY = { 0.95, 0.78, 0.32, 1 }
+local TITLE_SHADOW = { 0.08, 0.02, 0.02, 0.9 }
+local TITLE_GLOW = { 0.7, 0.15, 0.05, 0.5 }
 local BACKGROUND_TOP = { 0.08, 0.05, 0.05, 1 }
 local BACKGROUND_BOTTOM = { 0.06, 0.04, 0.08, 1 }
 local BUTTON_COLOR = { 0.18, 0.12, 0.12, 0.85 }
@@ -75,7 +77,7 @@ function MainMenuScene.new(opts)
         menuItems = makeMenuItems(hasSave),
         selectedIndex = 1,
         statusMessage = nil,
-        titleFont = love.graphics.newFont(44),
+        titleFont = love.graphics.newFont(54),
         buttonFont = love.graphics.newFont(22),
         smallFont = love.graphics.newFont(14),
     }
@@ -116,6 +118,52 @@ local function drawBackground()
         local nextY = (step + 1) / math.max(steps, 1) * height
         love.graphics.rectangle("fill", 0, y, width, math.max(1, nextY - y))
     end
+end
+
+local function drawRetroTitle(scene)
+    local width = love.graphics.getWidth()
+    local titleText = "DIABLO 2D"
+    local font = scene.titleFont
+    love.graphics.setFont(font)
+
+    local textWidth = font:getWidth(titleText)
+    local textHeight = font:getHeight()
+    local centerX = width / 2
+    local y = love.graphics.getHeight() * 0.18
+    local bannerPaddingX = 32
+    local bannerPaddingY = 16
+    local bannerX = centerX - textWidth / 2 - bannerPaddingX
+    local bannerY = y - bannerPaddingY
+    local bannerW = textWidth + bannerPaddingX * 2
+    local bannerH = textHeight + bannerPaddingY * 2
+
+    -- Banner base
+    love.graphics.setColor(0.08, 0.04, 0.04, 0.94)
+    love.graphics.rectangle("fill", bannerX, bannerY, bannerW, bannerH, 10, 10)
+
+    -- Banner highlight band
+    love.graphics.setColor(0.25, 0.12, 0.12, 0.7)
+    love.graphics.rectangle("fill", bannerX, bannerY, bannerW, bannerH * 0.45, 10, 10)
+
+    -- Inner border
+    love.graphics.setLineWidth(2)
+    love.graphics.setColor(0.85, 0.45, 0.25, 0.8)
+    love.graphics.rectangle("line", bannerX + 2, bannerY + 2, bannerW - 4, bannerH - 4, 8, 8)
+
+    -- Shadow pass
+    love.graphics.setColor(TITLE_SHADOW)
+    love.graphics.printf(titleText, 0, y + 3, width, "center")
+    love.graphics.printf(titleText, 2, y + 1, width, "center")
+
+    -- Main text
+    love.graphics.setColor(TITLE_PRIMARY)
+    love.graphics.printf(titleText, 0, y, width, "center")
+
+    -- Glow overlay
+    love.graphics.setBlendMode("add", "alphamultiply")
+    love.graphics.setColor(TITLE_GLOW)
+    love.graphics.printf(titleText, 0, y - 1, width, "center")
+    love.graphics.setBlendMode("alpha")
 end
 
 local function pointInRect(x, y, rect)
@@ -236,10 +284,7 @@ function MainMenuScene:draw()
     computeLayout(self.menuItems)
     drawBackground()
 
-    love.graphics.setFont(self.titleFont)
-    love.graphics.setColor(TITLE_COLOR)
-    local width = love.graphics.getWidth()
-    love.graphics.printf("Diablo 2D", 0, love.graphics.getHeight() * 0.22, width, "center")
+    drawRetroTitle(self)
 
     love.graphics.setFont(self.buttonFont)
     for index, item in ipairs(self.menuItems) do
