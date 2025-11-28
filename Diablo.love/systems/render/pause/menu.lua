@@ -6,8 +6,7 @@ local MENU_ITEM_HEIGHT = 56
 local MENU_ITEM_SPACING = 14
 local MENU_WIDTH = 320
 local MENU_PADDING = 24
-local MENU_VERTICAL_PADDING = 16
-local MENU_ITEM_COUNT = 5
+local MENU_VERTICAL_PADDING = 24
 
 function renderPauseMenu.draw(scene)
     renderWindowChrome.draw(scene, scene.windowChromeConfig)
@@ -23,11 +22,15 @@ function renderPauseMenu.draw(scene)
     if itemWidth < 0 then
         itemWidth = 0
     end
-    local menuHeight = (MENU_ITEM_HEIGHT * MENU_ITEM_COUNT)
-        + (MENU_ITEM_SPACING * (MENU_ITEM_COUNT - 1))
-        + (MENU_VERTICAL_PADDING * 2)
     local menuX = contentArea.x + (contentArea.width - menuWidth) / 2
-    local menuY = contentArea.y + (contentArea.height - menuHeight) / 2
+
+    local totalMenuHeight = (MENU_ITEM_HEIGHT * 5) + (MENU_ITEM_SPACING * 4)
+    local availableHeight = contentArea.height
+    local startOffset = (availableHeight - totalMenuHeight) / 2
+    if startOffset < MENU_VERTICAL_PADDING then
+        startOffset = MENU_VERTICAL_PADDING
+    end
+    local menuY = contentArea.y + startOffset
 
     -- Only show hover states if this scene is the current top scene
     local isTopScene = false
@@ -39,7 +42,7 @@ function renderPauseMenu.draw(scene)
     local font = love.graphics.getFont()
 
     -- Resume button
-    local resumeY = menuY + MENU_VERTICAL_PADDING
+    local resumeY = menuY
     local isResumeHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
         and mouseX <= menuX + menuWidth - MENU_PADDING
