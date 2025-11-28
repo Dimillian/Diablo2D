@@ -3,6 +3,7 @@
 local SceneKinds = {}
 
 SceneKinds.WORLD = "world"
+SceneKinds.MAIN_MENU = "main_menu"
 SceneKinds.INVENTORY = "inventory"
 SceneKinds.SKILLS = "skills"
 SceneKinds.PAUSE = "pause"
