@@ -51,7 +51,7 @@ function soundHelper.generateRetroSound(opts)
         local noise = (math.random() - 0.5) * noiseAmount
 
         -- Apply envelope: attack and decay (skip decay for looping sounds)
-        local envelope = 1.0
+        local envelope
         if looping then
             -- For looping sounds, only apply quick attack at start, no decay
             if t < attackTime then
@@ -181,7 +181,7 @@ function soundHelper.generateFireballImpactSound()
         local hiss = (math.random() - 0.5) * 0.3
 
         -- Explosion envelope: quick attack, fast decay
-        local envelope = 1.0
+        local envelope
         if t < 0.003 then
             envelope = t / 0.003
         else
@@ -325,7 +325,7 @@ function soundHelper.generateThunderImpactSound()
         local rumble = ((rumblePhase < 0.5) and 1.0 or -1.0) * 0.25
 
         -- Thunder envelope: instant crack, then deep rumble decay
-        local envelope = 1.0
+        local envelope
         if t < 0.005 then
             envelope = 1.0 -- Instant crack
         else
