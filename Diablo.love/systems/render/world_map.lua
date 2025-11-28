@@ -121,11 +121,14 @@ local function drawChunkRectangles(scene, layout)
     love.graphics.setScissor(mapX, mapY, mapWidth, mapHeight)
     love.graphics.setColor(MAP_CONFIG.gridColor)
     love.graphics.setLineWidth(1)
-    for column = bounds.minX, bounds.maxX + 1 do
+    local gridHalfCols = math.ceil(mapWidth / chunkPixelSize / 2) + 1
+    local gridHalfRows = math.ceil(mapHeight / chunkPixelSize / 2) + 1
+
+    for column = centerChunkX - gridHalfCols, centerChunkX + gridHalfCols do
         local x = mapCenterX + (column - centerChunkX) * chunkPixelSize - halfChunk
         love.graphics.line(x, mapY, x, mapY + mapHeight)
     end
-    for row = bounds.minY, bounds.maxY + 1 do
+    for row = centerChunkY - gridHalfRows, centerChunkY + gridHalfRows do
         local y = mapCenterY + (row - centerChunkY) * chunkPixelSize - halfChunk
         love.graphics.line(mapX, y, mapX + mapWidth, y)
     end
