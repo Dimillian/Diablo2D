@@ -6,7 +6,7 @@ local MENU_ITEM_HEIGHT = 56
 local MENU_ITEM_SPACING = 14
 local MENU_WIDTH = 320
 local MENU_PADDING = 24
-local MENU_ITEM_COUNT = 4
+local MENU_ITEM_COUNT = 5
 
 function renderPauseMenu.draw(scene)
     renderWindowChrome.draw(scene, scene.windowChromeConfig)
@@ -108,8 +108,36 @@ function renderPauseMenu.draw(scene)
     love.graphics.setColor(0.9, 0.85, 0.65, 1)
     love.graphics.print(crtLabel, menuX + MENU_PADDING + 10, crtY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
 
+    -- Main menu button
+    local mainMenuY = crtY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
+    local isMainMenuHovered = isTopScene
+        and mouseX >= menuX + MENU_PADDING
+        and mouseX <= menuX + menuWidth - MENU_PADDING
+        and mouseY >= mainMenuY
+        and mouseY <= mainMenuY + MENU_ITEM_HEIGHT
+
+    if isMainMenuHovered then
+        love.graphics.setColor(0.35, 0.25, 0.25, 1)
+        love.graphics.rectangle(
+            "fill",
+            menuX + MENU_PADDING,
+            mainMenuY,
+            itemWidth,
+            MENU_ITEM_HEIGHT,
+            4,
+            4
+        )
+    end
+
+    love.graphics.setColor(0.95, 0.75, 0.75, 1)
+    love.graphics.print(
+        "Return to Main Menu",
+        menuX + MENU_PADDING + 10,
+        mainMenuY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2
+    )
+
     -- Quit button
-    local quitY = crtY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
+    local quitY = mainMenuY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
     local isQuitHovered = isTopScene
         and mouseX >= menuX + MENU_PADDING
         and mouseX <= menuX + menuWidth - MENU_PADDING
@@ -149,6 +177,12 @@ function renderPauseMenu.draw(scene)
     scene.menuRects.crt = {
         x = menuX + MENU_PADDING,
         y = crtY,
+        w = itemWidth,
+        h = MENU_ITEM_HEIGHT,
+    }
+    scene.menuRects.mainMenu = {
+        x = menuX + MENU_PADDING,
+        y = mainMenuY,
         w = itemWidth,
         h = MENU_ITEM_HEIGHT,
     }

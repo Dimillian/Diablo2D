@@ -2,6 +2,7 @@ local renderPauseMenu = require("systems.render.pause.menu")
 local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
+local MainMenuScene = require("scenes.main_menu")
 local CRTShader = require("modules.crt_shader")
 
 local PauseScene = {}
@@ -123,6 +124,15 @@ function PauseScene:mousepressed(x, y, button)
         end
     end
 
+    -- Return to main menu
+    if rects.mainMenu then
+        local rect = rects.mainMenu
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            self:returnToMainMenu()
+            return
+        end
+    end
+
     -- Quit button
     if rects.quit then
         local rect = rects.quit
@@ -139,6 +149,29 @@ end
 
 function PauseScene:toggleCRT()
     CRTShader.toggle()
+end
+
+function PauseScene:returnToMainMenu()
+    local manager = self.world and self.world.sceneManager
+    if not manager then
+        return
+    end
+
+    -- Pop pause menu itself
+    manager:pop()
+
+    -- Pop world scene if present
+    local current = manager:current()
+    if current and current.kind == SceneKinds.WORLD then
+        manager:pop()
+    end
+
+    -- Push a fresh main menu
+    manager:push(
+        MainMenuScene.new({
+            sceneManager = manager,
+        })
+    )
 end
 
 return PauseScene
