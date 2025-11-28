@@ -7,6 +7,21 @@ local renderWorldMap = require("systems.render.world_map")
 
 local WorldMapScene = {}
 WorldMapScene.__index = WorldMapScene
+local ZOOM_CONFIG = {
+    minZoom = 0.5,
+    maxZoom = 2.5,
+    step = 0.2,
+}
+
+local function clampZoom(value)
+    if value < ZOOM_CONFIG.minZoom then
+        return ZOOM_CONFIG.minZoom
+    end
+    if value > ZOOM_CONFIG.maxZoom then
+        return ZOOM_CONFIG.maxZoom
+    end
+    return value
+end
 
 function WorldMapScene.new(opts)
     opts = opts or {}
@@ -28,6 +43,10 @@ function WorldMapScene.new(opts)
                 renderWorldMap.draw,
             },
         },
+        zoom = clampZoom(opts.zoom or 1),
+        minZoom = ZOOM_CONFIG.minZoom,
+        maxZoom = ZOOM_CONFIG.maxZoom,
+        zoomStep = ZOOM_CONFIG.step,
     }
 
     scene.windowChromeConfig = {
@@ -47,6 +66,7 @@ function WorldMapScene:enter()
     if not self.detailFont then
         self.detailFont = love.graphics.newFont(14)
     end
+    self.zoom = clampZoom(self.zoom or 1)
 end
 
 -- luacheck: ignore 212/self
@@ -78,6 +98,16 @@ function WorldMapScene:keypressed(key)
     if self.world and self.world.sceneManager then
         self.world.sceneManager:toggleWorldMap(key)
     end
+end
+
+function WorldMapScene:wheelmoved(_x, y)
+    if y == 0 then
+        return
+    end
+
+    local zoom = self.zoom or 1
+    zoom = zoom + (self.zoomStep or ZOOM_CONFIG.step) * y
+    self.zoom = clampZoom(zoom)
 end
 
 function WorldMapScene:mousepressed(x, y, button)

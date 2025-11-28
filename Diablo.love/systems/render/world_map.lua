@@ -16,6 +16,24 @@ local MAP_CONFIG = {
 local ZONE_HASH_X = 73856093
 local ZONE_HASH_Y = 19349663
 
+local function resolveZoom(scene)
+    if not scene then
+        return 1
+    end
+
+    local zoom = scene.zoom or 1
+    local minZoom = scene.minZoom or 0.5
+    local maxZoom = scene.maxZoom or 2.5
+
+    if zoom < minZoom then
+        return minZoom
+    end
+    if zoom > maxZoom then
+        return maxZoom
+    end
+    return zoom
+end
+
 local function computeChunkBounds(chunks)
     local minX, maxX = math.huge, -math.huge
     local minY, maxY = math.huge, -math.huge
@@ -79,13 +97,16 @@ local function drawChunkRectangles(scene, layout)
     love.graphics.setColor(MAP_CONFIG.backgroundColor)
     love.graphics.rectangle("fill", mapX, mapY, mapWidth, mapHeight, 0, 0)
 
-    local cellSize = math.min(mapWidth / bounds.width, mapHeight / bounds.height)
+    local zoom = resolveZoom(scene)
+    local cellSize = math.min(mapWidth / bounds.width, mapHeight / bounds.height) * zoom
     local drawWidth = cellSize * bounds.width
     local drawHeight = cellSize * bounds.height
     local originX = mapX + (mapWidth - drawWidth) / 2
     local originY = mapY + (mapHeight - drawHeight) / 2
 
     -- Draw grid lines
+    love.graphics.push("all")
+    love.graphics.setScissor(mapX, mapY, mapWidth, mapHeight)
     love.graphics.setColor(MAP_CONFIG.gridColor)
     love.graphics.setLineWidth(1)
     for column = 0, bounds.width do
@@ -192,6 +213,9 @@ local function drawChunkRectangles(scene, layout)
         love.graphics.setLineWidth(2)
         love.graphics.circle("line", centerX, centerY, radius + 2)
     end
+
+    love.graphics.setScissor()
+    love.graphics.pop()
 end
 
 function worldMapRenderer.draw(scene)
