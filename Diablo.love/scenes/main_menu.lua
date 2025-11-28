@@ -1,7 +1,7 @@
 local SceneKinds = require("modules.scene_kinds")
 local WorldScene = require("scenes.world")
 local WorldState = require("modules.world_state")
-local FireEffect = require("effects.fire")
+local EmberEffect = require("effects.ember")
 
 local MainMenuScene = {}
 MainMenuScene.__index = MainMenuScene
@@ -89,7 +89,7 @@ function MainMenuScene.new(opts)
         buttonFont = love.graphics.newFont(22),
         smallFont = love.graphics.newFont(14),
         titleSparks = {},
-        titleFire = FireEffect.createBandEmitter({
+        titleFire = EmberEffect.createBandEmitter({
             rate = FIRE_PARTICLE_RATE,
             sizeMin = 4,
             sizeMax = 8,
@@ -100,7 +100,7 @@ function MainMenuScene.new(opts)
             startColor = FIRE_PARTICLE_START,
             endColor = FIRE_PARTICLE_END,
         }),
-        bottomFire = FireEffect.createBandEmitter({
+        bottomFire = EmberEffect.createBandEmitter({
             rate = PANEL_FIRE_PARTICLE_RATE,
             sizeMin = 7,
             sizeMax = 13,
@@ -410,11 +410,11 @@ function MainMenuScene:update(dt)
 
     local titleFireH = layout.bannerH * 0.95
     local titleFireY = layout.bannerY + layout.bannerH - titleFireH
-    FireEffect.setBandArea(self.titleFire, layout.bannerX, titleFireY, layout.bannerW, titleFireH)
-    FireEffect.update(self.titleFire, dt or 0)
+    EmberEffect.setBandArea(self.titleFire, layout.bannerX, titleFireY, layout.bannerW, titleFireH)
+    EmberEffect.update(self.titleFire, dt or 0)
 
-    FireEffect.setBandArea(self.bottomFire, bottomArea.x, bottomArea.y, bottomArea.w, bottomArea.h)
-    FireEffect.update(self.bottomFire, dt or 0)
+    EmberEffect.setBandArea(self.bottomFire, bottomArea.x, bottomArea.y, bottomArea.w, bottomArea.h)
+    EmberEffect.update(self.bottomFire, dt or 0)
 
     -- Hover should mirror keyboard selection highlight
     local mouseX, mouseY = love.mouse.getPosition()
@@ -426,11 +426,11 @@ function MainMenuScene:draw()
     local layout = getTitleLayout(self)
     drawBackground()
 
-    FireEffect.drawBand(self.bottomFire, self.time, 0.82)
+    EmberEffect.drawBand(self.bottomFire, self.time, 0.82)
 
-    FireEffect.drawBand(self.titleFire, self.time, 0.8)
+    EmberEffect.drawBand(self.titleFire, self.time, 0.8)
     drawRetroTitle(self, layout)
-    FireEffect.drawParticles(self.titleFire)
+    EmberEffect.drawParticles(self.titleFire)
 
     love.graphics.setFont(self.buttonFont)
     for index, item in ipairs(self.menuItems) do
@@ -456,7 +456,7 @@ function MainMenuScene:draw()
         love.graphics.printf(item.label, rect.x, rect.y + rect.h / 2 - 12, rect.w, "center")
     end
 
-    FireEffect.drawParticles(self.bottomFire)
+    EmberEffect.drawParticles(self.bottomFire)
 
     if self.statusMessage then
         love.graphics.setFont(self.smallFont)

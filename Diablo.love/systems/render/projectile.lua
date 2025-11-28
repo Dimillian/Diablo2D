@@ -1,11 +1,13 @@
 local Spells = require("data.spells")
 local coordinates = require("systems.helpers.coordinates")
-local FireEffect = require("effects.fire")
+local EmberEffect = require("effects.ember")
 
 local renderProjectileSystem = {}
 
 local TWO_PI = math.pi * 2
 local fireballEmitters = {}
+local thunderEmitters = {}
+local thunderImpactBursts = {}
 local lastRenderTime = nil
 
 local function clamp(value, minValue, maxValue)
@@ -38,7 +40,7 @@ local function getFireballEmitter(projectileId, radius)
         return emitter
     end
 
-    emitter = FireEffect.createRadialEmitter({
+    emitter = EmberEffect.createRadialEmitter({
         radius = radius * 1.1,
         rate = 28,
         sizeMin = 2,
@@ -54,6 +56,57 @@ local function getFireballEmitter(projectileId, radius)
     })
     fireballEmitters[projectileId] = emitter
     return emitter
+end
+
+local function getThunderEmitter(projectileId, radius)
+    local emitter = thunderEmitters[projectileId]
+    if emitter then
+        return emitter
+    end
+
+    emitter = EmberEffect.createRadialEmitter({
+        radius = radius * 0.9,
+        rate = 52,
+        sizeMin = 2,
+        sizeMax = 5,
+        lifeBase = 0.38,
+        speedMin = 140,
+        speedMax = 210,
+        driftMin = -34,
+        driftMax = 34,
+        pixelScale = 0.9,
+        startColor = { 0.74, 0.95, 1.0, 0.95 },
+        endColor = { 0.12, 0.6, 1.0, 0.0 },
+    })
+    thunderEmitters[projectileId] = emitter
+    return emitter
+end
+
+local function spawnThunderImpactBurst(position, radius)
+    local emitter = EmberEffect.createRadialEmitter({
+        radius = radius * 1.4,
+        rate = 320,
+        sizeMin = 2,
+        sizeMax = 4,
+        lifeBase = 0.24,
+        speedMin = 320,
+        speedMax = 520,
+        driftMin = -90,
+        driftMax = 90,
+        pixelScale = 0.9,
+        startColor = { 0.85, 0.98, 1.0, 1.0 },
+        endColor = { 0.2, 0.65, 1.0, 0.0 },
+    })
+    EmberEffect.setAnchor(emitter, position.x, position.y)
+    -- Prime a tight burst instantly
+    EmberEffect.update(emitter, 0.04)
+    EmberEffect.update(emitter, 0.02)
+    emitter.rate = 0
+
+    thunderImpactBursts[#thunderImpactBursts + 1] = {
+        emitter = emitter,
+        timeToLive = 0.55,
+    }
 end
 
 local function drawSimpleImpact(args)
@@ -326,7 +379,8 @@ function renderProjectileSystem.draw(world)
         dt = math.max(0, time - lastRenderTime)
     end
     lastRenderTime = time
-    local activeEmitters = {}
+    local activeFireballEmitters = {}
+    local activeThunderEmitters = {}
 
     for _, projectile in ipairs(projectiles) do
         local projectileComponent = projectile.projectile
@@ -371,6 +425,7 @@ function renderProjectileSystem.draw(world)
         if state == "impact" then
             if projectileId then
                 fireballEmitters[projectileId] = nil
+                thunderEmitters[projectileId] = nil
             end
             local impactPosition = projectileComponent.impactPosition
             if impactPosition and impactPosition.x and impactPosition.y then
@@ -393,6 +448,9 @@ function renderProjectileSystem.draw(world)
                     duration = projectileComponent.impactDuration,
                 })
             elseif renderable.kind == "thunder" then
+                if projectileComponent.impactPosition then
+                    spawnThunderImpactBurst(projectileComponent.impactPosition, radius)
+                end
                 drawImpactThunder({
                     centerX = centerX,
                     centerY = centerY,
@@ -423,10 +481,10 @@ function renderProjectileSystem.draw(world)
         if renderable.kind == "fireball" then
             if projectileId then
                 local emitter = getFireballEmitter(projectileId, radius)
-                FireEffect.setAnchor(emitter, centerX, centerY)
-                FireEffect.update(emitter, dt)
-                activeEmitters[projectileId] = true
-                FireEffect.drawParticles(emitter)
+                EmberEffect.setAnchor(emitter, centerX, centerY)
+                EmberEffect.update(emitter, dt)
+                activeFireballEmitters[projectileId] = true
+                EmberEffect.drawParticles(emitter)
             end
 
             local lastDirX = projectileComponent.lastDirectionX
@@ -457,6 +515,14 @@ function renderProjectileSystem.draw(world)
                 boltLength = spell.projectileBoltLength
             end
 
+            if projectileId then
+                local emitter = getThunderEmitter(projectileId, radius)
+                EmberEffect.setAnchor(emitter, centerX, centerY)
+                EmberEffect.update(emitter, dt)
+                activeThunderEmitters[projectileId] = true
+                EmberEffect.drawParticles(emitter)
+            end
+
             drawFlyingThunder({
                 centerX = centerX,
                 centerY = centerY,
@@ -483,8 +549,26 @@ function renderProjectileSystem.draw(world)
     end
 
     for id in pairs(fireballEmitters) do
-        if not activeEmitters[id] then
+        if not activeFireballEmitters[id] then
             fireballEmitters[id] = nil
+        end
+    end
+
+    for id in pairs(thunderEmitters) do
+        if not activeThunderEmitters[id] then
+            thunderEmitters[id] = nil
+        end
+    end
+
+    -- Draw and cull thunder impact bursts
+    for index = #thunderImpactBursts, 1, -1 do
+        local burst = thunderImpactBursts[index]
+        if burst.timeToLive <= 0 and (#(burst.emitter.particles or {}) == 0) then
+            table.remove(thunderImpactBursts, index)
+        else
+            EmberEffect.update(burst.emitter, dt)
+            EmberEffect.drawParticles(burst.emitter)
+            burst.timeToLive = burst.timeToLive - dt
         end
     end
 

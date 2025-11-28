@@ -1,4 +1,4 @@
-local FireEffect = {}
+local EmberEffect = {}
 
 local DEFAULT_START_COLOR = { 1.0, 0.96, 0.65, 1.0 }
 local DEFAULT_END_COLOR = { 1.0, 0.4, 0.08, 0.0 }
@@ -95,20 +95,20 @@ local function createBaseEmitter(opts)
     }
 end
 
-function FireEffect.createBandEmitter(opts)
+function EmberEffect.createBandEmitter(opts)
     local emitter = createBaseEmitter(opts)
     emitter.mode = "band"
     return emitter
 end
 
-function FireEffect.createRadialEmitter(opts)
+function EmberEffect.createRadialEmitter(opts)
     local emitter = createBaseEmitter(opts)
     emitter.mode = "radial"
     emitter.radius = opts.radius or 16
     return emitter
 end
 
-function FireEffect.setBandArea(emitter, x, y, w, h)
+function EmberEffect.setBandArea(emitter, x, y, w, h)
     if not emitter then
         return
     end
@@ -119,7 +119,7 @@ function FireEffect.setBandArea(emitter, x, y, w, h)
     emitter.band.h = h or emitter.band.h or 0
 end
 
-function FireEffect.setAnchor(emitter, x, y)
+function EmberEffect.setAnchor(emitter, x, y)
     if not emitter then
         return
     end
@@ -172,7 +172,7 @@ local function spawnParticle(emitter)
     }
 end
 
-function FireEffect.update(emitter, dt)
+function EmberEffect.update(emitter, dt)
     if not emitter or not dt or dt <= 0 then
         return
     end
@@ -192,14 +192,19 @@ function FireEffect.update(emitter, dt)
     emitter.particles = particles
 
     emitter.timer = (emitter.timer or 0) + dt
-    local spawnInterval = 1 / (emitter.rate or 1)
-    while emitter.timer >= spawnInterval do
-        emitter.timer = emitter.timer - spawnInterval
-        emitter.particles[#emitter.particles + 1] = spawnParticle(emitter)
+    local rate = emitter.rate or 0
+    if rate > 0 then
+        local spawnInterval = 1 / rate
+        while emitter.timer >= spawnInterval do
+            emitter.timer = emitter.timer - spawnInterval
+            emitter.particles[#emitter.particles + 1] = spawnParticle(emitter)
+        end
+    else
+        emitter.timer = 0
     end
 end
 
-function FireEffect.drawBand(emitter, time, alpha)
+function EmberEffect.drawBand(emitter, time, alpha)
     if not emitter or emitter.mode ~= "band" then
         return
     end
@@ -215,7 +220,7 @@ function FireEffect.drawBand(emitter, time, alpha)
     love.graphics.pop()
 end
 
-function FireEffect.drawParticles(emitter)
+function EmberEffect.drawParticles(emitter)
     if not emitter or not emitter.particles then
         return
     end
@@ -248,4 +253,4 @@ function FireEffect.drawParticles(emitter)
     love.graphics.pop()
 end
 
-return FireEffect
+return EmberEffect
