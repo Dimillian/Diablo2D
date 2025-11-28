@@ -339,7 +339,19 @@ end
 
 function MainMenuScene:update(dt)
     self.time = (self.time or 0) + (dt or 0)
-    seedSpark(self)
+    -- Remove expired sparks and replenish to target count for continuous effect
+    local alive = {}
+    for _, spark in ipairs(self.titleSparks or {}) do
+        if self.time < spark.start + spark.duration then
+            alive[#alive + 1] = spark
+        end
+    end
+    self.titleSparks = alive
+
+    while #self.titleSparks < TITLE_SPARK_COUNT do
+        seedSpark(self)
+    end
+
     computeLayout(self.menuItems)
 end
 
