@@ -26,7 +26,7 @@ function PauseScene.new(opts)
         title = scene.title,
         layout = {
             widthRatio = 0.38,
-            heightRatio = 0.5,
+            heightRatio = 0.6,
             headerHeight = 64,
             padding = 28,
         },

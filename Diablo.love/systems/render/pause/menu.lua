@@ -6,7 +6,7 @@ local MENU_ITEM_HEIGHT = 56
 local MENU_ITEM_SPACING = 14
 local MENU_WIDTH = 320
 local MENU_PADDING = 24
-local MENU_VERTICAL_PADDING = 24
+local MENU_VERTICAL_PADDING = 12
 
 function renderPauseMenu.draw(scene)
     renderWindowChrome.draw(scene, scene.windowChromeConfig)
