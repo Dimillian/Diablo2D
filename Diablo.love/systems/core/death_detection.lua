@@ -74,6 +74,12 @@ function deathDetectionSystem.update(world, dt) -- luacheck: ignore 212/dt
                 foeExperience = foeExperience,
                 time = world.time or 0,
             })
+
+            if world.playerId == entity.id or entity.playerControlled then
+                if world.triggerGameOver then
+                    world:triggerGameOver()
+                end
+            end
         end
 
         ::continue::
