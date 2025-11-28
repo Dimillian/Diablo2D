@@ -11,6 +11,7 @@ local MAP_CONFIG = {
     gridColor = { 0.2, 0.2, 0.2, 0.65 },
     playerFill = { 0.18, 0.82, 0.28, 1 },
     playerOutline = { 0.05, 0.28, 0.05, 1 },
+    baseChunkPixelSize = 40,
 }
 
 local ZONE_HASH_X = 73856093
@@ -98,24 +99,35 @@ local function drawChunkRectangles(scene, layout)
     love.graphics.rectangle("fill", mapX, mapY, mapWidth, mapHeight, 0, 0)
 
     local zoom = resolveZoom(scene)
-    local cellSize = math.min(mapWidth / bounds.width, mapHeight / bounds.height) * zoom
-    local drawWidth = cellSize * bounds.width
-    local drawHeight = cellSize * bounds.height
-    local originX = mapX + (mapWidth - drawWidth) / 2
-    local originY = mapY + (mapHeight - drawHeight) / 2
+    local chunkPixelSize = (MAP_CONFIG.baseChunkPixelSize or 40) * zoom
+    local halfChunk = chunkPixelSize / 2
+    local mapCenterX = mapX + mapWidth / 2
+    local mapCenterY = mapY + mapHeight / 2
 
-    -- Draw grid lines
+    local player = world:getPlayer()
+    local chunkSize = world.chunkManager and world.chunkManager.chunkSize or 1
+    local centerChunkX
+    local centerChunkY
+    if player and player.position then
+        centerChunkX = math.floor(player.position.x / chunkSize)
+        centerChunkY = math.floor(player.position.y / chunkSize)
+    else
+        centerChunkX = math.floor((bounds.minX + bounds.maxX) / 2)
+        centerChunkY = math.floor((bounds.minY + bounds.maxY) / 2)
+    end
+
+    -- Draw grid lines over the content area; zoom changes chunk spacing, not the container size.
     love.graphics.push("all")
     love.graphics.setScissor(mapX, mapY, mapWidth, mapHeight)
     love.graphics.setColor(MAP_CONFIG.gridColor)
     love.graphics.setLineWidth(1)
-    for column = 0, bounds.width do
-        local x = originX + column * cellSize
-        love.graphics.line(x, originY, x, originY + drawHeight)
+    for column = bounds.minX, bounds.maxX + 1 do
+        local x = mapCenterX + (column - centerChunkX) * chunkPixelSize - halfChunk
+        love.graphics.line(x, mapY, x, mapY + mapHeight)
     end
-    for row = 0, bounds.height do
-        local y = originY + row * cellSize
-        love.graphics.line(originX, y, originX + drawWidth, y)
+    for row = bounds.minY, bounds.maxY + 1 do
+        local y = mapCenterY + (row - centerChunkY) * chunkPixelSize - halfChunk
+        love.graphics.line(mapX, y, mapX + mapWidth, y)
     end
 
     local regions = {}
@@ -123,8 +135,8 @@ local function drawChunkRectangles(scene, layout)
     for _, chunk in pairs(chunks) do
         local col = chunk.chunkX - bounds.minX
         local row = chunk.chunkY - bounds.minY
-        local rectX = originX + col * cellSize
-        local rectY = originY + row * cellSize
+        local rectX = mapCenterX + (chunk.chunkX - centerChunkX) * chunkPixelSize - halfChunk
+        local rectY = mapCenterY + (chunk.chunkY - centerChunkY) * chunkPixelSize - halfChunk
 
         local biome = biomes.getById(chunk.biomeId)
         local baseColor = biome and biome.tileColors.primary or { 0.35, 0.35, 0.35, 1 }
@@ -133,10 +145,10 @@ local function drawChunkRectangles(scene, layout)
         local alpha = visited and MAP_CONFIG.exploredAlpha or MAP_CONFIG.unexploredAlpha
 
         love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], alpha)
-        love.graphics.rectangle("fill", rectX, rectY, cellSize, cellSize)
+        love.graphics.rectangle("fill", rectX, rectY, chunkPixelSize, chunkPixelSize)
 
         love.graphics.setColor(accent[1], accent[2], accent[3], alpha * 0.85 + 0.1)
-        love.graphics.rectangle("line", rectX, rectY, cellSize, cellSize)
+        love.graphics.rectangle("line", rectX, rectY, chunkPixelSize, chunkPixelSize)
 
         local name = chunk.zoneName or chunk.biomeLabel or chunk.biomeId or "?"
         local zoneSeed = chunk.zoneSeed or chunk.seed or (chunk.chunkX * ZONE_HASH_X + chunk.chunkY * ZONE_HASH_Y)
@@ -163,8 +175,8 @@ local function drawChunkRectangles(scene, layout)
             region.maxRow = math.max(region.maxRow, row)
         end
 
-        local centerX = originX + (col + 0.5) * cellSize
-        local centerY = originY + (row + 0.5) * cellSize
+        local centerX = rectX + halfChunk
+        local centerY = rectY + halfChunk
         region.sumX = region.sumX + centerX
         region.sumY = region.sumY + centerY
         region.count = region.count + 1
@@ -180,7 +192,7 @@ local function drawChunkRectangles(scene, layout)
         if region.count > 0 and region.name and region.name ~= "" then
             local centerX = region.sumX / region.count
             local centerY = region.sumY / region.count - font:getHeight() / 2
-            local width = math.max(cellSize, (region.maxCol - region.minCol + 1) * cellSize)
+            local width = math.max(chunkPixelSize, (region.maxCol - region.minCol + 1) * chunkPixelSize)
             local opacity = region.visitedCount > 0 and 1 or 0.5
 
             love.graphics.setColor(0, 0, 0, opacity * 0.5)
@@ -191,21 +203,12 @@ local function drawChunkRectangles(scene, layout)
         end
     end
 
-    local player = world:getPlayer()
     if player and player.position then
-        local chunkSize = world.chunkManager and world.chunkManager.chunkSize or 1
-        local chunkX = math.floor(player.position.x / chunkSize)
-        local chunkY = math.floor(player.position.y / chunkSize)
-        local chunkOriginX = chunkX * chunkSize
-        local chunkOriginY = chunkY * chunkSize
-        local offsetX = math.max(0, math.min(1, (player.position.x - chunkOriginX) / chunkSize))
-        local offsetY = math.max(0, math.min(1, (player.position.y - chunkOriginY) / chunkSize))
-
-        local col = chunkX - bounds.minX
-        local row = chunkY - bounds.minY
-        local centerX = originX + (col + offsetX) * cellSize
-        local centerY = originY + (row + offsetY) * cellSize
-        local radius = math.max(4, cellSize * 0.08)
+        local chunkCoordX = player.position.x / chunkSize
+        local chunkCoordY = player.position.y / chunkSize
+        local centerX = mapCenterX + (chunkCoordX - centerChunkX) * chunkPixelSize
+        local centerY = mapCenterY + (chunkCoordY - centerChunkY) * chunkPixelSize
+        local radius = math.max(4, chunkPixelSize * 0.08)
 
         love.graphics.setColor(MAP_CONFIG.playerFill)
         love.graphics.circle("fill", centerX, centerY, radius)
