@@ -106,15 +106,15 @@ local function drawChunkRectangles(scene, layout)
 
     local player = world:getPlayer()
     local chunkSize = world.chunkManager and world.chunkManager.chunkSize or 1
-    local centerChunkX
-    local centerChunkY
-    if player and player.position then
-        centerChunkX = math.floor(player.position.x / chunkSize)
-        centerChunkY = math.floor(player.position.y / chunkSize)
-    else
-        centerChunkX = math.floor((bounds.minX + bounds.maxX) / 2)
-        centerChunkY = math.floor((bounds.minY + bounds.maxY) / 2)
-    end
+    local panOffsetX = scene.panOffsetX or 0
+    local panOffsetY = scene.panOffsetY or 0
+
+    local playerChunkX = player and player.position and (player.position.x / chunkSize) or nil
+    local playerChunkY = player and player.position and (player.position.y / chunkSize) or nil
+    local baseCenterX = playerChunkX or ((bounds.minX + bounds.maxX) / 2)
+    local baseCenterY = playerChunkY or ((bounds.minY + bounds.maxY) / 2)
+    local centerChunkX = baseCenterX + panOffsetX
+    local centerChunkY = baseCenterY + panOffsetY
 
     -- Draw grid lines over the content area; zoom changes chunk spacing, not the container size.
     love.graphics.push("all")

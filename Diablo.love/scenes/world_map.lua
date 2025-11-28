@@ -12,6 +12,10 @@ local ZOOM_CONFIG = {
     maxZoom = 2.5,
     step = 0.2,
 }
+local PAN_CONFIG = {
+    speedChunksPerSecond = 4,
+    zoomSpeedDivider = 1.0,
+}
 
 local function clampZoom(value)
     if value < ZOOM_CONFIG.minZoom then
@@ -44,9 +48,12 @@ function WorldMapScene.new(opts)
             },
         },
         zoom = clampZoom(opts.zoom or 1),
+        panOffsetX = 0,
+        panOffsetY = 0,
         minZoom = ZOOM_CONFIG.minZoom,
         maxZoom = ZOOM_CONFIG.maxZoom,
         zoomStep = ZOOM_CONFIG.step,
+        panSpeed = PAN_CONFIG.speedChunksPerSecond,
     }
 
     scene.windowChromeConfig = {
@@ -67,6 +74,8 @@ function WorldMapScene:enter()
         self.detailFont = love.graphics.newFont(14)
     end
     self.zoom = clampZoom(self.zoom or 1)
+    self.panOffsetX = 0
+    self.panOffsetY = 0
 end
 
 -- luacheck: ignore 212/self
@@ -74,7 +83,26 @@ function WorldMapScene:exit()
 end
 
 -- luacheck: ignore 212/self
-function WorldMapScene:update(_dt)
+function WorldMapScene:update(dt)
+    local dx, dy = 0, 0
+    if InputManager.isActionDown(InputActions.MOVE_LEFT) then
+        dx = dx - 1
+    end
+    if InputManager.isActionDown(InputActions.MOVE_RIGHT) then
+        dx = dx + 1
+    end
+    if InputManager.isActionDown(InputActions.MOVE_UP) then
+        dy = dy - 1
+    end
+    if InputManager.isActionDown(InputActions.MOVE_DOWN) then
+        dy = dy + 1
+    end
+
+    if dx ~= 0 or dy ~= 0 then
+        local speed = (self.panSpeed or PAN_CONFIG.speedChunksPerSecond) / (self.zoom or 1)
+        self.panOffsetX = self.panOffsetX + dx * speed * dt
+        self.panOffsetY = self.panOffsetY + dy * speed * dt
+    end
 end
 
 function WorldMapScene:draw()
