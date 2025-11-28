@@ -7,6 +7,7 @@ local MENU_ITEM_SPACING = 14
 local MENU_WIDTH = 320
 local MENU_PADDING = 24
 local MENU_VERTICAL_PADDING = 12
+local STATUS_MARGIN_TOP = 22
 
 function renderPauseMenu.draw(scene)
     renderWindowChrome.draw(scene, scene.windowChromeConfig)
@@ -24,7 +25,8 @@ function renderPauseMenu.draw(scene)
     end
     local menuX = contentArea.x + (contentArea.width - menuWidth) / 2
 
-    local totalMenuHeight = (MENU_ITEM_HEIGHT * 5) + (MENU_ITEM_SPACING * 4)
+    local itemIds = { "resume", "save", "load", "controls", "crt", "mainMenu", "quit" }
+    local totalMenuHeight = (#itemIds * MENU_ITEM_HEIGHT) + ((#itemIds - 1) * MENU_ITEM_SPACING)
     local availableHeight = contentArea.height
     local startOffset = (availableHeight - totalMenuHeight) / 2
     if startOffset < MENU_VERTICAL_PADDING then
@@ -41,163 +43,71 @@ function renderPauseMenu.draw(scene)
     local mouseX, mouseY = love.mouse.getPosition()
     local font = love.graphics.getFont()
 
-    -- Resume button
-    local resumeY = menuY
-    local isResumeHovered = isTopScene
-        and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + menuWidth - MENU_PADDING
-        and mouseY >= resumeY
-        and mouseY <= resumeY + MENU_ITEM_HEIGHT
-
-    if isResumeHovered then
-        love.graphics.setColor(0.3, 0.3, 0.3, 1)
-        love.graphics.rectangle(
-            "fill",
-            menuX + MENU_PADDING,
-            resumeY,
-            itemWidth,
-            MENU_ITEM_HEIGHT,
-            4,
-            4
-        )
-    end
-
-    love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Resume", menuX + MENU_PADDING + 10, resumeY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
-
-    -- Controls button
-    local controlsY = resumeY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
-    local isControlsHovered = isTopScene
-        and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + menuWidth - MENU_PADDING
-        and mouseY >= controlsY
-        and mouseY <= controlsY + MENU_ITEM_HEIGHT
-
-    if isControlsHovered then
-        love.graphics.setColor(0.3, 0.3, 0.3, 1)
-        love.graphics.rectangle(
-            "fill",
-            menuX + MENU_PADDING,
-            controlsY,
-            itemWidth,
-            MENU_ITEM_HEIGHT,
-            4,
-            4
-        )
-    end
-
-    love.graphics.setColor(0.95, 0.9, 0.7, 1)
-    love.graphics.print("Controls", menuX + MENU_PADDING + 10, controlsY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
-
-    -- CRT toggle button
-    local crtY = controlsY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
-    local isCRTHovered = isTopScene
-        and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + menuWidth - MENU_PADDING
-        and mouseY >= crtY
-        and mouseY <= crtY + MENU_ITEM_HEIGHT
-
-    if isCRTHovered then
-        love.graphics.setColor(0.3, 0.3, 0.3, 1)
-        love.graphics.rectangle(
-            "fill",
-            menuX + MENU_PADDING,
-            crtY,
-            itemWidth,
-            MENU_ITEM_HEIGHT,
-            4,
-            4
-        )
-    end
-
-    local crtLabel = "CRT Shader: " .. (scene.isCRTEnabled and scene:isCRTEnabled() and "ON" or "OFF")
-    love.graphics.setColor(0.9, 0.85, 0.65, 1)
-    love.graphics.print(crtLabel, menuX + MENU_PADDING + 10, crtY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
-
-    -- Main menu button
-    local mainMenuY = crtY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
-    local isMainMenuHovered = isTopScene
-        and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + menuWidth - MENU_PADDING
-        and mouseY >= mainMenuY
-        and mouseY <= mainMenuY + MENU_ITEM_HEIGHT
-
-    if isMainMenuHovered then
-        love.graphics.setColor(0.35, 0.25, 0.25, 1)
-        love.graphics.rectangle(
-            "fill",
-            menuX + MENU_PADDING,
-            mainMenuY,
-            itemWidth,
-            MENU_ITEM_HEIGHT,
-            4,
-            4
-        )
-    end
-
-    love.graphics.setColor(0.95, 0.75, 0.75, 1)
-    love.graphics.print(
-        "Return to Main Menu",
-        menuX + MENU_PADDING + 10,
-        mainMenuY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2
-    )
-
-    -- Quit button
-    local quitY = mainMenuY + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
-    local isQuitHovered = isTopScene
-        and mouseX >= menuX + MENU_PADDING
-        and mouseX <= menuX + menuWidth - MENU_PADDING
-        and mouseY >= quitY
-        and mouseY <= quitY + MENU_ITEM_HEIGHT
-
-    if isQuitHovered then
-        love.graphics.setColor(0.4, 0.2, 0.2, 1)
-        love.graphics.rectangle(
-            "fill",
-            menuX + MENU_PADDING,
-            quitY,
-            itemWidth,
-            MENU_ITEM_HEIGHT,
-            4,
-            4
-        )
-    end
-
-    love.graphics.setColor(0.95, 0.7, 0.7, 1)
-    love.graphics.print("Quit", menuX + MENU_PADDING + 10, quitY + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
-
-    -- Store rects for click detection
+    local y = menuY
     scene.menuRects = scene.menuRects or {}
-    scene.menuRects.resume = {
-        x = menuX + MENU_PADDING,
-        y = resumeY,
-        w = itemWidth,
-        h = MENU_ITEM_HEIGHT,
+    local crtLabel = "CRT Shader: " .. (scene.isCRTEnabled and scene:isCRTEnabled() and "ON" or "OFF")
+    local labels = {
+        resume = "Resume",
+        save = "Save Game",
+        load = "Load Game",
+        controls = "Controls",
+        crt = crtLabel,
+        mainMenu = "Return to Main Menu",
+        quit = "Quit",
     }
-    scene.menuRects.controls = {
-        x = menuX + MENU_PADDING,
-        y = controlsY,
-        w = itemWidth,
-        h = MENU_ITEM_HEIGHT,
-    }
-    scene.menuRects.crt = {
-        x = menuX + MENU_PADDING,
-        y = crtY,
-        w = itemWidth,
-        h = MENU_ITEM_HEIGHT,
-    }
-    scene.menuRects.mainMenu = {
-        x = menuX + MENU_PADDING,
-        y = mainMenuY,
-        w = itemWidth,
-        h = MENU_ITEM_HEIGHT,
-    }
-    scene.menuRects.quit = {
-        x = menuX + MENU_PADDING,
-        y = quitY,
-        w = itemWidth,
-        h = MENU_ITEM_HEIGHT,
-    }
+
+    for _, id in ipairs(itemIds) do
+        local rect = {
+            x = menuX + MENU_PADDING,
+            y = y,
+            w = itemWidth,
+            h = MENU_ITEM_HEIGHT,
+        }
+
+        local hovered = isTopScene
+            and mouseX >= rect.x
+            and mouseX <= rect.x + rect.w
+            and mouseY >= rect.y
+            and mouseY <= rect.y + rect.h
+
+        if hovered then
+            local baseColor = { 0.3, 0.3, 0.3, 1 }
+            if id == "mainMenu" then
+                baseColor = { 0.35, 0.25, 0.25, 1 }
+            elseif id == "quit" then
+                baseColor = { 0.4, 0.2, 0.2, 1 }
+            end
+            love.graphics.setColor(baseColor)
+            love.graphics.rectangle("fill", rect.x, rect.y, rect.w, rect.h, 4, 4)
+        end
+
+        local textColor = { 0.95, 0.9, 0.7, 1 }
+        if id == "mainMenu" then
+            textColor = { 0.95, 0.75, 0.75, 1 }
+        elseif id == "quit" then
+            textColor = { 0.95, 0.7, 0.7, 1 }
+        elseif id == "crt" then
+            textColor = { 0.9, 0.85, 0.65, 1 }
+        end
+
+        love.graphics.setColor(textColor)
+        love.graphics.print(labels[id], rect.x + 10, rect.y + (MENU_ITEM_HEIGHT - font:getHeight()) / 2)
+
+        scene.menuRects[id] = rect
+        y = y + MENU_ITEM_HEIGHT + MENU_ITEM_SPACING
+    end
+
+    -- Status message
+    if scene.statusMessage then
+        love.graphics.setColor(0.9, 0.85, 0.8, 0.9)
+        love.graphics.printf(
+            scene.statusMessage,
+            menuX,
+            y + STATUS_MARGIN_TOP,
+            menuWidth,
+            "center"
+        )
+    end
 end
 
 return renderPauseMenu

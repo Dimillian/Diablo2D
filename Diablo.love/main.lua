@@ -146,7 +146,10 @@ end
 
 function love.quit()
     local scene = sceneManager:current()
-    if scene and scene.kind == SceneKinds.WORLD and scene.serializeState then
-        WorldState.save(scene:serializeState())
+    if scene and scene.kind == SceneKinds.WORLD then
+        local payload = WorldState.buildSave(scene)
+        if payload then
+            WorldState.save(payload)
+        end
     end
 end

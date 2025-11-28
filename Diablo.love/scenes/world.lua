@@ -58,6 +58,96 @@ local Physics = require("modules.physics")
 local WorldScene = {}
 WorldScene.__index = WorldScene
 
+local function copyList(list)
+    local result = {}
+    for index, entry in ipairs(list or {}) do
+        result[index] = entry
+    end
+    return result
+end
+
+local function copyMap(source)
+    local result = {}
+    for key, value in pairs(source or {}) do
+        result[key] = value
+    end
+    return result
+end
+
+local function applyPlayerState(player, state)
+    if not player or not state then
+        return
+    end
+
+    if state.position and player.position then
+        player.position.x = state.position.x or player.position.x
+        player.position.y = state.position.y or player.position.y
+    end
+
+    if state.baseStats and player.baseStats then
+        for key, value in pairs(state.baseStats) do
+            player.baseStats[key] = value
+        end
+    end
+
+    if state.movement and player.movement then
+        player.movement.speed = state.movement.speed or player.movement.speed
+    end
+
+    if state.combat and player.combat then
+        player.combat.range = state.combat.range or player.combat.range
+    end
+
+    if state.health and player.health then
+        player.health.current = state.health.current or player.health.current
+        player.health.max = state.health.max or player.health.max
+        player.health.current = math.min(player.health.current, player.health.max)
+    end
+
+    if state.mana and player.mana then
+        player.mana.current = state.mana.current or player.mana.current
+        player.mana.max = state.mana.max or player.mana.max
+        player.mana.current = math.min(player.mana.current, player.mana.max)
+    end
+
+    if state.potions and player.potions then
+        player.potions.healthPotionCount = state.potions.healthPotionCount or player.potions.healthPotionCount
+        player.potions.maxHealthPotionCount = state.potions.maxHealthPotionCount or player.potions.maxHealthPotionCount
+        player.potions.manaPotionCount = state.potions.manaPotionCount or player.potions.manaPotionCount
+        player.potions.maxManaPotionCount = state.potions.maxManaPotionCount or player.potions.maxManaPotionCount
+        player.potions.cooldownDuration = state.potions.cooldownDuration or player.potions.cooldownDuration
+        player.potions.cooldownRemaining = state.potions.cooldownRemaining or player.potions.cooldownRemaining
+    end
+
+    if state.experience and player.experience then
+        player.experience.level = state.experience.level or player.experience.level
+        player.experience.currentXP = state.experience.currentXP or player.experience.currentXP
+        player.experience.xpForNextLevel = state.experience.xpForNextLevel or player.experience.xpForNextLevel
+        player.experience.unallocatedPoints = state.experience.unallocatedPoints or player.experience.unallocatedPoints
+    end
+
+    if state.inventory and player.inventory then
+        player.inventory.capacity = state.inventory.capacity or player.inventory.capacity
+        player.inventory.gold = state.inventory.gold or player.inventory.gold
+        player.inventory.items = copyList(state.inventory.items)
+    end
+
+    if state.equipment and player.equipment then
+        player.equipment = copyMap(state.equipment)
+    end
+
+    if state.skills and player.skills then
+        player.skills.availablePoints = state.skills.availablePoints or player.skills.availablePoints
+        player.skills.allocations = copyMap(state.skills.allocations)
+
+        local equipped = {}
+        for index, skill in ipairs(state.skills.equipped or {}) do
+            equipped[index] = skill
+        end
+        player.skills.equipped = equipped
+    end
+end
+
 ---Create a world scene that owns entities like the player.
 ---@param opts table|nil
 ---@return WorldScene
@@ -72,6 +162,7 @@ function WorldScene.new(opts)
         lastUpdateDt = 0,
         pendingCombatEvents = {},
         sceneManager = opts.sceneManager, -- Reference to scene manager for opening inventory
+        starterGearGenerated = opts.starterGearGenerated or false,
         systemHelpers = {
             coordinates = require("systems.helpers.coordinates"),
         },
@@ -277,11 +368,13 @@ function WorldScene.new(opts)
 
     local chunkX = currentChunkX
     local chunkY = currentChunkY
+    local providedSafeZone = opts.spawnSafeZone
     scene.spawnSafeZone = {
-        chunkKey = ChunkManager.getChunkKey(scene.chunkManager, chunkX, chunkY),
-        centerX = player.position.x,
-        centerY = player.position.y,
-        radius = opts.spawnSafeRadius or 192,
+        chunkKey = (providedSafeZone and providedSafeZone.chunkKey)
+            or ChunkManager.getChunkKey(scene.chunkManager, chunkX, chunkY),
+        centerX = (providedSafeZone and providedSafeZone.centerX) or player.position.x,
+        centerY = (providedSafeZone and providedSafeZone.centerY) or player.position.y,
+        radius = (providedSafeZone and providedSafeZone.radius) or opts.spawnSafeRadius or 192,
     }
     ChunkManager.ensureChunkLoaded(scene.chunkManager, scene, chunkX, chunkY)
 
@@ -290,6 +383,10 @@ function WorldScene.new(opts)
         scene.minimapState.visible = true
     end
     scene.minimapState.zoom = scene.minimapState.zoom or 1
+
+    if opts.playerState then
+        applyPlayerState(player, opts.playerState)
+    end
 
     return scene
 end
@@ -397,6 +494,15 @@ function WorldScene:serializeState()
             zoom = self.minimapState and self.minimapState.zoom or 1,
         },
         visitedChunks = shallowCopyTable(self.visitedChunks or {}),
+        spawnSafeZone = self.spawnSafeZone
+            and {
+                chunkKey = self.spawnSafeZone.chunkKey,
+                centerX = self.spawnSafeZone.centerX,
+                centerY = self.spawnSafeZone.centerY,
+                radius = self.spawnSafeZone.radius,
+            }
+            or nil,
+        starterGearGenerated = self.starterGearGenerated or false,
         generatedChunks = {},
     }
 
