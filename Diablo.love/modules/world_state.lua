@@ -85,8 +85,14 @@ local function normalizeResource(component, defaultMax)
     local max = defaultMax
     local current = defaultMax
     if component then
-        max = component.max or defaultMax
-        current = component.current or max
+        if component.max ~= nil then
+            max = component.max
+        end
+        if component.current ~= nil then
+            current = component.current
+        else
+            current = max
+        end
     end
 
     return {
@@ -105,6 +111,7 @@ function WorldState.normalizePlayer(persisted)
 
     local experience = persisted.experience or {}
     local level = experience.level or 1
+    local potions = persisted.potions or {}
 
     return {
         id = persisted.id or "player",
@@ -122,17 +129,22 @@ function WorldState.normalizePlayer(persisted)
         health = normalizeResource(persisted.health, ComponentDefaults.PLAYER_STARTING_HEALTH),
         mana = normalizeResource(persisted.mana, ComponentDefaults.PLAYER_STARTING_MANA),
         potions = {
-            healthPotionCount = (persisted.potions and persisted.potions.healthPotionCount)
+            healthPotionCount = potions.healthPotionCount ~= nil
+                and potions.healthPotionCount
                 or ComponentDefaults.HEALTH_POTION_STARTING_COUNT,
-            maxHealthPotionCount = (persisted.potions and persisted.potions.maxHealthPotionCount)
+            maxHealthPotionCount = potions.maxHealthPotionCount ~= nil
+                and potions.maxHealthPotionCount
                 or ComponentDefaults.MAX_HEALTH_POTION_COUNT,
-            manaPotionCount = (persisted.potions and persisted.potions.manaPotionCount)
+            manaPotionCount = potions.manaPotionCount ~= nil
+                and potions.manaPotionCount
                 or ComponentDefaults.MANA_POTION_STARTING_COUNT,
-            maxManaPotionCount = (persisted.potions and persisted.potions.maxManaPotionCount)
+            maxManaPotionCount = potions.maxManaPotionCount ~= nil
+                and potions.maxManaPotionCount
                 or ComponentDefaults.MAX_MANA_POTION_COUNT,
-            cooldownDuration = (persisted.potions and persisted.potions.cooldownDuration)
+            cooldownDuration = potions.cooldownDuration ~= nil
+                and potions.cooldownDuration
                 or ComponentDefaults.POTION_COOLDOWN_DURATION,
-            cooldownRemaining = (persisted.potions and persisted.potions.cooldownRemaining) or 0,
+            cooldownRemaining = potions.cooldownRemaining or 0,
         },
         inventory = {
             items = copyArray(persisted.inventory and persisted.inventory.items or {}),
