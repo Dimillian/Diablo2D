@@ -1,12 +1,6 @@
 local createFloatingDamage = require("components.floating_damage")
-local EmberEffect = require("effects.ember")
 
 local renderDamageNumbersSystem = {}
-
-local function ensureBloodList(world)
-    world._bloodBursts = world._bloodBursts or {}
-    return world._bloodBursts
-end
 
 local function ensureIds(world)
     world._floatingDamageId = (world._floatingDamageId or 0) + 1
@@ -55,46 +49,12 @@ local function spawnDamageNumber(world, event)
     world:addEntity(entity)
 end
 
-local function spawnBloodBurst(world, event)
-    if not event.position then
-        return
-    end
-
-    local bursts = ensureBloodList(world)
-    local emitter = EmberEffect.createRadialEmitter({
-        radius = 18,
-        rate = 280,
-        sizeMin = 2,
-        sizeMax = 4,
-        lifeBase = 0.32,
-        speedMin = 140,
-        speedMax = 260,
-        driftMin = -70,
-        driftMax = 70,
-        pixelScale = 1.0,
-        startColor = { 0.9, 0.12, 0.08, 0.9 },
-        endColor = { 0.5, 0.04, 0.02, 0.0 },
-    })
-    EmberEffect.setAnchor(emitter, event.position.x, event.position.y)
-    EmberEffect.update(emitter, 0.04)
-    emitter.rate = 0
-
-    bursts[#bursts + 1] = {
-        emitter = emitter,
-        timeToLive = 0.5,
-    }
-end
-
 function renderDamageNumbersSystem.draw(world)
     local events = world.pendingCombatEvents or {}
     for _, event in ipairs(events) do
         if event.type == "damage" and not event._spawnedFloatingDamage then
             spawnDamageNumber(world, event)
             event._spawnedFloatingDamage = true
-            if not event._spawnedBlood then
-                spawnBloodBurst(world, event)
-                event._spawnedBlood = true
-            end
         end
     end
 
@@ -110,18 +70,6 @@ function renderDamageNumbersSystem.draw(world)
     love.graphics.setFont(world.damageFont or love.graphics.getFont())
     local camera = world.camera or { x = 0, y = 0 }
     love.graphics.translate(-camera.x, -camera.y)
-
-    local bursts = world._bloodBursts or {}
-    for index = #bursts, 1, -1 do
-        local burst = bursts[index]
-        if burst.timeToLive <= 0 and (#(burst.emitter.particles or {}) == 0) then
-            table.remove(bursts, index)
-        else
-            EmberEffect.update(burst.emitter, dt)
-            EmberEffect.drawParticles(burst.emitter)
-            burst.timeToLive = burst.timeToLive - dt
-        end
-    end
 
     local entities = world:queryEntities({ "floatingDamage" })
 

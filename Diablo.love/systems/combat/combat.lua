@@ -2,6 +2,7 @@ local vector = require("modules.vector")
 local Aggro = require("systems.helpers.aggro")
 local createRecentlyDamaged = require("components.recently_damaged")
 local createKnockback = require("components.knockback")
+local createBloodBurst = require("components.blood_burst")
 
 local combatSystem = {}
 
@@ -118,6 +119,12 @@ function combatSystem.update(world, dt)
         target.health.current = math.max(0, (target.health.current or 0) - damage)
 
         markRecentlyDamaged(world, target)
+
+        -- Add blood burst effect to target entity
+        local bloodBurstComponent = createBloodBurst({
+            position = { x = targetX, y = targetY },
+        })
+        world:addComponent(target.id, "bloodBurst", bloodBurstComponent)
 
         -- Add gentle knockback to both attacker and target when hit
         -- Direction: push attacker away from target, push target away from attacker

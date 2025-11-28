@@ -16,6 +16,7 @@ local renderFoeSystem = require("systems.render.foe")
 local renderProjectileSystem = require("systems.render.projectile")
 local renderMouseLookSystem = require("systems.render.mouse_look")
 local renderHealthSystem = require("systems.render.health")
+local renderBloodBurstSystem = require("systems.render.blood_burst")
 local renderDamageNumbersSystem = require("systems.render.damage_numbers")
 local wanderSystem = require("systems.ai.wander")
 local detectionSystem = require("systems.ai.detection")
@@ -225,6 +226,7 @@ function WorldScene.new(opts)
                 renderProjectileSystem.draw,
                 renderMouseLookSystem.draw,
                 renderHealthSystem.draw,
+                renderBloodBurstSystem.draw,
                 renderDamageNumbersSystem.draw,
                 uiMain.draw,
                 uiMinimapSystem.draw,
