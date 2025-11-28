@@ -175,11 +175,15 @@ local function drawChunkRectangles(scene, layout)
         local chunkSize = world.chunkManager and world.chunkManager.chunkSize or 1
         local chunkX = math.floor(player.position.x / chunkSize)
         local chunkY = math.floor(player.position.y / chunkSize)
+        local chunkOriginX = chunkX * chunkSize
+        local chunkOriginY = chunkY * chunkSize
+        local offsetX = math.max(0, math.min(1, (player.position.x - chunkOriginX) / chunkSize))
+        local offsetY = math.max(0, math.min(1, (player.position.y - chunkOriginY) / chunkSize))
 
         local col = chunkX - bounds.minX
         local row = chunkY - bounds.minY
-        local centerX = originX + (col + 0.5) * cellSize
-        local centerY = originY + (row + 0.5) * cellSize
+        local centerX = originX + (col + offsetX) * cellSize
+        local centerY = originY + (row + offsetY) * cellSize
         local radius = math.max(4, cellSize * 0.08)
 
         love.graphics.setColor(MAP_CONFIG.playerFill)
