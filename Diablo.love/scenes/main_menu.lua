@@ -70,8 +70,8 @@ end
 function MainMenuScene.new(opts)
     opts = opts or {}
 
-    local persisted = WorldState.load()
-    local hasSave = persisted ~= nil
+    local persisted = WorldState.load(WorldState.DEFAULT_SLOT)
+    local hasSave = WorldState.slotExists(WorldState.DEFAULT_SLOT)
 
     local scene = {
         kind = SceneKinds.MAIN_MENU,
@@ -261,21 +261,13 @@ function MainMenuScene:startContinue()
         return
     end
 
-    local persisted = self.persistedState
-    local options = {
-        sceneManager = self.sceneManager,
-        worldSeed = persisted.worldSeed,
-        chunkSize = persisted.chunkSize,
-        activeRadius = persisted.activeRadius,
-        startBiomeId = persisted.startBiomeId,
-        startBiomeRadius = persisted.startBiomeRadius,
-        startBiomeCenter = persisted.startBiomeCenter,
-        forceStartBiome = persisted.forceStartBiome,
-        generatedChunks = WorldState.normalizeChunks(persisted.generatedChunks),
-        visitedChunks = persisted.visitedChunks,
-        minimapState = persisted.minimapState,
-    }
+    local options = WorldState.buildWorldOptions(self.persistedState)
+    if not options then
+        self.statusMessage = "Save data is corrupted."
+        return
+    end
 
+    options.sceneManager = self.sceneManager
     if not options.worldSeed then
         options.worldSeed = love.math.random(1, 1000000)
     end
