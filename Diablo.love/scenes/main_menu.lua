@@ -1,6 +1,7 @@
 local SceneKinds = require("modules.scene_kinds")
 local WorldScene = require("scenes.world")
 local WorldState = require("modules.world_state")
+local FireEffect = require("effects.fire")
 
 local MainMenuScene = {}
 MainMenuScene.__index = MainMenuScene
@@ -38,57 +39,6 @@ local function mixColor(a, b, t)
         lerp(a[4] or 1, b[4] or 1, t),
     }
 end
-
-local FIRE_SHADER = [[
-extern number time;
-extern vec2 resolution;
-extern vec2 origin;
-
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
-vec4 effect(vec4 color, Image tex, vec2 uv, vec2 px) {
-    vec2 pos = (px - origin) / resolution;
-    pos = clamp(pos, 0.0, 1.0);
-    pos.y = 1.0 - pos.y;
-
-    float pixelate = 110.0;
-    pos = floor(pos * pixelate) / pixelate;
-
-    float t = time * 0.7;
-    float n1 = noise(vec2(pos.x * 9.0, pos.y * 6.0 + t * 1.4));
-    float n2 = noise(vec2(pos.x * 16.0 + t * 0.4, pos.y * 12.0 - t * 1.2));
-    float column = sin((pos.x + n1 * 0.08) * 18.0 + t * 2.0) * 0.08;
-
-    float base = pow(pos.y, 2.0);
-    float intensity = clamp(base * 1.1 + n1 * 0.45 + n2 * 0.35 + column, 0.0, 1.2);
-
-    float taper = smoothstep(0.12, 0.35, pos.y) * (1.0 - smoothstep(0.72, 0.95, pos.y));
-    float edge = smoothstep(0.05, 0.2, pos.x) * smoothstep(0.95, 0.8, pos.x);
-    float alpha = clamp(intensity * taper * edge, 0.0, 1.0);
-
-    vec3 cold = vec3(0.14, 0.04, 0.04);
-    vec3 warm = vec3(0.85, 0.28, 0.07);
-    vec3 hot = vec3(1.0, 0.82, 0.45);
-    float heat = clamp(intensity * 1.3 + pos.y * 0.3, 0.0, 1.0);
-    vec3 flame = mix(warm, hot, heat);
-    vec3 finalColor = mix(cold, flame, clamp(pos.y * 1.25, 0.0, 1.0));
-
-    return vec4(finalColor * color.rgb, alpha * color.a);
-}
-]]
 
 local function makeMenuItems(hasSave)
     return {
@@ -139,11 +89,28 @@ function MainMenuScene.new(opts)
         buttonFont = love.graphics.newFont(22),
         smallFont = love.graphics.newFont(14),
         titleSparks = {},
-        fireParticles = {},
-        panelFireParticles = {},
-        fireSpawnTimer = 0,
-        panelFireSpawnTimer = 0,
-        fireShader = love.graphics.newShader(FIRE_SHADER),
+        titleFire = FireEffect.createBandEmitter({
+            rate = FIRE_PARTICLE_RATE,
+            sizeMin = 4,
+            sizeMax = 8,
+            lifeBase = 0.6,
+            spawnInset = 8,
+            spawnYOffset = 4,
+            pixelScale = 0.5,
+            startColor = FIRE_PARTICLE_START,
+            endColor = FIRE_PARTICLE_END,
+        }),
+        bottomFire = FireEffect.createBandEmitter({
+            rate = PANEL_FIRE_PARTICLE_RATE,
+            sizeMin = 7,
+            sizeMax = 13,
+            lifeBase = 2.0,
+            spawnInset = 12,
+            spawnYOffset = 4,
+            pixelScale = 1.1,
+            startColor = FIRE_PARTICLE_START,
+            endColor = FIRE_PARTICLE_END,
+        }),
         time = 0,
     }
 
@@ -210,31 +177,6 @@ local function getBottomFireArea()
     }
 end
 
-local function getMenuBounds(items)
-    if #items == 0 then
-        return { x = 0, y = 0, w = 0, h = 0 }
-    end
-
-    local minX = items[1].rect.x
-    local maxX = items[1].rect.x + items[1].rect.w
-    local minY = items[1].rect.y
-    local maxY = items[1].rect.y + items[1].rect.h
-
-    for _, item in ipairs(items) do
-        minX = math.min(minX, item.rect.x)
-        maxX = math.max(maxX, item.rect.x + item.rect.w)
-        minY = math.min(minY, item.rect.y)
-        maxY = math.max(maxY, item.rect.y + item.rect.h)
-    end
-
-    return {
-        x = minX,
-        y = minY,
-        w = maxX - minX,
-        h = maxY - minY,
-    }
-end
-
 local function drawBackground()
     local width = love.graphics.getWidth()
     local height = love.graphics.getHeight()
@@ -248,51 +190,6 @@ local function drawBackground()
         local nextY = (step + 1) / math.max(steps, 1) * height
         love.graphics.rectangle("fill", 0, y, width, math.max(1, nextY - y))
     end
-end
-
-local function drawFireBackdrop(scene, x, y, w, h)
-    if not scene.fireShader then
-        return
-    end
-
-    love.graphics.push("all")
-    love.graphics.setShader(scene.fireShader)
-    scene.fireShader:send("time", scene.time or 0)
-    scene.fireShader:send("resolution", { w, h })
-    scene.fireShader:send("origin", { x, y })
-    love.graphics.setColor(1, 1, 1, 0.8)
-    love.graphics.rectangle("fill", x, y, w, h)
-    love.graphics.pop()
-end
-
-local function drawFireParticles(particles)
-    if not particles then
-        return
-    end
-
-    love.graphics.push("all")
-    love.graphics.setBlendMode("add", "alphamultiply")
-    for _, particle in ipairs(particles) do
-        local t = 1 - (particle.life / particle.maxLife)
-        local color = mixColor(FIRE_PARTICLE_START, FIRE_PARTICLE_END, t)
-        love.graphics.setColor(color)
-        love.graphics.rectangle(
-            "fill",
-            math.floor(particle.x + 0.5) - particle.size,
-            math.floor(particle.y + 0.5) - particle.size,
-            math.ceil(particle.size * 2.2),
-            math.ceil(particle.size * 2.2)
-        )
-        love.graphics.setColor(color[1], color[2], color[3], color[4] * 0.8)
-        love.graphics.rectangle(
-            "fill",
-            math.floor(particle.x + 0.5) - particle.size / 2,
-            math.floor(particle.y + 0.5) - particle.size / 2,
-            math.ceil(particle.size),
-            math.ceil(particle.size)
-        )
-    end
-    love.graphics.pop()
 end
 
 local function drawRetroTitle(scene, layout)
@@ -493,44 +390,6 @@ local function seedSpark(scene)
     end
 end
 
-local function updateFireParticlesSet(currentParticles, timer, spawnArea, dt, rate)
-    local particles = {}
-    for _, particle in ipairs(currentParticles or {}) do
-        local life = particle.life - dt
-        if life > 0 then
-            particle.life = life
-            particle.y = particle.y - particle.speed * dt
-            particle.x = particle.x + particle.drift * dt
-            particle.size = particle.size * (1 - dt * 0.25)
-            particle.speed = particle.speed * (1 - dt * 0.08)
-            particles[#particles + 1] = particle
-        end
-    end
-
-    timer = (timer or 0) + dt
-
-    local spawnInterval = 1 / rate
-    while timer >= spawnInterval do
-        timer = timer - spawnInterval
-        local x = love.math.random(spawnArea.xMin, spawnArea.xMax)
-        local y = spawnArea.y
-        local size = love.math.random(spawnArea.sizeMin, spawnArea.sizeMax)
-        local life = love.math.random() * 0.5 + spawnArea.lifeBase
-
-        particles[#particles + 1] = {
-            x = x,
-            y = y,
-            size = size,
-            maxLife = life,
-            life = life,
-            speed = love.math.random() * 60 + 80,
-            drift = love.math.random() * 22 - 11,
-        }
-    end
-
-    return particles, timer
-end
-
 function MainMenuScene:update(dt)
     self.time = (self.time or 0) + (dt or 0)
     local layout = getTitleLayout(self)
@@ -549,38 +408,13 @@ function MainMenuScene:update(dt)
         seedSpark(self)
     end
 
-    local titleSpawn = {
-        xMin = layout.bannerX + 8,
-        xMax = layout.bannerX + layout.bannerW - 8,
-        y = layout.bannerY + layout.bannerH - 4,
-        sizeMin = 7,
-        sizeMax = 12,
-        lifeBase = 0.6,
-    }
-    local bottomSpawn = {
-        xMin = bottomArea.x + 12,
-        xMax = bottomArea.x + bottomArea.w - 12,
-        y = bottomArea.y + bottomArea.h - 4,
-        sizeMin = 7,
-        sizeMax = 13,
-        lifeBase = 0.6,
-    }
+    local titleFireH = layout.bannerH * 0.95
+    local titleFireY = layout.bannerY + layout.bannerH - titleFireH
+    FireEffect.setBandArea(self.titleFire, layout.bannerX, titleFireY, layout.bannerW, titleFireH)
+    FireEffect.update(self.titleFire, dt or 0)
 
-    self.fireParticles, self.fireSpawnTimer = updateFireParticlesSet(
-        self.fireParticles,
-        self.fireSpawnTimer,
-        titleSpawn,
-        dt or 0,
-        FIRE_PARTICLE_RATE
-    )
-
-    self.panelFireParticles, self.panelFireSpawnTimer = updateFireParticlesSet(
-        self.panelFireParticles,
-        self.panelFireSpawnTimer,
-        bottomSpawn,
-        dt or 0,
-        PANEL_FIRE_PARTICLE_RATE
-    )
+    FireEffect.setBandArea(self.bottomFire, bottomArea.x, bottomArea.y, bottomArea.w, bottomArea.h)
+    FireEffect.update(self.bottomFire, dt or 0)
 
     -- Hover should mirror keyboard selection highlight
     local mouseX, mouseY = love.mouse.getPosition()
@@ -590,16 +424,13 @@ end
 function MainMenuScene:draw()
     computeLayout(self.menuItems)
     local layout = getTitleLayout(self)
-    local bottomArea = getBottomFireArea()
     drawBackground()
 
-    drawFireBackdrop(self, bottomArea.x, bottomArea.y, bottomArea.w, bottomArea.h)
+    FireEffect.drawBand(self.bottomFire, self.time, 0.82)
 
-    local titleFireH = layout.bannerH * 0.95
-    local titleFireY = layout.bannerY + layout.bannerH - titleFireH
-    drawFireBackdrop(self, layout.bannerX, titleFireY, layout.bannerW, titleFireH)
+    FireEffect.drawBand(self.titleFire, self.time, 0.8)
     drawRetroTitle(self, layout)
-    drawFireParticles(self.fireParticles)
+    FireEffect.drawParticles(self.titleFire)
 
     love.graphics.setFont(self.buttonFont)
     for index, item in ipairs(self.menuItems) do
@@ -625,7 +456,7 @@ function MainMenuScene:draw()
         love.graphics.printf(item.label, rect.x, rect.y + rect.h / 2 - 12, rect.w, "center")
     end
 
-    drawFireParticles(self.panelFireParticles)
+    FireEffect.drawParticles(self.bottomFire)
 
     if self.statusMessage then
         love.graphics.setFont(self.smallFont)

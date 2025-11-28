@@ -1,9 +1,12 @@
 local Spells = require("data.spells")
 local coordinates = require("systems.helpers.coordinates")
+local FireEffect = require("effects.fire")
 
 local renderProjectileSystem = {}
 
 local TWO_PI = math.pi * 2
+local fireballEmitters = {}
+local lastRenderTime = nil
 
 local function clamp(value, minValue, maxValue)
     return math.max(minValue, math.min(maxValue, value))
@@ -27,6 +30,30 @@ local function normalizeDirection(dx, dy)
         return 1, 0
     end
     return dx / length, dy / length
+end
+
+local function getFireballEmitter(projectileId, radius)
+    local emitter = fireballEmitters[projectileId]
+    if emitter then
+        return emitter
+    end
+
+    emitter = FireEffect.createRadialEmitter({
+        radius = radius * 1.1,
+        rate = 28,
+        sizeMin = 2,
+        sizeMax = 4,
+        lifeBase = 0.35,
+        speedMin = 70,
+        speedMax = 130,
+        driftMin = -26,
+        driftMax = 26,
+        pixelScale = 1.25,
+        startColor = { 1.0, 0.92, 0.7, 1.0 },
+        endColor = { 1.0, 0.35, 0.08, 0.0 },
+    })
+    fireballEmitters[projectileId] = emitter
+    return emitter
 end
 
 local function drawSimpleImpact(args)
@@ -294,6 +321,12 @@ function renderProjectileSystem.draw(world)
     love.graphics.translate(-camera.x, -camera.y)
 
     local time = world.time or 0
+    local dt = 0
+    if lastRenderTime then
+        dt = math.max(0, time - lastRenderTime)
+    end
+    lastRenderTime = time
+    local activeEmitters = {}
 
     for _, projectile in ipairs(projectiles) do
         local projectileComponent = projectile.projectile
@@ -314,6 +347,7 @@ function renderProjectileSystem.draw(world)
         if not centerX or not centerY then
             goto continue
         end
+        local projectileId = projectile.id or projectileComponent
 
         local state = projectileComponent.state or "flying"
         if projectile.inactive and projectile.inactive.isInactive and state ~= "impact" then
@@ -335,6 +369,9 @@ function renderProjectileSystem.draw(world)
         end
 
         if state == "impact" then
+            if projectileId then
+                fireballEmitters[projectileId] = nil
+            end
             local impactPosition = projectileComponent.impactPosition
             if impactPosition and impactPosition.x and impactPosition.y then
                 centerX = impactPosition.x
@@ -384,6 +421,14 @@ function renderProjectileSystem.draw(world)
         end
 
         if renderable.kind == "fireball" then
+            if projectileId then
+                local emitter = getFireballEmitter(projectileId, radius)
+                FireEffect.setAnchor(emitter, centerX, centerY)
+                FireEffect.update(emitter, dt)
+                activeEmitters[projectileId] = true
+                FireEffect.drawParticles(emitter)
+            end
+
             local lastDirX = projectileComponent.lastDirectionX
             local lastDirY = projectileComponent.lastDirectionY
             local dirX, dirY = normalizeDirection(lastDirX, lastDirY)
@@ -435,6 +480,12 @@ function renderProjectileSystem.draw(world)
         end
 
         ::continue::
+    end
+
+    for id in pairs(fireballEmitters) do
+        if not activeEmitters[id] then
+            fireballEmitters[id] = nil
+        end
     end
 
     love.graphics.pop()
