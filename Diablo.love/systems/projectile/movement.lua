@@ -69,6 +69,23 @@ function projectileMovementSystem.update(world, dt)
         local dy = targetY - centerY
         local ndx, ndy = vector.normalize(dx, dy)
 
+        -- Clamp thunder bolts to land at their target when no enemy is hit.
+        -- Otherwise the bolt continues past the cursor because it only expires on lifetime.
+        if projectileComponent.spellId == "thunder" then
+            local travelThisFrame = (projectileComponent.speed or projectile.movement.speed or 0) * dt
+            if travelThisFrame > 0 then
+                local distanceToTarget = vector.length(dx, dy)
+                if distanceToTarget <= travelThisFrame then
+                    projectileEffects.triggerImpact(world, projectile, {
+                        position = { x = targetX, y = targetY },
+                        directionX = ndx,
+                        directionY = ndy,
+                    })
+                    goto continue
+                end
+            end
+        end
+
         projectile.movement.vx = ndx
         projectile.movement.vy = ndy
         projectile.movement.speed = projectileComponent.speed or projectile.movement.speed
