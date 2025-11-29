@@ -990,7 +990,12 @@
             prompt += `- Follow the ECS architecture patterns\n`;
             prompt += `- Reference \`AGENTS.MD\` for coding standards\n`;
             prompt += `- Add tests in \`spec/\` if applicable\n`;
-            prompt += `- Update components in \`data/component_defaults.lua\` if needed\n\n`;
+            prompt += `- Update components in \`data/component_defaults.lua\` if needed\n`;
+            prompt += `- **IMPORTANT: Always update beads using bd commands**\n`;
+            prompt += `  - When starting work: \`bd update ${issue.id} --status in_progress\`\n`;
+            prompt += `  - When discovering new work: \`bd create "New task" -p 1 --deps discovered-from:${issue.id}\`\n`;
+            prompt += `  - When completing: \`bd close ${issue.id} --reason "Completed"\`\n`;
+            prompt += `  - Always commit \`.beads/issues.jsonl\` together with code changes\n\n`;
 
             prompt += `Let's start by understanding the current codebase structure and then implement the changes needed for this task.`;
 
