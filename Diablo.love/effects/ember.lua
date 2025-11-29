@@ -3,6 +3,33 @@ local EmberEffect = {}
 local DEFAULT_START_COLOR = { 1.0, 0.96, 0.65, 1.0 }
 local DEFAULT_END_COLOR = { 1.0, 0.4, 0.08, 0.0 }
 
+if not love or not love.graphics then
+    function EmberEffect.createBandEmitter(_opts)
+        return {}
+    end
+
+    function EmberEffect.createRadialEmitter(_opts)
+        return {}
+    end
+
+    function EmberEffect.setBandArea(_emitter, _x, _y, _w, _h)
+    end
+
+    function EmberEffect.setAnchor(_emitter, _x, _y)
+    end
+
+    function EmberEffect.update(_emitter, _dt)
+    end
+
+    function EmberEffect.drawBand(_emitter, _time, _alpha)
+    end
+
+    function EmberEffect.drawParticles(_emitter)
+    end
+
+    return EmberEffect
+end
+
 local function lerp(a, b, t)
     return a + (b - a) * t
 end

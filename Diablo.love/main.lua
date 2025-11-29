@@ -50,11 +50,17 @@ function love.keypressed(key)
     InputManager.registerPress(key)
 
     local action = InputManager.getActionForKey(key)
+    local currentScene = sceneManager:current()
+
+    if currentScene and currentScene.kind == SceneKinds.GAME_OVER then
+        if currentScene.keypressed then
+            currentScene:keypressed(key)
+        end
+        return
+    end
 
     -- Handle pause menu first (only if no other windows are open)
     if action == InputActions.CLOSE_MODAL then
-        local currentScene = sceneManager:current()
-
         -- If pause menu is open, close it
         if currentScene and currentScene.kind == SceneKinds.PAUSE then
             sceneManager:pop()
