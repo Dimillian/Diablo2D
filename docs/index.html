@@ -331,6 +331,142 @@
             color: #95a5a6;
         }
 
+        .cursor-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cursor-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .cursor-button:active {
+            transform: translateY(0);
+        }
+
+        .cursor-button.copied {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        }
+
+        .cursor-prompt-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .cursor-prompt-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cursor-prompt-content {
+            background: #1a1a2e;
+            border: 2px solid #ff6b6b;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .cursor-prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cursor-prompt-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+
+        .cursor-prompt-close {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            color: #e0e0e0;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        .cursor-prompt-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .cursor-prompt-text {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #e0e0e0;
+            white-space: pre-wrap;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .cursor-prompt-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .cursor-prompt-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cursor-prompt-btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .cursor-prompt-btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .cursor-prompt-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        .cursor-prompt-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
         .badge {
             padding: 4px 10px;
             border-radius: 12px;
@@ -755,6 +891,9 @@
                         Created: ${formatDate(issue.created_at)}
                         ${issue.closed_at ? ` | Closed: ${formatDate(issue.closed_at)}` : ''}
                     </div>
+                    <button class="cursor-button" data-issue-id="${issue.id}">
+                        🚀 Open in Cursor
+                    </button>
                 </div>
                 <div class="detail-content">
                     ${issue.description ? `
@@ -781,6 +920,159 @@
                     selectIssue(link.dataset.issueId);
                 });
             });
+
+            // Add Cursor button handler
+            const cursorButton = panel.querySelector('.cursor-button');
+            if (cursorButton) {
+                cursorButton.addEventListener('click', () => {
+                    openCursorPrompt(issue);
+                });
+            }
+        }
+
+        function generateCursorPrompt(issue) {
+            const repoUrl = 'https://github.com/Dimillian/Diablo2D';
+            const repoPath = '/Users/dimillian/Documents/Dev/Other/Love/Diablo';
+
+            let prompt = `# Task: ${issue.id} - ${issue.title}\n\n`;
+            prompt += `## Context\n\n`;
+            prompt += `I'm working on this task from the Diablo2D project. Here's all the context I need:\n\n`;
+
+            prompt += `**Task ID:** ${issue.id}\n`;
+            prompt += `**Type:** ${issue.issue_type}\n`;
+            prompt += `**Priority:** ${getPriorityLabel(issue.priority)} (${issue.priority})\n`;
+            prompt += `**Status:** ${issue.status}\n\n`;
+
+            if (issue.description) {
+                prompt += `## Description\n\n${issue.description}\n\n`;
+            }
+
+            // Add dependencies context
+            if (issue.dependencyDetails && issue.dependencyDetails.length > 0) {
+                prompt += `## Dependencies\n\n`;
+                prompt += `This task depends on:\n`;
+                issue.dependencyDetails.forEach(dep => {
+                    prompt += `- **${dep.depends_on_id}**: ${dep.title} (${dep.type})\n`;
+                    if (dep.issue && dep.issue.description) {
+                        prompt += `  - ${dep.issue.description.substring(0, 150)}...\n`;
+                    }
+                });
+                prompt += `\n`;
+            }
+
+            // Add subtasks context
+            if (issue.subtasks && issue.subtasks.length > 0) {
+                prompt += `## Subtasks\n\n`;
+                prompt += `This epic has ${issue.subtasks.length} subtasks:\n`;
+                issue.subtasks.forEach(subtask => {
+                    prompt += `- **${subtask.id}**: ${subtask.title} (${subtask.status})\n`;
+                });
+                prompt += `\n`;
+            }
+
+            prompt += `## Project Context\n\n`;
+            prompt += `- **Repository:** ${repoUrl}\n`;
+            prompt += `- **Local Path:** ${repoPath}\n`;
+            prompt += `- **Project Type:** Love2D game (Lua)\n`;
+            prompt += `- **Architecture:** ECS (Entity Component System)\n\n`;
+
+            prompt += `## Key Files to Review\n\n`;
+            prompt += `Based on the task description, you may need to work with:\n`;
+            prompt += `- ECS system files in \`modules/ecs.lua\`\n`;
+            prompt += `- Component files in \`components/\`\n`;
+            prompt += `- System files in \`systems/\`\n`;
+            prompt += `- Scene files in \`scenes/\`\n`;
+            prompt += `- Data files in \`data/\`\n\n`;
+
+            prompt += `## Instructions\n\n`;
+            prompt += `Please help me implement this task. Review the codebase structure, understand the existing patterns, and implement the required changes following the project's conventions:\n`;
+            prompt += `- Use 4-space indentation\n`;
+            prompt += `- Follow the ECS architecture patterns\n`;
+            prompt += `- Reference \`AGENTS.MD\` for coding standards\n`;
+            prompt += `- Add tests in \`spec/\` if applicable\n`;
+            prompt += `- Update components in \`data/component_defaults.lua\` if needed\n\n`;
+
+            prompt += `Let's start by understanding the current codebase structure and then implement the changes needed for this task.`;
+
+            return prompt;
+        }
+
+        function openCursorPrompt(issue) {
+            const prompt = generateCursorPrompt(issue);
+
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'cursor-prompt-modal active';
+            modal.innerHTML = `
+                <div class="cursor-prompt-content">
+                    <div class="cursor-prompt-header">
+                        <div class="cursor-prompt-title">🚀 Cursor Prompt for ${issue.id}</div>
+                        <button class="cursor-prompt-close">&times;</button>
+                    </div>
+                    <div class="cursor-prompt-text">${escapeHtml(prompt)}</div>
+                    <div class="cursor-prompt-actions">
+                        <button class="cursor-prompt-btn cursor-prompt-btn-secondary" id="copy-prompt">Copy Prompt</button>
+                        <button class="cursor-prompt-btn cursor-prompt-btn-primary" id="open-cursor">Open Cursor</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Copy button
+            modal.querySelector('#copy-prompt').addEventListener('click', () => {
+                navigator.clipboard.writeText(prompt).then(() => {
+                    const btn = modal.querySelector('#copy-prompt');
+                    const originalText = btn.textContent;
+                    btn.textContent = '✓ Copied!';
+                    btn.classList.add('cursor-prompt-btn-primary');
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.classList.remove('cursor-prompt-btn-primary');
+                    }, 2000);
+                });
+            });
+
+            // Open Cursor button
+            modal.querySelector('#open-cursor').addEventListener('click', () => {
+                // Try to open Cursor with the prompt
+                // Cursor uses vscode:// protocol, but we'll copy to clipboard and show instructions
+                navigator.clipboard.writeText(prompt).then(() => {
+                    const btn = modal.querySelector('#open-cursor');
+                    btn.textContent = '✓ Copied! Open Cursor Composer and paste';
+                    btn.style.background = '#2ecc71';
+
+                    // Try to open Cursor if possible
+                    const repoPath = '/Users/dimillian/Documents/Dev/Other/Love/Diablo';
+                    const cursorUrl = `cursor://file${repoPath}`;
+
+                    // Create a hidden link to try opening Cursor
+                    const link = document.createElement('a');
+                    link.href = cursorUrl;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            });
+
+            // Close button
+            modal.querySelector('.cursor-prompt-close').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function filterIssues() {
