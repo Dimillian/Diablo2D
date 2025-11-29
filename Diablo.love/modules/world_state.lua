@@ -2,6 +2,7 @@
 ---Centralizes save file details so scenes can share load/save logic.
 local ComponentDefaults = require("data.component_defaults")
 local Leveling = require("modules.leveling")
+local LifetimeStats = require("modules.lifetime_stats")
 local Json = require("vendor.json")
 
 local WorldState = {}
@@ -320,6 +321,7 @@ function WorldState.buildSave(world, slotName)
         slot = slotName or WorldState.DEFAULT_SLOT,
         world = WorldState.normalizeWorld(world:serializeState()),
         player = WorldState.normalizePlayer(WorldState.capturePlayer(world)),
+        lifetimeStats = LifetimeStats.normalize(world.lifetimeStats),
     }
     payload.metadata = buildMetadata(payload)
 
@@ -358,6 +360,7 @@ function WorldState.load(slotName)
 
     wrapped.world = WorldState.normalizeWorld(wrapped.world)
     wrapped.player = WorldState.normalizePlayer(wrapped.player)
+    wrapped.lifetimeStats = LifetimeStats.normalize(wrapped.lifetimeStats)
     wrapped.version = wrapped.version or 0
     wrapped.savedAt = wrapped.savedAt or os.time()
     wrapped.metadata = buildMetadata(wrapped)
@@ -449,6 +452,7 @@ function WorldState.buildWorldOptions(save)
         playerState = player,
         playerX = player and player.position and player.position.x or nil,
         playerY = player and player.position and player.position.y or nil,
+        lifetimeStats = LifetimeStats.normalize(save.lifetimeStats),
     }
 end
 

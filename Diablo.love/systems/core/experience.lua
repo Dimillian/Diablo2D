@@ -1,5 +1,6 @@
 local Leveling = require("modules.leveling")
 local notificationBus = require("modules.notification_bus")
+local LifetimeStats = require("modules.lifetime_stats")
 
 local experienceSystem = {}
 
@@ -54,6 +55,7 @@ local function applyLevelUpBonuses(world, player)
         local totalXPForNextLevel = Leveling.getXPForLevel((exp.level or 1) + 1)
         if exp.currentXP and exp.currentXP >= totalXPForNextLevel then
             exp.level = (exp.level or 1) + 1
+            LifetimeStats.addLevels(world, 1)
 
             -- Grant 15 unallocated attribute points
             exp.unallocatedPoints = (exp.unallocatedPoints or 0) + ATTRIBUTE_POINTS_PER_LEVEL
@@ -92,6 +94,7 @@ local function awardExperience(world, player, event)
     end
 
     exp.currentXP = (exp.currentXP or 0) + xpGain
+    LifetimeStats.addExperience(world, xpGain)
     applyLevelUpBonuses(world, player)
 end
 

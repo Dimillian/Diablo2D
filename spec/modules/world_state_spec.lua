@@ -83,6 +83,12 @@ local function buildWorldDouble()
     }
 
     local world = {
+        lifetimeStats = {
+            foesKilled = 7,
+            damageDealt = 3456,
+            experienceEarned = 890,
+            levelsGained = 2,
+        },
         getPlayer = function()
             return player
         end,
@@ -142,6 +148,12 @@ describe("modules.world_state", function()
         assert.equals("forest", payload.world.startBiomeId)
         assert.truthy(payload.world.generatedChunks["0:0"])
         assert.equals(192, payload.world.spawnSafeZone.radius)
+        assert.same({
+            foesKilled = 7,
+            damageDealt = 3456,
+            experienceEarned = 890,
+            levelsGained = 2,
+        }, payload.lifetimeStats)
     end)
 
     it("returns ok when save writes successfully", function()
@@ -209,6 +221,12 @@ it("roundtrips a save and preserves critical world and player fields", function(
         assert.equals(12, player.inventory.gold)
         assert.equals(1, #player.inventory.items)
         assert.equals("item_1", player.equipment.weapon.id)
+        assert.same({
+            foesKilled = 7,
+            damageDealt = 3456,
+            experienceEarned = 890,
+            levelsGained = 2,
+        }, loaded.lifetimeStats)
 
         -- World assertions
         local world = loaded.world

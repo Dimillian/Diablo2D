@@ -55,6 +55,8 @@ local InputManager = require("modules.input_manager")
 local InputActions = require("modules.input_actions")
 local SceneKinds = require("modules.scene_kinds")
 local Physics = require("modules.physics")
+local LifetimeStats = require("modules.lifetime_stats")
+local lifetimeStatsSystem = require("systems.core.lifetime_stats")
 local GameOverScene
 
 local WorldScene = {}
@@ -169,6 +171,7 @@ function WorldScene.new(opts)
             coordinates = require("systems.helpers.coordinates"),
         },
         notifications = {},
+        lifetimeStats = LifetimeStats.normalize(opts.lifetimeStats),
         gameOverTriggered = false,
         input = {
             mouse = {
@@ -209,6 +212,7 @@ function WorldScene.new(opts)
                 combatSystem.update,
                 projectileCollisionSystem.update,
                 deathDetectionSystem.update,
+                lifetimeStatsSystem.update,
                 lootDropSystem.update,
                 lootScatterSystem.update,
                 experienceSystem.update,
@@ -289,6 +293,7 @@ function WorldScene.new(opts)
 
     -- Set metatable early so methods are available
     setmetatable(scene, WorldScene)
+    LifetimeStats.ensure(scene)
 
     -- Instantiate the player entity as part of the world setup.
     local player = Player.new({
@@ -432,6 +437,7 @@ function WorldScene:resetWorld(seed)
     self.visitedChunks = {}
     self.activeChunkKeys = {}
     self.pendingCombatEvents = {}
+    self.lifetimeStats = LifetimeStats.normalize()
     self.gameOverTriggered = false
     self.forceStartBiome = true
     self.startBiomeRadius = math.max(0, self.startBiomeRadius or 2)
@@ -695,6 +701,7 @@ function WorldScene:triggerGameOver()
             GameOverScene.new({
                 sceneManager = self.sceneManager,
                 world = self,
+                lifetimeStats = self.lifetimeStats,
             })
         )
     end

@@ -1,6 +1,7 @@
 local SceneKinds = require("modules.scene_kinds")
 local MainMenuScene = require("scenes.main_menu")
 local EmberEffect = require("effects.ember")
+local LifetimeStats = require("modules.lifetime_stats")
 
 local GameOverScene = {}
 GameOverScene.__index = GameOverScene
@@ -45,6 +46,11 @@ local function drawBackground()
         local nextY = (step + 1) / math.max(steps, 1) * height
         love.graphics.rectangle("fill", 0, y, width, math.max(1, nextY - y))
     end
+end
+
+local function formatNumber(value)
+    value = value or 0
+    return string.format("%d", math.floor(value + 0.5))
 end
 
 local function getTitleLayout(scene)
@@ -148,6 +154,7 @@ function GameOverScene.new(opts)
             endColor = FIRE_PARTICLE_END,
         }),
         buttonHot = false,
+        lifetimeStats = LifetimeStats.ensure(nil, opts.lifetimeStats or (opts.world and opts.world.lifetimeStats)),
     }
 
     return setmetatable(scene, GameOverScene)
@@ -183,6 +190,32 @@ local function drawPanel(layout)
     love.graphics.setColor(PANEL_OUTLINE)
     love.graphics.setLineWidth(3)
     love.graphics.rectangle("line", layout.x, layout.y, layout.w, layout.h, 12, 12)
+end
+
+local function drawStats(panel, stats, font)
+    if not stats then
+        return
+    end
+
+    love.graphics.setFont(font)
+    local startY = panel.y + 96
+    local lineHeight = font:getHeight() + 6
+    local valueX = panel.x + panel.w - 40
+    local valueWidth = math.max(120, panel.w * 0.35)
+    local entries = {
+        { label = "Foes slain", value = formatNumber(stats.foesKilled) },
+        { label = "Damage dealt", value = formatNumber(stats.damageDealt) },
+        { label = "XP earned", value = formatNumber(stats.experienceEarned) },
+        { label = "Levels gained", value = formatNumber(stats.levelsGained) },
+    }
+
+    for index, entry in ipairs(entries) do
+        local y = startY + (index - 1) * lineHeight
+        love.graphics.setColor(0.95, 0.72, 0.55, 0.96)
+        love.graphics.print(entry.label, panel.x + 40, y)
+        love.graphics.setColor(1, 0.96, 0.9, 1)
+        love.graphics.printf(entry.value, valueX - valueWidth, y, valueWidth, "right")
+    end
 end
 
 function GameOverScene:update(dt)
@@ -224,6 +257,8 @@ function GameOverScene:draw()
     love.graphics.setColor(0.92, 0.86, 0.82, 0.92)
     local bodyText = "You have fallen. The darkness creeps closer."
     love.graphics.printf(bodyText, panel.x + 28, panel.y + 34, panel.w - 56, "center")
+
+    drawStats(panel, self.lifetimeStats, self.bodyFont)
 
     love.graphics.setFont(self.bodyFont)
     local button = panel.button
