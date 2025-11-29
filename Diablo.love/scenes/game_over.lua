@@ -125,7 +125,6 @@ function GameOverScene.new(opts)
         time = 0,
         titleFont = love.graphics.newFont(58),
         bodyFont = love.graphics.newFont(22),
-        smallFont = love.graphics.newFont(16),
         bottomFire = EmberEffect.createBandEmitter({
             rate = 38,
             sizeMin = 7,
@@ -237,10 +236,6 @@ function GameOverScene:draw()
 
     love.graphics.setColor(1, 0.96, 0.9, 1)
     love.graphics.printf("Return to Main Menu", button.x, button.y + button.h / 2 - 12, button.w, "center")
-
-    love.graphics.setFont(self.smallFont)
-    love.graphics.setColor(0.85, 0.75, 0.7, 0.9)
-    love.graphics.printf("Press Enter or click to continue", panel.x, panel.y + panel.h - 80, panel.w, "center")
 
     EmberEffect.drawParticles(self.bottomFire)
     love.graphics.pop()
