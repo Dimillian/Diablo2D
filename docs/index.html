@@ -575,10 +575,11 @@
                     });
                 }
 
-                // Find subtasks (issues that depend on this one with parent-child type)
+                // Find subtasks (issues that depend on this one - includes parent-child and discovered-from)
                 issue.subtasks = allIssues.filter(other => {
                     return other.dependencies && other.dependencies.some(dep =>
-                        dep.depends_on_id === issue.id && dep.type === 'parent-child'
+                        dep.depends_on_id === issue.id &&
+                        (dep.type === 'parent-child' || dep.type === 'discovered-from')
                     );
                 });
             });
