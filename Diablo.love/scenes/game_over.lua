@@ -161,7 +161,7 @@ local function pointInRect(x, y, rect)
     return x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h
 end
 
-local function drawRetroTitle(scene, layout)
+local function drawRetroTitle(layout)
     love.graphics.setFont(layout.font)
 
     love.graphics.setColor(0.05, 0.02, 0.02, 0.96)
@@ -215,7 +215,7 @@ function GameOverScene:draw()
     EmberEffect.drawBand(self.bottomFire, self.time, 0.76)
     EmberEffect.drawBand(self.titleFire, self.time, 0.78)
 
-    drawRetroTitle(self, titleLayout)
+    drawRetroTitle(titleLayout)
     EmberEffect.drawParticles(self.titleFire)
 
     drawPanel(panel)
