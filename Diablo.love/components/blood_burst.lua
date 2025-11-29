@@ -5,18 +5,18 @@ local function createBloodBurst(opts)
     local position = opts.position or { x = 0, y = 0 }
 
     local emitter = EmberEffect.createRadialEmitter({
-        radius = 18,
-        rate = 280,
+        radius = 22,
+        rate = 380,
         sizeMin = 2,
-        sizeMax = 4,
-        lifeBase = 0.32,
-        speedMin = 140,
-        speedMax = 260,
-        driftMin = -70,
-        driftMax = 70,
+        sizeMax = 5,
+        lifeBase = 0.4,
+        speedMin = 160,
+        speedMax = 300,
+        driftMin = -80,
+        driftMax = 80,
         pixelScale = 1.0,
-        startColor = { 0.9, 0.12, 0.08, 0.9 },
-        endColor = { 0.5, 0.04, 0.02, 0.0 },
+        startColor = { 1.0, 0.15, 0.1, 1.0 },
+        endColor = { 0.6, 0.05, 0.03, 0.0 },
     })
     EmberEffect.setAnchor(emitter, position.x, position.y)
     EmberEffect.update(emitter, 0.04)
@@ -24,7 +24,7 @@ local function createBloodBurst(opts)
 
     return {
         emitter = emitter,
-        timeToLive = opts.timeToLive or 0.5,
+        timeToLive = opts.timeToLive or 0.65,
     }
 end
 

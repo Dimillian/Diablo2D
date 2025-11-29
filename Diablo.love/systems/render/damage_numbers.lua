@@ -15,9 +15,9 @@ local function spawnDamageNumber(world, event)
     local isCrit = event.crit or false
     local velocityX = (math.random() - 0.5) * (isCrit and 60 or 30)
     local velocityY = (isCrit and -55 or -40) - math.random() * 25
-    local lifetime = isCrit and 1.2 or 0.9
-    local color = isCrit and { 1, 0.95, 0.35, 1 } or { 1, 0.35, 0.3, 1 }
-    local shadowColor = isCrit and { 0.4, 0.15, 0, 0.95 } or { 0, 0, 0, 0.75 }
+    local lifetime = isCrit and 1.6 or 1.3
+    local color = isCrit and { 1, 0.95, 0.2, 1 } or { 1, 1, 1, 1 }
+    local shadowColor = isCrit and { 0.5, 0.3, 0, 0.95 } or { 0, 0, 0, 0.85 }
 
     local spawnYOffset = isCrit and 26 or 18
     local spawnY = event.position.y - spawnYOffset
@@ -39,10 +39,11 @@ local function spawnDamageNumber(world, event)
             color = color,
             shadowColor = shadowColor,
             crit = isCrit,
-            scaleStart = isCrit and 1.8 or 1.25,
-            scaleEnd = isCrit and 1.1 or 0.85,
+            scaleStart = isCrit and 3.0 or 2.4,
+            scaleEnd = isCrit and 1.0 or 0.7,
             wobbleAmplitude = isCrit and 10 or 4,
             wobbleFrequency = isCrit and 16 or 9,
+            flashDuration = isCrit and 0.15 or 0.12,
         }),
     }
 
@@ -84,10 +85,16 @@ function renderDamageNumbersSystem.draw(world)
 
         local alpha = math.max(floating.timer / (floating.maxTimer or 1), 0)
         local progress = 1 - alpha
-        local easedProgress = 1 - (1 - progress) ^ 2
+
+        local flashDuration = floating.flashDuration or 0.12
+        local flashProgress = math.min(1, (flashDuration - floating.elapsed) / flashDuration)
+        flashProgress = math.max(0, flashProgress)
+
+        local easedProgress = 1 - (1 - progress) ^ 3
         local scaleStart = floating.scaleStart or 1
         local scaleEnd = floating.scaleEnd or scaleStart
         local scale = scaleStart + (scaleEnd - scaleStart) * easedProgress
+
         local wobble = 0
         local wobbleAmplitude = floating.wobbleAmplitude or 0
         local wobbleFrequency = floating.wobbleFrequency or 0
@@ -100,6 +107,21 @@ function renderDamageNumbersSystem.draw(world)
 
         love.graphics.push("all")
         local text = string.format("%d", math.floor(floating.damage + 0.5))
+
+        if flashProgress > 0 then
+            local flashAlpha = flashProgress * 0.8 * alpha
+            love.graphics.setBlendMode("add", "alphamultiply")
+            love.graphics.setColor(1, 1, 1, flashAlpha)
+            love.graphics.print(
+                text,
+                drawX,
+                drawY,
+                0,
+                scale * 1.15,
+                scale * 1.15
+            )
+            love.graphics.setBlendMode("alpha")
+        end
 
         local shadow = floating.shadowColor or floating.color
         love.graphics.setColor(

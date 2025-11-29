@@ -126,7 +126,6 @@ function combatSystem.update(world, dt)
         })
         world:addComponent(target.id, "bloodBurst", bloodBurstComponent)
 
-        -- Add gentle knockback to both attacker and target when hit
         -- Direction: push attacker away from target, push target away from attacker
         local dx = attackerX - targetX
         local dy = attackerY - targetY
@@ -136,19 +135,20 @@ function combatSystem.update(world, dt)
         local attackerKnockback = createKnockback({
             x = ndx,
             y = ndy,
-            timer = 0.2,
-            maxTimer = 0.2,
-            strength = 80, -- More noticeable knockback (pixels per second)
+            timer = 0.25,
+            maxTimer = 0.25,
+            strength = 100,
         })
         world:addComponent(entity.id, "knockback", attackerKnockback)
 
         -- Knockback for target (pushes target away from attacker)
+        local targetKnockbackStrength = target.foe and 140 or 100
         local targetKnockback = createKnockback({
             x = -ndx,
             y = -ndy,
-            timer = 0.2,
-            maxTimer = 0.2,
-            strength = 80, -- More noticeable knockback (pixels per second)
+            timer = 0.3,
+            maxTimer = 0.3,
+            strength = targetKnockbackStrength,
         })
         world:addComponent(target.id, "knockback", targetKnockback)
 

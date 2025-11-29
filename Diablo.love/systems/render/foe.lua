@@ -48,7 +48,7 @@ local function drawFoeFrame(entity, image, quad, baseScale)
     local flashProgress = getDamageFlashProgress(entity)
     local scale = (baseScale or 1.5)
     if flashProgress then
-        scale = scale * (1 + 0.08 * flashProgress)
+        scale = scale * (1 + 0.12 * flashProgress)
     end
 
     love.graphics.push()
@@ -70,7 +70,7 @@ local function drawFoeFrame(entity, image, quad, baseScale)
     )
 
     if flashProgress then
-        local flashAlpha = 0.45 + (0.35 * flashProgress)
+        local flashAlpha = 0.65 + (0.25 * flashProgress)
         love.graphics.setBlendMode("add", "alphamultiply")
         love.graphics.setColor(1, 1, 1, flashAlpha)
         love.graphics.draw(
@@ -84,6 +84,20 @@ local function drawFoeFrame(entity, image, quad, baseScale)
             qw / 2,
             qh / 2
         )
+        if flashProgress > 0.5 then
+            love.graphics.setColor(1, 0.3, 0.2, flashAlpha * 0.4)
+            love.graphics.draw(
+                image,
+                quad,
+                centerX,
+                centerY,
+                0,
+                1,
+                1,
+                qw / 2,
+                qh / 2
+            )
+        end
         love.graphics.setBlendMode("alpha")
     end
 

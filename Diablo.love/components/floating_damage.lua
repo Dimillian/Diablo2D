@@ -35,6 +35,7 @@ local function createFloatingDamageComponent(opts)
         wobbleAmplitude = opts.wobbleAmplitude or 0,
         wobbleFrequency = opts.wobbleFrequency or 0,
         wobbleOffset = opts.wobbleOffset or math.random() * math.pi * 2,
+        flashDuration = opts.flashDuration or 0.12,
         elapsed = 0,
     }
 end
