@@ -18,9 +18,14 @@ function EquipmentHelper.slots()
     return equipmentSlots
 end
 
+---Equip an item to the player
+---@param player table Player entity
+---@param item table Item to equip
+---@return boolean True if item was equipped successfully, false if inventory was full and previous item
+---   couldn't be stored
 function EquipmentHelper.equip(player, item)
     if not player or not item or not item.slot then
-        return
+        return false
     end
 
     local inventory = player.inventory
@@ -57,21 +62,35 @@ function EquipmentHelper.equip(player, item)
 
     -- Add previously equipped item back to inventory
     if previous and inventoryItems then
-        EquipmentHelper.addToInventory(player, previous)
+        local added = EquipmentHelper.addToInventory(player, previous)
+        if not added then
+            -- If inventory is full, restore previous equipment to prevent item loss
+            equipment[slotId] = previous
+            return false
+        end
     end
+
+    return true
 end
 
 function EquipmentHelper.unequip(player, slotId)
     if not player or not slotId then
-        return
+        return false
     end
 
     local equipment = player.equipment
     local item = equipment[slotId]
     if item then
-        EquipmentHelper.addToInventory(player, item)
-        equipment[slotId] = nil
+        local added = EquipmentHelper.addToInventory(player, item)
+        if added then
+            equipment[slotId] = nil
+            return true
+        else
+            -- Inventory full, cannot unequip
+            return false
+        end
     end
+    return false
 end
 
 function EquipmentHelper.removeFromInventory(player, index)
@@ -87,29 +106,31 @@ function EquipmentHelper.removeFromInventory(player, index)
     table.remove(inventory.items, index)
 end
 
----Add item to inventory at the beginning, trimming excess items if over limit
+---Add item to inventory at the end (insertion order), trimming excess items if over limit
 ---@param player table Player entity
 ---@param item table Item to add
 ---@param maxSlots number|nil Maximum inventory slots (uses inventory.capacity if not provided)
+---@return boolean True if item was added, false if inventory was full
 function EquipmentHelper.addToInventory(player, item, maxSlots)
     if not player or not item then
-        return
+        return false
     end
 
     local inventory = player.inventory
     if not inventory.items then
-        return
+        return false
     end
 
     maxSlots = maxSlots or inventory.capacity
 
-    -- Insert at beginning (position 1)
-    table.insert(inventory.items, 1, item)
-
-    -- Trim excess items from the end if over limit
-    while #inventory.items > maxSlots do
-        table.remove(inventory.items)
+    -- Check if inventory is full
+    if #inventory.items >= maxSlots then
+        return false
     end
+
+    -- Append at end (insertion order)
+    inventory.items[#inventory.items + 1] = item
+    return true
 end
 
 function EquipmentHelper.computeTotalStats(player)

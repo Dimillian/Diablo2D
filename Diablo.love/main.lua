@@ -143,6 +143,13 @@ function love.mousereleased(x, y, button, istouch, presses)
     end
 end
 
+function love.mousemoved(x, y, dx, dy, istouch)
+    local scene = sceneManager:current()
+    if scene and scene.mousemoved then
+        scene:mousemoved(x, y, dx, dy, istouch)
+    end
+end
+
 function love.wheelmoved(x, y)
     local scene = sceneManager:current()
     if scene and scene.wheelmoved then

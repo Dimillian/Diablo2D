@@ -11,6 +11,7 @@ local renderInventoryStats = require("systems.render.inventory.stats")
 local renderInventoryGrid = require("systems.render.inventory.grid")
 local renderInventoryBottomBar = require("systems.render.inventory.bottom_bar")
 local renderInventoryTooltip = require("systems.render.inventory.tooltip")
+local renderInventoryDragDrop = require("systems.render.inventory.drag_drop")
 
 local InventoryScene = {}
 InventoryScene.__index = InventoryScene
@@ -43,6 +44,7 @@ function InventoryScene.new(opts)
                 renderInventoryStats.draw,
                 renderInventoryGrid.draw,
                 renderInventoryBottomBar.draw,
+                renderInventoryDragDrop.draw,
                 renderInventoryTooltip.draw,
             },
         },
@@ -70,10 +72,14 @@ function InventoryScene:enter()
     self.windowRects = {}
     self.attributeButtonRects = {}
     self.windowLayout = nil
+    self.dragState = nil
+    self.trashRect = nil
 end
 
 -- luacheck: ignore 212/self
 function InventoryScene:exit()
+    -- Clear drag state when leaving inventory
+    self.dragState = nil
 end
 
 -- luacheck: ignore 212/self
@@ -139,22 +145,38 @@ function InventoryScene:mousepressed(x, y, button)
         return
     end
 
-    -- Inventory items: equip on click (only if item exists)
+    -- Inventory items: start drag on click (only if item exists)
     for _, rect in ipairs(self.itemRects or {}) do
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
             local item = rect.item
-            if item and item.slot then
-                EquipmentHelper.removeFromInventory(player, rect.index)
-                EquipmentHelper.equip(player, item)
+            if item then
+                -- Start drag
+                self.dragState = {
+                    item = item,
+                    sourceIndex = rect.index,
+                    sourceType = "inventory",
+                    mouseX = x,
+                    mouseY = y,
+                }
             end
             return
         end
     end
 
-    -- Equipment slots: unequip on click
+    -- Equipment slots: start drag on click (if item exists)
     for _, rect in ipairs(self.equipmentRects or {}) do
         if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
-            EquipmentHelper.unequip(player, rect.slot)
+            local item = rect.item
+            if item then
+                -- Start drag from equipment slot
+                self.dragState = {
+                    item = item,
+                    sourceSlot = rect.slot,
+                    sourceType = "equipment",
+                    mouseX = x,
+                    mouseY = y,
+                }
+            end
             return
         end
     end
@@ -172,6 +194,174 @@ function InventoryScene:mousepressed(x, y, button)
             end
             return
         end
+    end
+end
+
+---Handle mouse release input
+---@param x number Mouse X position
+---@param y number Mouse Y position
+---@param button number Mouse button released
+function InventoryScene:mousereleased(x, y, button)
+    if button ~= 1 then
+        return
+    end
+
+    if not self.dragState then
+        return
+    end
+
+    local player = self.world:getPlayer()
+    if not player then
+        self.dragState = nil
+        return
+    end
+
+    local dragState = self.dragState
+    local draggedItem = dragState.item
+
+    -- Check trash dropzone first
+    if self.trashRect then
+        if x >= self.trashRect.x
+            and x <= self.trashRect.x + self.trashRect.w
+            and y >= self.trashRect.y
+            and y <= self.trashRect.y + self.trashRect.h
+        then
+            -- Destroy item
+            if dragState.sourceType == "inventory" then
+                EquipmentHelper.removeFromInventory(player, dragState.sourceIndex)
+            elseif dragState.sourceType == "equipment" then
+                local equipment = player.equipment
+                equipment[dragState.sourceSlot] = nil
+            end
+            self.dragState = nil
+            return
+        end
+    end
+
+    -- Check equipment slots
+    for _, rect in ipairs(self.equipmentRects or {}) do
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            -- Check if item is compatible with this slot
+            local slotId = rect.slot
+            local compatibleSlot = draggedItem.slot
+            if compatibleSlot == "ring" and (slotId == "ringLeft" or slotId == "ringRight") then
+                compatibleSlot = slotId
+            end
+
+            if compatibleSlot == slotId then
+                -- Equip item
+                local previousItem = nil
+                if dragState.sourceType == "inventory" then
+                    EquipmentHelper.removeFromInventory(player, dragState.sourceIndex)
+                elseif dragState.sourceType == "equipment" then
+                    local equipment = player.equipment
+                    previousItem = equipment[dragState.sourceSlot]
+                    equipment[dragState.sourceSlot] = nil
+                end
+                local equipped = EquipmentHelper.equip(player, draggedItem)
+                if not equipped then
+                    -- Failed to equip (inventory full), restore item
+                    if dragState.sourceType == "inventory" then
+                        EquipmentHelper.addToInventory(player, draggedItem)
+                    elseif dragState.sourceType == "equipment" then
+                        local equipment = player.equipment
+                        equipment[dragState.sourceSlot] = previousItem
+                    end
+                end
+                self.dragState = nil
+                return
+            end
+        end
+    end
+
+    -- Check inventory slots
+    for _, rect in ipairs(self.itemRects or {}) do
+        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+            local targetIndex = rect.index
+
+            -- If dragging from inventory to inventory, swap items
+            if dragState.sourceType == "inventory" then
+                local inventory = player.inventory
+                local items = inventory.items
+                local sourceIndex = dragState.sourceIndex
+
+                if sourceIndex ~= targetIndex then
+                    local targetItem = items[targetIndex]
+                    items[targetIndex] = draggedItem
+                    items[sourceIndex] = targetItem
+                end
+            elseif dragState.sourceType == "equipment" then
+                -- Dragging from equipment to inventory slot
+                local inventory = player.inventory
+                local items = inventory.items
+                local targetItem = items[targetIndex]
+
+                -- Remove from equipment first
+                local equipment = player.equipment
+                equipment[dragState.sourceSlot] = nil
+
+                -- If target slot has an item, try to swap
+                if targetItem then
+                    -- Try to equip the target item if compatible
+                    if targetItem.slot then
+                        local slotId = targetItem.slot
+                        if slotId == "ring" then
+                            -- Try ringLeft first, then ringRight
+                            if not equipment.ringLeft then
+                                slotId = "ringLeft"
+                            elseif not equipment.ringRight then
+                                slotId = "ringRight"
+                            else
+                                slotId = "ringLeft"
+                            end
+                        end
+                        if not equipment[slotId] then
+                            -- Can equip target item
+                            -- equip() already removes the item from inventory internally
+                            local equipped = EquipmentHelper.equip(player, targetItem)
+                            if not equipped then
+                                -- Failed to equip (inventory full), restore dragged item to equipment
+                                equipment[dragState.sourceSlot] = draggedItem
+                                return
+                            end
+                        else
+                            -- Can't equip, restore equipment and keep target item
+                            equipment[dragState.sourceSlot] = draggedItem
+                            return
+                        end
+                    else
+                        -- Target item has no slot, swap positions
+                        items[targetIndex] = draggedItem
+                        -- Put target item back in equipment slot
+                        equipment[dragState.sourceSlot] = targetItem
+                        return
+                    end
+                end
+
+                -- Place dragged item in target slot (empty or after swap)
+                items[targetIndex] = draggedItem
+            end
+
+            self.dragState = nil
+            return
+        end
+    end
+
+    -- Drop outside any valid target - cancel drag
+    self.dragState = nil
+end
+
+---Handle mouse move input
+---@param x number Mouse X position
+---@param y number Mouse Y position
+---@param dx number Mouse X delta (unused)
+---@param dy number Mouse Y delta (unused)
+---@param istouch boolean Whether this is a touch event (unused)
+-- luacheck: ignore 212/dx 212/dy 212/istouch
+function InventoryScene:mousemoved(x, y, dx, dy, istouch)
+    if self.dragState then
+        self.dragState.mouseX = x
+        self.dragState.mouseY = y
     end
 end
 

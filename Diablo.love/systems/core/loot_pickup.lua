@@ -1,5 +1,6 @@
 local vector = require("modules.vector")
 local EquipmentHelper = require("systems.helpers.equipment")
+local NotificationBus = require("modules.notification_bus")
 
 local lootPickupSystem = {}
 
@@ -72,9 +73,17 @@ local function transferItemToPlayer(world, player, lootEntity)
     end
 
     if item.slot and equipment[item.slot] == nil then
-        EquipmentHelper.equip(player, item)
+        local equipped = EquipmentHelper.equip(player, item)
+        if not equipped then
+            -- Failed to equip (likely inventory full when trying to store previous item)
+            return false
+        end
     else
-        EquipmentHelper.addToInventory(player, item)
+        local added = EquipmentHelper.addToInventory(player, item)
+        if not added then
+            -- Inventory is full
+            return false
+        end
     end
 
     lootable.item = nil
@@ -148,6 +157,19 @@ function lootPickupSystem.update(world, dt)
             if distanceToPlayer <= pickupRadius then
                 local pickedUp = transferItemToPlayer(world, player, loot)
                 if pickedUp then
+                    input.consumedClickId = input.clickId
+                    return
+                else
+                    -- Failed to pick up (likely inventory full)
+                    if loot.lootable and loot.lootable.item then
+                        NotificationBus.queue(world, {
+                            title = "Inventory Full",
+                            bodyLines = { "Cannot pick up item - inventory is full!" },
+                            iconPath = "resources/icons/bag.png",
+                            ttl = 2.5,
+                            category = "inventory_full",
+                        })
+                    end
                     input.consumedClickId = input.clickId
                     return
                 end
