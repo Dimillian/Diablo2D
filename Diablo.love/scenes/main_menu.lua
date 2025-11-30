@@ -9,6 +9,7 @@ MainMenuScene.__index = MainMenuScene
 local BUTTON_WIDTH = 320
 local BUTTON_HEIGHT = 56
 local BUTTON_SPACING = 18
+local SAVE_REFRESH_INTERVAL = 1.5
 
 local TITLE_PRIMARY = { 0.95, 0.78, 0.32, 1 }
 local TITLE_SHADOW = { 0.08, 0.02, 0.02, 0.9 }
@@ -72,17 +73,48 @@ local function firstEnabledIndex(items)
     return 1
 end
 
+local function refreshSaveState(scene, force)
+    local now = scene.time or 0
+    if not force and scene.lastSaveRefresh and now - scene.lastSaveRefresh < SAVE_REFRESH_INTERVAL then
+        return
+    end
+
+    local save = WorldState.load(WorldState.DEFAULT_SLOT)
+    local hasValidSave = save ~= nil
+    local menuItems = makeMenuItems(hasValidSave)
+
+    local previousId = scene.menuItems
+        and scene.menuItems[scene.selectedIndex]
+        and scene.menuItems[scene.selectedIndex].id
+
+    scene.menuItems = menuItems
+    scene.persistedState = save
+    scene.lastSaveRefresh = now
+
+    if previousId then
+        for index, item in ipairs(menuItems) do
+            if item.id == previousId then
+                scene.selectedIndex = item.disabled and firstEnabledIndex(menuItems) or index
+                return
+            end
+        end
+    end
+
+    scene.selectedIndex = firstEnabledIndex(menuItems)
+
+    if not hasValidSave and WorldState.slotExists(WorldState.DEFAULT_SLOT) then
+        scene.statusMessage = "Save file could not be read."
+    end
+end
+
 function MainMenuScene.new(opts)
     opts = opts or {}
-
-    local persisted = WorldState.load(WorldState.DEFAULT_SLOT)
-    local hasSave = WorldState.slotExists(WorldState.DEFAULT_SLOT)
 
     local scene = {
         kind = SceneKinds.MAIN_MENU,
         sceneManager = opts.sceneManager,
-        persistedState = persisted,
-        menuItems = makeMenuItems(hasSave),
+        persistedState = nil,
+        menuItems = makeMenuItems(false),
         selectedIndex = 1,
         statusMessage = nil,
         titleFont = love.graphics.newFont(54),
@@ -112,20 +144,23 @@ function MainMenuScene.new(opts)
             endColor = FIRE_PARTICLE_END,
         }),
         time = 0,
+        lastSaveRefresh = nil,
+        titleLayout = nil,
+        bottomFireArea = nil,
     }
 
+    refreshSaveState(scene, true)
     scene.selectedIndex = firstEnabledIndex(scene.menuItems)
 
     return setmetatable(scene, MainMenuScene)
 end
 
-local function getTitleLayout(scene)
-    local width = love.graphics.getWidth()
+local function getTitleLayout(scene, width, height)
     local font = scene.titleFont
     local titleText = "DIABLO 2D"
     local textWidth = font:getWidth(titleText)
     local centerX = width / 2
-    local y = love.graphics.getHeight() * 0.18
+    local y = height * 0.18
     local bannerPaddingX = 32
     local bannerPaddingY = 16
     local bannerX = centerX - textWidth / 2 - bannerPaddingX
@@ -145,10 +180,8 @@ local function getTitleLayout(scene)
     }
 end
 
-local function computeLayout(items)
-    local width = love.graphics.getWidth()
-    local height = love.graphics.getHeight()
-
+local function computeLayout(items, width, height)
+    
     local totalHeight = #items * BUTTON_HEIGHT + (#items - 1) * BUTTON_SPACING
     local startY = height / 2 - totalHeight / 2
     local startX = width / 2 - BUTTON_WIDTH / 2
@@ -163,9 +196,7 @@ local function computeLayout(items)
     end
 end
 
-local function getBottomFireArea()
-    local width = love.graphics.getWidth()
-    local height = love.graphics.getHeight()
+local function getBottomFireArea(width, height)
     local fireH = math.min(height * 0.22, 180)
     local fireY = height - fireH
 
@@ -318,12 +349,16 @@ function MainMenuScene:startContinue()
         return
     end
 
-    if not self.persistedState then
-        self.statusMessage = "No save found to load."
+    local persisted = WorldState.load(WorldState.DEFAULT_SLOT)
+    self.persistedState = persisted
+    refreshSaveState(self, true)
+
+    if not persisted then
+        self.statusMessage = WorldState.slotExists(WorldState.DEFAULT_SLOT) and "Save file could not be read." or "No save found to load."
         return
     end
 
-    local options = WorldState.buildWorldOptions(self.persistedState)
+    local options = WorldState.buildWorldOptions(persisted)
     if not options then
         self.statusMessage = "Save data is corrupted."
         return
@@ -356,7 +391,7 @@ function MainMenuScene:updateSelectionFromMouse(x, y)
 end
 
 local function seedSpark(scene)
-    local layout = getTitleLayout(scene)
+    local layout = scene.titleLayout or getTitleLayout(scene, love.graphics.getWidth(), love.graphics.getHeight())
     local bannerX = layout.bannerX
     local bannerY = layout.bannerY
     local bannerW = layout.bannerW
@@ -392,9 +427,14 @@ end
 
 function MainMenuScene:update(dt)
     self.time = (self.time or 0) + (dt or 0)
-    local layout = getTitleLayout(self)
-    computeLayout(self.menuItems)
-    local bottomArea = getBottomFireArea()
+    refreshSaveState(self, false)
+
+    local width = love.graphics.getWidth()
+    local height = love.graphics.getHeight()
+    self.titleLayout = getTitleLayout(self, width, height)
+    computeLayout(self.menuItems, width, height)
+    self.bottomFireArea = getBottomFireArea(width, height)
+    local layout = self.titleLayout
     -- Remove expired sparks and replenish to target count for continuous effect
     local alive = {}
     for _, spark in ipairs(self.titleSparks or {}) do
@@ -413,7 +453,7 @@ function MainMenuScene:update(dt)
     EmberEffect.setBandArea(self.titleFire, layout.bannerX, titleFireY, layout.bannerW, titleFireH)
     EmberEffect.update(self.titleFire, dt or 0)
 
-    EmberEffect.setBandArea(self.bottomFire, bottomArea.x, bottomArea.y, bottomArea.w, bottomArea.h)
+    EmberEffect.setBandArea(self.bottomFire, self.bottomFireArea.x, self.bottomFireArea.y, self.bottomFireArea.w, self.bottomFireArea.h)
     EmberEffect.update(self.bottomFire, dt or 0)
 
     -- Hover should mirror keyboard selection highlight
@@ -422,8 +462,7 @@ function MainMenuScene:update(dt)
 end
 
 function MainMenuScene:draw()
-    computeLayout(self.menuItems)
-    local layout = getTitleLayout(self)
+    local layout = self.titleLayout or getTitleLayout(self, love.graphics.getWidth(), love.graphics.getHeight())
     drawBackground()
 
     EmberEffect.drawBand(self.bottomFire, self.time, 0.82)
