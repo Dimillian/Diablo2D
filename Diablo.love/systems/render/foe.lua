@@ -2,7 +2,6 @@ local spriteDirection = require("systems.helpers.sprite_direction")
 local spriteRenderer = require("systems.helpers.sprite_renderer")
 local Resources = require("modules.resources")
 local foeTypes = require("data.foe_types")
-local OutlineShaderPath = "shaders/outline.glsl"
 
 local renderFoeSystem = {}
 
@@ -41,7 +40,7 @@ local function getSpriteColumnCount(entity, animationType)
     return defaults[animationType] or 8
 end
 
-local function drawFoeFrame(entity, image, quad, baseScale, outlineColor, useShader)
+local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
     local centerX = entity.position.x + (entity.size.w / 2)
     local centerY = entity.position.y + (entity.size.h / 2)
     local _, _, qw, qh = quad:getViewport()
@@ -217,7 +216,7 @@ function renderFoeSystem.draw(world)
 
                 local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
                 if image and quad then
-                    drawFoeFrame(entity, image, quad, 1.5, outlineColor, false)
+                    drawFoeFrame(entity, image, quad, 1.5, outlineColor)
                 end
             end
         elseif animationState == "attacking" then
@@ -231,7 +230,7 @@ function renderFoeSystem.draw(world)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
-                drawFoeFrame(entity, image, quad, 1.5, outlineColor, false)
+                drawFoeFrame(entity, image, quad, 1.5, outlineColor)
             end
         else
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "walk")
@@ -240,7 +239,7 @@ function renderFoeSystem.draw(world)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
-                drawFoeFrame(entity, image, quad, 1.5, outlineColor, false)
+                drawFoeFrame(entity, image, quad, 1.5, outlineColor)
             end
         end
 
