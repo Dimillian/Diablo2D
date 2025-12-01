@@ -2,6 +2,7 @@ local spriteDirection = require("systems.helpers.sprite_direction")
 local spriteRenderer = require("systems.helpers.sprite_renderer")
 local Resources = require("modules.resources")
 local foeTypes = require("data.foe_types")
+local PowerGlowShader = require("modules.power_glow_shader")
 
 local renderFoeSystem = {}
 
@@ -40,7 +41,7 @@ local function getSpriteColumnCount(entity, animationType)
     return defaults[animationType] or 8
 end
 
-local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
+local function drawFoeFrame(entity, image, quad, baseScale, outlineColor, world)
     local centerX = entity.position.x + (entity.size.w / 2)
     local centerY = entity.position.y + (entity.size.h / 2)
     local _, _, qw, qh = quad:getViewport()
@@ -53,6 +54,10 @@ local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
     if flashProgress then
         scale = scale * (1 + 0.12 * flashProgress)
     end
+
+    local rarityId = entity.foe and entity.foe.rarity
+    local isPowerful = rarityId == "elite" or rarityId == "boss"
+    local powerShader = isPowerful and PowerGlowShader.getShader() or nil
 
     love.graphics.push()
     love.graphics.translate(centerX, centerY)
@@ -110,6 +115,21 @@ local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
         love.graphics.setBlendMode("alpha")
     end
 
+    -- Apply power glow shader for boss/elite foes
+    if powerShader and world then
+        local time = world.time or 0
+        local glowColor = outlineColor or { 1.0, 0.8, 0.2 }
+
+        powerShader:send("time", time)
+        powerShader:send("intensity", 0.5) -- Reduced to match user settings, less white washout
+        powerShader:send("glowColor", glowColor)
+        powerShader:send("pulseSpeed", 0.5) -- Slower for smoother progressive animation
+        powerShader:send("glowRadius", 0.6) -- Increased from 0.4 for wider glow
+        powerShader:send("distortionStrength", 1.5) -- Increased from 1.0 for more distortion
+
+        love.graphics.setShader(powerShader)
+    end
+
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.draw(
         image,
@@ -123,6 +143,10 @@ local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
         qh / 2
     )
 
+    -- Clear shader after drawing main sprite
+    if powerShader then
+        love.graphics.setShader()
+    end
 
     if flashProgress then
         local flashAlpha = 0.65 + (0.25 * flashProgress)
@@ -216,7 +240,7 @@ function renderFoeSystem.draw(world)
 
                 local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
                 if image and quad then
-                    drawFoeFrame(entity, image, quad, 1.5, outlineColor)
+                    drawFoeFrame(entity, image, quad, 1.5, outlineColor, world)
                 end
             end
         elseif animationState == "attacking" then
@@ -230,7 +254,7 @@ function renderFoeSystem.draw(world)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
-                drawFoeFrame(entity, image, quad, 1.5, outlineColor)
+                drawFoeFrame(entity, image, quad, 1.5, outlineColor, world)
             end
         else
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "walk")
@@ -239,7 +263,7 @@ function renderFoeSystem.draw(world)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
-                drawFoeFrame(entity, image, quad, 1.5, outlineColor)
+                drawFoeFrame(entity, image, quad, 1.5, outlineColor, world)
             end
         end
 
