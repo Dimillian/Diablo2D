@@ -34,13 +34,13 @@ local function lerp(a, b, t)
     return a + (b - a) * t
 end
 
-local function mixColor(a, b, t)
-    return {
-        lerp(a[1], b[1], t),
-        lerp(a[2], b[2], t),
-        lerp(a[3], b[3], t),
-        lerp(a[4] or 1, b[4] or 1, t),
-    }
+local function mixColor(a, b, t, out)
+    out = out or {}
+    out[1] = lerp(a[1], b[1], t)
+    out[2] = lerp(a[2], b[2], t)
+    out[3] = lerp(a[3], b[3], t)
+    out[4] = lerp(a[4] or 1, b[4] or 1, t)
+    return out
 end
 
 local FIRE_SHADER = [[
@@ -94,7 +94,21 @@ vec4 effect(vec4 color, Image tex, vec2 uv, vec2 px) {
 }
 ]]
 
-local flameShader = love.graphics.newShader(FIRE_SHADER)
+local flameShader = nil
+
+local function getFlameShader()
+    if not (love and love.graphics and love.graphics.newShader) then
+        return nil
+    end
+
+    if not flameShader then
+        flameShader = love.graphics.newShader(FIRE_SHADER)
+    end
+
+    return flameShader
+end
+
+local reusableColor = { 0, 0, 0, 0 }
 
 local function createBaseEmitter(opts)
     opts = opts or {}
@@ -114,6 +128,7 @@ local function createBaseEmitter(opts)
         speedMax = opts.speedMax or 110,
         driftMin = opts.driftMin or -20,
         driftMax = opts.driftMax or 20,
+        maxParticles = opts.maxParticles or 240,
         pixelScale = opts.pixelScale or 1.0,
         startColor = opts.startColor or DEFAULT_START_COLOR,
         endColor = opts.endColor or DEFAULT_END_COLOR,
@@ -200,12 +215,14 @@ local function spawnParticle(emitter)
 end
 
 function EmberEffect.update(emitter, dt)
-    if not emitter or not dt or dt <= 0 then
+    if not emitter or not dt or dt <= 0 or not (love and love.math) then
         return
     end
 
-    local particles = {}
-    for _, particle in ipairs(emitter.particles or {}) do
+    local particles = emitter.particles or {}
+    local writeIndex = 1
+    for index = 1, #particles do
+        local particle = particles[index]
         local life = particle.life + dt
         if life < particle.maxLife then
             particle.life = life
@@ -213,8 +230,12 @@ function EmberEffect.update(emitter, dt)
             particle.y = particle.y + particle.vy * dt
             particle.size = particle.size * (1 - dt * 0.2)
             particle.vy = particle.vy * (1 - dt * 0.08)
-            particles[#particles + 1] = particle
+            particles[writeIndex] = particle
+            writeIndex = writeIndex + 1
         end
+    end
+    for index = writeIndex, #particles do
+        particles[index] = nil
     end
     emitter.particles = particles
 
@@ -222,9 +243,18 @@ function EmberEffect.update(emitter, dt)
     local rate = emitter.rate or 0
     if rate > 0 then
         local spawnInterval = 1 / rate
-        while emitter.timer >= spawnInterval do
-            emitter.timer = emitter.timer - spawnInterval
-            emitter.particles[#emitter.particles + 1] = spawnParticle(emitter)
+        local maxParticles = emitter.maxParticles or math.huge
+        if #particles < maxParticles then
+            while emitter.timer >= spawnInterval and #particles < maxParticles do
+                emitter.timer = emitter.timer - spawnInterval
+                particles[#particles + 1] = spawnParticle(emitter)
+            end
+        end
+
+        if #particles >= maxParticles then
+            emitter.timer = math.min(emitter.timer, spawnInterval)
+        elseif emitter.timer > spawnInterval then
+            emitter.timer = emitter.timer % spawnInterval
         end
     else
         emitter.timer = 0
@@ -232,23 +262,27 @@ function EmberEffect.update(emitter, dt)
 end
 
 function EmberEffect.drawBand(emitter, time, alpha)
-    if not emitter or emitter.mode ~= "band" then
+    if not emitter or emitter.mode ~= "band" or not (love and love.graphics) then
         return
     end
 
     local band = emitter.band or { x = 0, y = 0, w = 0, h = 0 }
+    local shader = getFlameShader()
+    if not shader then
+        return
+    end
     love.graphics.push("all")
-    love.graphics.setShader(flameShader)
-    flameShader:send("time", time or 0)
-    flameShader:send("resolution", { band.w or 0, band.h or 0 })
-    flameShader:send("origin", { band.x or 0, band.y or 0 })
+    love.graphics.setShader(shader)
+    shader:send("time", time or 0)
+    shader:send("resolution", { band.w or 0, band.h or 0 })
+    shader:send("origin", { band.x or 0, band.y or 0 })
     love.graphics.setColor(1, 1, 1, alpha or 0.8)
     love.graphics.rectangle("fill", band.x or 0, band.y or 0, band.w or 0, band.h or 0)
     love.graphics.pop()
 end
 
 function EmberEffect.drawParticles(emitter)
-    if not emitter or not emitter.particles then
+    if not emitter or not emitter.particles or not (love and love.graphics) then
         return
     end
 
@@ -256,11 +290,11 @@ function EmberEffect.drawParticles(emitter)
     love.graphics.setBlendMode("add", "alphamultiply")
     for _, particle in ipairs(emitter.particles) do
         local t = particle.life / particle.maxLife
-        local color = mixColor(emitter.startColor, emitter.endColor, t)
+        local color = mixColor(emitter.startColor, emitter.endColor, t, reusableColor)
         local baseSize = particle.size * (emitter.pixelScale or 1)
         local px = math.floor(particle.x + 0.5)
         local py = math.floor(particle.y + 0.5)
-        love.graphics.setColor(color)
+        love.graphics.setColor(color[1], color[2], color[3], color[4])
         love.graphics.rectangle(
             "fill",
             px - baseSize,
