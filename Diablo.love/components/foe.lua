@@ -7,6 +7,8 @@ local function createFoeTag(opts)
         typeId = typeId,
         packId = opts.packId,
         packAggro = opts.packAggro or false,
+        rarity = opts.rarity or "common",
+        rarityLabel = opts.rarityLabel,
     }
 end
 

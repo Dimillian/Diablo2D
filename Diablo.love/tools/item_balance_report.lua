@@ -9,6 +9,7 @@ package.path = table.concat({
 
 local ItemsData = require("data.items")
 local ItemGenerator = require("items.generator")
+local FoeRarities = require("data.foe_rarities")
 
 math.randomseed(os.time())
 
@@ -16,6 +17,8 @@ local SAMPLE_COUNT = tonumber(arg and arg[1]) or 10000
 local DROP_SAMPLE_COUNT = tonumber(arg and arg[2]) or SAMPLE_COUNT
 local FOE_TIER = tonumber(arg and arg[3]) or 1
 FOE_TIER = math.max(1, math.floor(FOE_TIER))
+local rarityArg = (arg and arg[4]) or "common,elite,boss"
+local ITEM_DROP_CHANCE = 0.7
 local rarityOrder = { "common", "uncommon", "rare", "epic", "legendary" }
 local trackedStats = {
     "damageMin",
@@ -96,6 +99,19 @@ local function increment(map, key)
     map[key] = (map[key] or 0) + 1
 end
 
+local function splitList(input)
+    local list = {}
+    if not input or input == "" then
+        return list
+    end
+
+    for entry in string.gmatch(input, "[^,]+") do
+        list[#list + 1] = entry
+    end
+
+    return list
+end
+
 for _, rarityId in ipairs(rarityOrder) do
     local rarity = ItemsData.rarities[rarityId]
     if rarity then
@@ -124,11 +140,50 @@ end
 
 local dropRarityCount = {}
 local dropSlotCount = {}
+local dropSimulations = {}
 
 for _ = 1, DROP_SAMPLE_COUNT do
     local item = ItemGenerator.generate({ foeTier = FOE_TIER })
     increment(dropRarityCount, item.rarity)
     increment(dropSlotCount, item.slot or "unknown")
+end
+
+local function simulateDropsForFoeRarity(foeRarityId)
+    local rarity = FoeRarities.getById(foeRarityId)
+    local dropChance = math.min(1, ITEM_DROP_CHANCE * (rarity.itemDropChanceMultiplier or 1))
+    local range = rarity.itemDropCount or { min = 1, max = 1 }
+    local minCount = math.max(1, range.min or 1)
+    local maxCount = math.max(minCount, range.max or minCount)
+
+    local result = {
+        rarityId = rarity.id,
+        rarityLabel = rarity.label,
+        attempts = DROP_SAMPLE_COUNT,
+        successful = 0,
+        items = 0,
+        itemRarityCounts = {},
+    }
+
+    for _ = 1, DROP_SAMPLE_COUNT do
+        if math.random() < dropChance then
+            result.successful = result.successful + 1
+            local count = math.random(minCount, maxCount)
+            for _ = 1, count do
+                local item = ItemGenerator.generate({ foeTier = FOE_TIER })
+                increment(result.itemRarityCounts, item.rarity)
+                result.items = result.items + 1
+            end
+        end
+    end
+
+    return result
+end
+
+for _, foeRarityId in ipairs(splitList(rarityArg)) do
+    local trimmed = foeRarityId:gsub("%s+", "")
+    if trimmed ~= "" then
+        dropSimulations[#dropSimulations + 1] = simulateDropsForFoeRarity(trimmed)
+    end
 end
 
 local function printHeader()
@@ -213,4 +268,26 @@ table.sort(slotEntries, function(a, b)
 end)
 for _, entry in ipairs(slotEntries) do
     print(string.format("  %-10s %s", entry.slot, formatPercent(entry.count, DROP_SAMPLE_COUNT)))
+end
+
+if #dropSimulations > 0 then
+    print("")
+    print("Drop Simulation by Foe Rarity")
+    print(string.rep("-", 40))
+    for _, sim in ipairs(dropSimulations) do
+        local avgItems = sim.attempts > 0 and (sim.items / sim.attempts) or 0
+        local successRate = formatPercent(sim.successful, sim.attempts)
+        print(string.format(
+            "%s (%s): success %s, avg items/kill %.2f",
+            sim.rarityLabel,
+            sim.rarityId,
+            successRate,
+            avgItems
+        ))
+        print("  Item rarity split:")
+        for _, rarityId in ipairs(rarityOrder) do
+            local count = sim.itemRarityCounts[rarityId] or 0
+            print(string.format("    %-10s %s", rarityId, formatPercent(count, sim.items)))
+        end
+    end
 end

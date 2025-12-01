@@ -324,6 +324,7 @@ function WorldScene.new(opts)
     scene.worldSeed = opts.worldSeed or love.math.random(0, 1000000)
     scene.generatedChunks = opts.generatedChunks or {}
     scene.visitedChunks = opts.visitedChunks or {}
+    scene.bossPacks = opts.bossPacks or {}
     scene.chunkConfig = {
         chunkSize = opts.chunkSize or 512,
         activeRadius = opts.activeRadius or 4,
@@ -435,6 +436,7 @@ function WorldScene:resetWorld(seed)
     self.worldSeed = seed or love.math.random(0, 1000000)
     self.generatedChunks = {}
     self.visitedChunks = {}
+    self.bossPacks = {}
     self.activeChunkKeys = {}
     self.pendingCombatEvents = {}
     self.lifetimeStats = LifetimeStats.normalize()
@@ -505,6 +507,7 @@ function WorldScene:serializeState()
             zoom = self.minimapState and self.minimapState.zoom or 1,
         },
         visitedChunks = shallowCopyTable(self.visitedChunks or {}),
+        bossPacks = shallowCopyTable(self.bossPacks or {}),
         spawnSafeZone = self.spawnSafeZone
             and {
                 chunkKey = self.spawnSafeZone.chunkKey,
@@ -541,6 +544,7 @@ function WorldScene:serializeState()
             props = copyDescriptorList(chunk.props or {}),
             defeatedFoes = shallowCopyTable(chunk.defeatedFoes or {}),
             lootedStructures = shallowCopyTable(chunk.lootedStructures or {}),
+            bossPackId = chunk.bossPackId,
         }
     end
 

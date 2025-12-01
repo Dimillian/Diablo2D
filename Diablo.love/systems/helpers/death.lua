@@ -89,6 +89,23 @@ function DeathHelper.handleDeath(world, target, attacker, position) -- luacheck:
             if chunk.spawnedEntities then
                 chunk.spawnedEntities[target.chunkResident.descriptorId] = nil
             end
+
+            if chunk.bossPackId and world and world.bossPacks then
+                local packInfo = chunk.zoneName and world.bossPacks[chunk.zoneName]
+                if packInfo and packInfo.chunkKey == chunk.key and not packInfo.defeated then
+                    local allDefeated = true
+                    for _, descriptor in ipairs(chunk.descriptors and chunk.descriptors.foes or {}) do
+                        if descriptor.packId == chunk.bossPackId and not chunk.defeatedFoes[descriptor.id] then
+                            allDefeated = false
+                            break
+                        end
+                    end
+
+                    if allDefeated then
+                        packInfo.defeated = true
+                    end
+                end
+            end
         end
     end
 

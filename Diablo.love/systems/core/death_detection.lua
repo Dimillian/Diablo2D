@@ -1,5 +1,6 @@
 local DeathHelper = require("systems.helpers.death")
 local foeTypes = require("data.foe_types")
+local foeRarities = require("data.foe_rarities")
 
 local deathDetectionSystem = {}
 
@@ -56,11 +57,14 @@ function deathDetectionSystem.update(world, dt) -- luacheck: ignore 212/dt
             -- Push death event
             local foeLevel = entity.level or 1
             local foeTypeId = entity.foeTypeId or (entity.foe and entity.foe.typeId)
+            local foeRarityId = entity.foe and entity.foe.rarity
             local foeExperience = 0
             if foeTypeId then
                 local config = foeTypes.getConfig(foeTypeId)
                 if config and config.experience then
-                    foeExperience = config.experience
+                    local rarity = foeRarities.getById(foeRarityId)
+                    local multiplier = rarity and rarity.experienceMultiplier or 1
+                    foeExperience = config.experience * multiplier
                 end
             end
 
@@ -71,6 +75,8 @@ function deathDetectionSystem.update(world, dt) -- luacheck: ignore 212/dt
                 position = deathPosition,
                 foeLevel = foeLevel,
                 foeTypeId = foeTypeId,
+                foeRarityId = foeRarityId,
+                foeRarityLabel = foeRarityId and (foeRarities.getById(foeRarityId).label) or nil,
                 foeExperience = foeExperience,
                 time = world.time or 0,
             })

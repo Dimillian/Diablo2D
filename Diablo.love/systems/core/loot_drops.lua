@@ -3,6 +3,7 @@ local ItemData = require("data.items")
 local LootEntity = require("entities.loot")
 local Tooltips = require("systems.helpers.tooltips")
 local FoeTypes = require("data.foe_types")
+local FoeRarities = require("data.foe_rarities")
 
 local lootDropSystem = {}
 local TWO_PI = math.pi * 2
@@ -173,11 +174,17 @@ local function spawnPotionLoot(world, event)
 end
 
 local function spawnItemLoot(world, event)
-    if math.random() >= ITEM_DROP_CHANCE then
+    if not event.position then
         return
     end
 
-    if not event.position then
+    local rarity = FoeRarities.getById(event.foeRarityId)
+    local dropChanceMultiplier = rarity and rarity.itemDropChanceMultiplier or 1
+    local dropChance = math.min(1, ITEM_DROP_CHANCE * dropChanceMultiplier)
+    if rarity and rarity.id == "boss" then
+        dropChance = 1
+    end
+    if math.random() >= dropChance then
         return
     end
 
@@ -189,46 +196,51 @@ local function spawnItemLoot(world, event)
         end
     end
 
-    local item = ItemGenerator.roll({
-        source = "loot",
-        foeTier = foeTier,
-    })
+    local itemDropCount = rarity and rarity.itemDropCount or { min = 1, max = 1 }
+    local countMin = math.max(1, itemDropCount.min or 1)
+    local countMax = math.max(countMin, itemDropCount.max or countMin)
+    local dropCount = math.random(countMin, countMax)
 
-    if not item then
-        return
+    for _ = 1, dropCount do
+        local item = ItemGenerator.roll({
+            source = "loot",
+            foeTier = foeTier,
+        })
+
+        if item then
+            item.source = item.source or "monster"
+
+            local width = 26
+            local height = 26
+            local baseX = event.position.x - width / 2
+            local baseY = event.position.y - height / 2
+            local scatter = rollScatterData()
+
+            local loot = LootEntity.new({
+                x = baseX + scatter.offsetX,
+                y = baseY + scatter.offsetY,
+                width = width,
+                height = height,
+                renderable = buildLootRenderable(item),
+                lootable = {
+                    item = item,
+                    pickupRadius = 128,
+                    source = event.lootSource or event.targetId,
+                    despawnTimer = 45,
+                    maxDespawnTimer = 45,
+                },
+                lootScatter = {
+                    vx = scatter.vx,
+                    vy = scatter.vy,
+                    friction = scatter.friction,
+                    maxDuration = scatter.maxDuration,
+                    stopThreshold = scatter.stopThreshold,
+                },
+            })
+
+            world:addEntity(loot)
+        end
     end
-
-    item.source = item.source or "monster"
-
-    local width = 26
-    local height = 26
-    local baseX = event.position.x - width / 2
-    local baseY = event.position.y - height / 2
-    local scatter = rollScatterData()
-
-    local loot = LootEntity.new({
-        x = baseX + scatter.offsetX,
-        y = baseY + scatter.offsetY,
-        width = width,
-        height = height,
-        renderable = buildLootRenderable(item),
-        lootable = {
-            item = item,
-            pickupRadius = 128,
-            source = event.lootSource or event.targetId,
-            despawnTimer = 45,
-            maxDespawnTimer = 45,
-        },
-        lootScatter = {
-            vx = scatter.vx,
-            vy = scatter.vy,
-            friction = scatter.friction,
-            maxDuration = scatter.maxDuration,
-            stopThreshold = scatter.stopThreshold,
-        },
-    })
-
-    world:addEntity(loot)
 end
 
 local function spawnGoldLoot(world, event)
@@ -241,13 +253,14 @@ local function spawnGoldLoot(world, event)
         return
     end
 
+    local rarity = FoeRarities.getById(event.foeRarityId)
     local goldRange = foeConfig.goldRange
     if not goldRange then
         return
     end
 
-    local chance = foeConfig.goldChance or 0.6
-    if math.random() >= chance then
+    local chance = (foeConfig.goldChance or 0.6) * (rarity and rarity.goldChanceMultiplier or 1)
+    if math.random() >= math.min(1, chance) then
         return
     end
 
@@ -259,6 +272,11 @@ local function spawnGoldLoot(world, event)
     end
 
     local amount = math.random(minGold, maxGold)
+    if amount <= 0 then
+        return
+    end
+
+    amount = math.floor(amount * (rarity and rarity.goldAmountMultiplier or 1) + 0.5)
     if amount <= 0 then
         return
     end

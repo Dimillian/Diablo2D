@@ -13,7 +13,7 @@ Items.rarities = {
         label = "Uncommon",
         weight = 20,
         prefixCount = 1,
-        suffixCount = 1,
+        suffixCount = 0,
     },
     rare = {
         id = "rare",

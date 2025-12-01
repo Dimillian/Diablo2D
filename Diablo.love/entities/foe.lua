@@ -1,3 +1,5 @@
+local foeRarity = require("modules.world.foe_rarity")
+
 local Foe = {}
 Foe.__index = Foe
 
@@ -7,10 +9,29 @@ Foe.__index = Foe
 function Foe.new(opts)
     local config = opts.config
     local typeId = opts.foeTypeId or (config and config.id)
-    local packAggro = opts.packAggro
+    local rarityId = opts.rarity or opts.rarityId or "common"
+    local scaled = foeRarity.apply(config, rarityId)
+
+    local packAggro = scaled.packAggro
     if packAggro == nil and config then
         packAggro = config.packAggro
     end
+    packAggro = packAggro or false
+
+    local renderColor = config and config.color
+    local rarity = foeRarity.get(rarityId)
+    local outlineColor = nil
+    if rarityId ~= "common" and rarity then
+        outlineColor = rarity.tint
+    end
+    local detectionRange = scaled.detectionRange or (config and config.detectionRange)
+    local leashExtension = scaled.leashExtension or (config and config.leashExtension)
+    local health = scaled.health or (config and config.health)
+    local damageMin = scaled.damageMin or (config and config.damageMin)
+    local damageMax = scaled.damageMax or (config and config.damageMax)
+    local sizeScale = scaled.scaleMultiplier or 1
+    local width = (opts.width or 20) * sizeScale
+    local height = (opts.height or 20) * sizeScale
 
     local createPosition = require("components.position")
     local createSize = require("components.size")
@@ -26,46 +47,50 @@ function Foe.new(opts)
 
     local entity = {
         id = opts.id or ("foe_" .. math.random(10000, 99999)),
-        name = config.name,
+        name = opts.name or config.name,
         position = createPosition({
             x = opts.x,
             y = opts.y,
         }),
         size = createSize({
-            w = opts.width,
-            h = opts.height,
+            w = width,
+            h = height,
         }),
         movement = createMovement({
             speed = config.speed,
         }),
         renderable = createRenderable({
             kind = "rect",
-            color = config.color,
+            color = renderColor,
+            outlineColor = outlineColor,
             spritePrefix = config.spritePrefix,
             animationState = "idle",
+            scaleMultiplier = sizeScale,
         }),
         wander = createWander({
             interval = config.wanderInterval,
         }),
         detection = createDetection({
-            range = config.detectionRange,
-            leashExtension = config.leashExtension,
+            range = detectionRange,
+            leashExtension = leashExtension,
         }),
         foe = createFoeTag({
             type = opts.foeType or typeId,
             typeId = typeId,
             packId = opts.packId,
             packAggro = packAggro,
+            rarity = scaled.rarityId,
+            rarityLabel = scaled.rarityLabel,
         }),
         health = createHealth({
-            max = config.health,
-            current = config.health,
+            max = health,
+            current = health,
         }),
         combat = createCombat({
             range = config.range,
             attackSpeed = config.attackSpeed,
-            baseDamageMin = config.damageMin,
-            baseDamageMax = config.damageMax,
+            baseDamageMin = damageMin,
+            baseDamageMax = damageMax,
         }),
         foeTypeId = typeId,
         physicsBody = createPhysicsBody({

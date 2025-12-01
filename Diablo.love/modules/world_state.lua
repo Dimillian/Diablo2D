@@ -76,6 +76,7 @@ function WorldState.normalizeChunks(persisted)
             defeatedFoes = copyMap(chunk.defeatedFoes),
             lootedStructures = copyMap(chunk.lootedStructures),
             spawnedEntities = {},
+            bossPackId = chunk.bossPackId,
         }
     end
 
@@ -188,6 +189,7 @@ function WorldState.normalizeWorld(persisted)
             }
             or nil,
         forceStartBiome = persisted.forceStartBiome,
+        bossPacks = copyMap(persisted.bossPacks),
         minimapState = (function()
             local visible = true
             if persisted.minimapState and persisted.minimapState.visible ~= nil then
@@ -449,6 +451,7 @@ function WorldState.buildWorldOptions(save)
         minimapState = world.minimapState,
         spawnSafeZone = world.spawnSafeZone,
         starterGearGenerated = world.starterGearGenerated or player ~= nil,
+        bossPacks = world.bossPacks,
         playerState = player,
         playerX = player and player.position and player.position.x or nil,
         playerY = player and player.position and player.position.y or nil,

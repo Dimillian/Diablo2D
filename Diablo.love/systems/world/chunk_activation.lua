@@ -25,6 +25,9 @@ local function instantiateFoe(world, chunk, descriptor)
         height = 20,
         config = config,
         packId = descriptor.packId,
+        rarity = descriptor.rarity,
+        rarityLabel = descriptor.rarityLabel,
+        name = descriptor.name,
     })
 
     foe.chunkResident = createChunkResident({

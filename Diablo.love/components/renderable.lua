@@ -10,6 +10,7 @@ local function createRenderableComponent(opts)
         spriteSheetPath = opts.spriteSheetPath,
         spritePrefix = opts.spritePrefix,
         animationState = opts.animationState or "idle",
+        scaleMultiplier = opts.scaleMultiplier or 1,
     }
 end
 

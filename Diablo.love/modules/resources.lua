@@ -7,6 +7,7 @@ local cache = {
     images = {},
     quads = {}, -- For sprite sheet regions
     atlases = {}, -- Sprite sheet images with metadata
+    shaders = {},
 }
 
 ---Load a standalone image (cached)
@@ -148,6 +149,34 @@ function resources.clearCache()
     cache.images = {}
     cache.quads = {}
     cache.atlases = {}
+    cache.shaders = {}
+end
+
+---Load and cache a shader from disk.
+---@param path string
+---@return love.Shader|nil
+function resources.loadShader(path)
+    if cache.shaders[path] then
+        return cache.shaders[path]
+    end
+
+    local source = love.filesystem.read(path)
+    if source then
+        local success, shader = pcall(love.graphics.newShader, source)
+        if success and shader then
+            cache.shaders[path] = shader
+            return shader
+        end
+    end
+
+    -- Fallback: allow callers to pass raw source directly
+    local success, shader = pcall(love.graphics.newShader, path)
+    if success and shader then
+        cache.shaders[path] = shader
+        return shader
+    end
+
+    return nil
 end
 
 return resources

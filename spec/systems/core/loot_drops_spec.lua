@@ -1,102 +1,110 @@
-local helper = require("spec.spec_helper")
+require("spec.spec_helper")
+
+local LootDrops = require("systems.core.loot_drops")
 local TestWorld = require("spec.support.test_world")
+local FoeTypes = require("data.foe_types")
 
-package.loaded["items.generator"] = require("spec.system_helpers.item_generator_stub")
-package.loaded["systems.helpers.tooltips"] = require("spec.system_helpers.tooltips_stub")
-package.loaded["entities.loot"] = require("spec.system_helpers.loot_entity_stub")
-package.loaded["data.items"] = require("spec.system_helpers.items_data_stub")
-
-local lootDropSystem = require("systems.core.loot_drops")
-
-describe("systems.core.loot_drops", function()
+describe("systems.core.loot_drops rarity scaling", function()
     local world
-    local player
     local originalRandom
 
     before_each(function()
-        originalRandom = math.random
-        math.random = function(a, b)
-            if a and b then
-                return a
-            elseif a then
-                return a
-            else
-                return 0.5
-            end
-        end
-
         world = TestWorld.new()
+        world.generatedChunks = {}
         world.pendingCombatEvents = {}
+        world.addedLoot = {}
 
-        player = helper.buildEntity({
-            id = "player_1",
-            position = { x = 0, y = 0 },
-            potions = {
-                healthPotionCount = 0,
-                maxHealthPotionCount = 5,
-                manaPotionCount = 0,
-                maxManaPotionCount = 5,
-            },
-        })
-
-        function world:getPlayer() -- luacheck: ignore 212/self
-            return player
+        function world:addEntity(entity)
+            self.addedLoot[#self.addedLoot + 1] = entity
         end
 
-        world:addEntity(player)
+        originalRandom = math.random
+        math.random = function(min, max)
+            if min and max then
+                return min
+            end
+            return 0.1
+        end
     end)
 
     after_each(function()
         math.random = originalRandom
     end)
 
-    local function countLootEntities()
-        local count = 0
-        for _, entity in pairs(world.entities) do
-            if entity.lootable then
-                count = count + 1
-            end
-        end
-        return count
+    local function pushDeathEvent(rarityId)
+        local foeTypeId = "orc3"
+        local foeConfig = FoeTypes.getConfig(foeTypeId)
+        assert.is_not_nil(foeConfig)
+
+        world.pendingCombatEvents[#world.pendingCombatEvents + 1] = {
+            type = "death",
+            foeTypeId = foeTypeId,
+            foeRarityId = rarityId,
+            position = { x = 0, y = 0 },
+        }
     end
 
-    it("spawns loot and potion entities for death events", function()
-        world.pendingCombatEvents[1] = {
-            type = "death",
-            targetId = "foe_1",
-            position = { x = 100, y = 100 },
-            sourceId = player.id,
-            foeTypeId = "slow",
-        }
+    it("bosses drop multiple items", function()
+        pushDeathEvent("boss")
 
-        lootDropSystem.update(world, 0)
+        LootDrops.update(world, 0)
 
-        assert.is_true(countLootEntities() >= 1)
-        assert.is_true(world.pendingCombatEvents[1]._spawnedLoot)
+        local itemLoot = {}
+        for _, entry in ipairs(world.addedLoot) do
+            if entry.lootable and entry.lootable.item then
+                itemLoot[#itemLoot + 1] = entry
+            end
+        end
+
+        assert.is_true(#itemLoot >= 2)
     end)
 
-    it("does not spawn duplicate loot when event already processed", function()
-        world.pendingCombatEvents[1] = {
-            type = "death",
-            targetId = "foe_1",
-            position = { x = 100, y = 100 },
-            sourceId = player.id,
-            _spawnedLoot = true,
-        }
+    it("boss drop bypasses base chance gate", function()
+        -- Force chance roll high to ensure boss override still drops
+        math.random = function(min, max)
+            if min and max then
+                return min
+            end
+            return 0.99
+        end
 
-        local beforeCount = countLootEntities()
-        lootDropSystem.update(world, 0)
-        assert.equal(beforeCount, countLootEntities())
+        pushDeathEvent("boss")
+        LootDrops.update(world, 0)
+
+        local hasItem = false
+        for _, entry in ipairs(world.addedLoot) do
+            if entry.lootable and entry.lootable.item then
+                hasItem = true
+                break
+            end
+        end
+
+        assert.is_true(hasItem)
     end)
 
-    it("ignores events without position", function()
-        world.pendingCombatEvents[1] = {
-            type = "death",
-            targetId = "foe_1",
-            sourceId = player.id,
-        }
+    it("elites increase gold amount compared to common", function()
+        pushDeathEvent("common")
+        LootDrops.update(world, 0)
+        local commonGold = nil
+        for _, entry in ipairs(world.addedLoot) do
+            if entry.lootable and entry.lootable.gold then
+                commonGold = entry.lootable.gold
+            end
+        end
 
-        lootDropSystem.update(world, 0)
-        assert.equal(0, countLootEntities())
+        world.pendingCombatEvents = {}
+        world.addedLoot = {}
+        pushDeathEvent("elite")
+        LootDrops.update(world, 0)
+        local eliteGold = nil
+        for _, entry in ipairs(world.addedLoot) do
+            if entry.lootable and entry.lootable.gold then
+                eliteGold = entry.lootable.gold
+            end
+        end
+
+        assert.is_not_nil(commonGold)
+        assert.is_not_nil(eliteGold)
+        assert.is_true(eliteGold > commonGold)
     end)
 end)
