@@ -11,6 +11,7 @@ local function createRenderableComponent(opts)
         spritePrefix = opts.spritePrefix,
         animationState = opts.animationState or "idle",
         scaleMultiplier = opts.scaleMultiplier or 1,
+        outlineColor = opts.outlineColor,
     }
 end
 

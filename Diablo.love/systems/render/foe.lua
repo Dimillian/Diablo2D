@@ -41,7 +41,7 @@ local function getSpriteColumnCount(entity, animationType)
     return defaults[animationType] or 8
 end
 
-local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
+local function drawFoeFrame(entity, image, quad, baseScale, outlineColor, useShader)
     local centerX = entity.position.x + (entity.size.w / 2)
     local centerY = entity.position.y + (entity.size.h / 2)
     local _, _, qw, qh = quad:getViewport()
@@ -60,10 +60,25 @@ local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
     love.graphics.scale(scale, scale)
     love.graphics.translate(-centerX, -centerY)
 
+    -- Always draw outline manually using additive blending to preserve color
     if outlineColor then
-        local alpha = 1
-        love.graphics.setColor(outlineColor[1], outlineColor[2], outlineColor[3], alpha)
         local offsets = {
+            { -3, 0 },
+            { 3, 0 },
+            { 0, -3 },
+            { 0, 3 },
+            { -3, -3 },
+            { -3, 3 },
+            { 3, -3 },
+            { 3, 3 },
+            { -2, 0 },
+            { 2, 0 },
+            { 0, -2 },
+            { 0, 2 },
+            { -2, -2 },
+            { -2, 2 },
+            { 2, -2 },
+            { 2, 2 },
             { -1, 0 },
             { 1, 0 },
             { 0, -1 },
@@ -73,19 +88,27 @@ local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
             { 1, -1 },
             { 1, 1 },
         }
-        for _, offset in ipairs(offsets) do
-            love.graphics.draw(
-                image,
-                quad,
-                centerX + offset[1],
-                centerY + offset[2],
-                0,
-                1,
-                1,
-                qw / 2,
-                qh / 2
-            )
+        -- Use additive blending to add outline color glow - this preserves the color hue
+        love.graphics.setBlendMode("add", "alphamultiply")
+        -- Draw multiple passes for intensity
+        for pass = 1, 3 do
+            local alpha = pass == 1 and 0.8 or (pass == 2 and 0.5 or 0.3)
+            love.graphics.setColor(outlineColor[1], outlineColor[2], outlineColor[3], alpha)
+            for _, offset in ipairs(offsets) do
+                love.graphics.draw(
+                    image,
+                    quad,
+                    centerX + offset[1],
+                    centerY + offset[2],
+                    0,
+                    1,
+                    1,
+                    qw / 2,
+                    qh / 2
+                )
+            end
         end
+        love.graphics.setBlendMode("alpha")
     end
 
     love.graphics.setColor(1, 1, 1, 1)
@@ -100,6 +123,7 @@ local function drawFoeFrame(entity, image, quad, baseScale, outlineColor)
         qw / 2,
         qh / 2
     )
+
 
     if flashProgress then
         local flashAlpha = 0.65 + (0.25 * flashProgress)
@@ -170,10 +194,6 @@ function renderFoeSystem.draw(world)
 
         local spriteSheetPath
         local totalFrames
-        local outlineShader
-        if outlineColor then
-            outlineShader = Resources.loadShader and Resources.loadShader(OutlineShaderPath) or nil
-        end
 
         if animationState == "dying" then
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "death")
@@ -197,15 +217,7 @@ function renderFoeSystem.draw(world)
 
                 local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
                 if image and quad then
-                    if outlineShader then
-                        love.graphics.setShader(outlineShader)
-                        outlineShader:send("outlineColor", outlineColor)
-                        outlineShader:send("radius", 1.0)
-                    end
-                    drawFoeFrame(entity, image, quad, 1.5, outlineColor)
-                    if outlineShader then
-                        love.graphics.setShader()
-                    end
+                    drawFoeFrame(entity, image, quad, 1.5, outlineColor, false)
                 end
             end
         elseif animationState == "attacking" then
@@ -219,15 +231,7 @@ function renderFoeSystem.draw(world)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
-                if outlineShader then
-                    love.graphics.setShader(outlineShader)
-                    outlineShader:send("outlineColor", outlineColor)
-                    outlineShader:send("radius", 1.0)
-                end
-                drawFoeFrame(entity, image, quad, 1.5, outlineColor)
-                if outlineShader then
-                    love.graphics.setShader()
-                end
+                drawFoeFrame(entity, image, quad, 1.5, outlineColor, false)
             end
         else
             spriteSheetPath = Resources.getFoeSpritePath(renderable.spritePrefix, "walk")
@@ -236,15 +240,7 @@ function renderFoeSystem.draw(world)
             local image, quad = spriteRenderer.getSpriteQuad(spriteSheetPath, row, col, totalFrames)
 
             if image and quad then
-                if outlineShader then
-                    love.graphics.setShader(outlineShader)
-                    outlineShader:send("outlineColor", outlineColor)
-                    outlineShader:send("radius", 1.0)
-                end
-                drawFoeFrame(entity, image, quad, 1.5, outlineColor)
-                if outlineShader then
-                    love.graphics.setShader()
-                end
+                drawFoeFrame(entity, image, quad, 1.5, outlineColor, false)
             end
         end
 
